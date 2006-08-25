@@ -98,6 +98,7 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.optionsButton,SIGNAL("clicked()"),self.showOptions)
         QObject.connect(self.launchBrowserButton,SIGNAL("clicked()"),self.launchBrowser)
       #  QObject.connect(self.viewLogButton,SIGNAL("clicked()"),self.viewLog)
+        QObject.connect(self.showAllReportsButton,SIGNAL("clicked()"),self.showAllReports)      
         QObject.connect(self.startButton,SIGNAL("clicked()"),self.startClicked)
         QObject.connect(self.stopButton,SIGNAL("clicked()"),self.stopClicked)                
         QObject.connect(self.searchButton,SIGNAL("clicked()"),self._planetDb_filter)                        
@@ -157,14 +158,13 @@ class MainWindow(baseclass,formclass):
         while True:
             try:
                 msg = self.msgQueue.get(False)
-                methodName, methodArgs = msg[0], msg[1:]
-                if methodName not in dir(self):
+                if msg.methodName not in dir(self):
                     raise BotFatalError("Inter-queue message not found.")
                 
-                if methodName is not "connectionError":
+                if msg.methodName is not "connectionError":
                     self.setConnectionOK()
-                method = getattr(self,methodName)
-                method(*methodArgs)
+                method = getattr(self,msg.methodName)
+                method(*msg.args)
             except Empty:
                 break
  
@@ -179,19 +179,19 @@ class MainWindow(baseclass,formclass):
             self.startButton.setText("Pause")
             self.stopButton.setEnabled(True)
         elif self.startButton.text() == "Pause":
-            self.bot.msgQueue.put(ThreadMsgTypes.pause)
+            self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.pause))
             self.botStatusLabel.setPalette(QPalette(MyColors.lightYellow))
             self.botStatusLabel.setText("Paused")
             self.startButton.setText("Resume") 
         elif self.startButton.text() == "Resume":
-            self.bot.msgQueue.put(ThreadMsgTypes.resume)
+            self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.resume))
             self.setBotStatusRunning()                   
             self.startButton.setText("Pause") 
     
     def stopClicked(self):
-        if not self.bot:
-            return
-        self.bot.msgQueue.put(ThreadMsgTypes.stop)
+        if self.bot:
+            self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.stop))
+        else: return
         self.stopButton.setEnabled(False)
         self.startButton.setText("Start")
         self.botStatusLabel.setPalette(QPalette(MyColors.lightRed))
@@ -251,30 +251,34 @@ class MainWindow(baseclass,formclass):
         coordsStr = str(planetTreeSelectedItem.text(0))
         self.spyReportsTree.clear()
         planet = self._planetDb.read(coordsStr)
-        self._planetDb_selectedPlanet = planet
+        self._planetDb_fillReportsTree(planet.spyReports)
         
-        if len(planet.spyReports) == 0:
+    def _planetDb_fillReportsTree(self,spyReports):
+        if len(spyReports) == 0:
             return
         
-        for spyReport in planet.spyReports:
+        for spyReport in spyReports:
             res = spyReport.resources
             onlyHasMissiles = not spyReport.hasNonMissileDefense() and spyReport.hasDefense()
             if onlyHasMissiles: defense = "Only missiles"
             else: defense = spyReport.hasInfoAbout("defense")
             
-            itemData = [spyReport.date.strftime("%X %x"),str(res.metal),str(res.crystal),str(res.deuterium)]
+            itemData = [spyReport.code,spyReport.date.strftime("%X %x"),str(spyReport.coords),str(res.metal),str(res.crystal),str(res.deuterium)]
             itemData += [spyReport.hasInfoAbout("fleet"),defense,spyReport.actionTook]            
             item = QTreeWidgetItem(itemData)
             self.spyReportsTree.addTopLevelItem(item)
             
         self.splitter.setSizes([230,111,1])
         self.spyReportsTree.setCurrentItem(self.spyReportsTree.topLevelItem(0))            
-    
-    def _planetDb_updateReportDetailsTrees(self,spyReportsTreeSelectedItem):
         
-        index = self.spyReportsTree.indexOfTopLevelItem(spyReportsTreeSelectedItem)
-        spyReport = self._planetDb_selectedPlanet.spyReports[index]
-
+    def _planetDb_updateReportDetailsTrees(self,spyReportsTreeSelectedItem):
+        if spyReportsTreeSelectedItem is None:
+            return
+        codeStr = str(spyReportsTreeSelectedItem.text(0))        
+        coordsStr = str(spyReportsTreeSelectedItem.text(2))
+        
+        planet =  self._planetDb.read(coordsStr)
+        spyReport = [report for report in planet.spyReports if str(report.code) == codeStr][0]
         
         for i in ["fleet","defense","buildings","research"]:
             tree = getattr(self,i + "Tree")
@@ -287,7 +291,11 @@ class MainWindow(baseclass,formclass):
             else: items = [QTreeWidgetItem([var])]
             tree.addTopLevelItems(items)
 
-    
+    def showAllReports(self):
+        allPlanets = self._planetDb.readAll()
+        allReports = [planet.spyReports[-1] for planet in allPlanets if len(planet.spyReports) > 0]
+        self._planetDb_fillReportsTree(allReports)
+        
     # bot events handler methods:
     # --------------------------
     
@@ -364,6 +372,7 @@ class MainWindow(baseclass,formclass):
         
     def espionagesEnd(self):
         self.progressBar.setVisible(False)
+        self.botActivityLabel.setText("")
     def waitForReportsBegin(self,howMany):
         self.botActivityLabel.setText("Waiting for all %s reports to arrive..." % howMany)
         self.progressBar.setVisible(False)        
@@ -434,7 +443,9 @@ class MainWindow(baseclass,formclass):
     def loggedIn(self,username,session):
         self.launchBrowserButton.setEnabled(True)
         self.session = session
-        
+    def fatalException(self,exception):
+        self.stopClicked()
+        QMessageBox.critical(self,"Fatal error","Critical error: %s" % exception)
 
 def guiMain():
     app = QApplication(sys.argv)

@@ -59,70 +59,72 @@ class Bot(threading.Thread):
         
         def targetsSearchBegin(self,howMany):
             self.logAndPrint( ' / Looking for %s inactive planets to spy...' % howMany)
-            if self.gui: self.gui.msgQueue.put(["targetsSearchBegin",howMany])
+            self.dispatch("targetsSearchBegin",howMany)
         def solarSystemAnalyzed(self,galaxy,solarSystem):
             self.logAndPrint( '|      Analyzed solar system [%s:%s:]' % (galaxy,solarSystem)     )
-            if self.gui: self.gui.msgQueue.put(["solarSystemAnalyzed",galaxy,solarSystem])            
+            self.dispatch("solarSystemAnalyzed",galaxy,solarSystem)            
         def targetPlanetFound(self,planet):
             self.logAndPrint( '|      Target planet found: %s' % planet)
-            if self.gui: self.gui.msgQueue.put(["targetPlanetFound",planet])            
+            self.dispatch("targetPlanetFound",planet)            
         def targetsSearchEnd(self):        
             self.logAndPrint( ' \\')
-            if self.gui: self.gui.msgQueue.put(["targetsSearchEnd"])            
+            self.dispatch("targetsSearchEnd")            
         def espionagesBegin(self,howMany): 
             self.logAndPrint( ' / Planet(s) found, starting espionage(s)')
-            if self.gui: self.gui.msgQueue.put(["espionagesBegin",howMany])            
+            self.dispatch("espionagesBegin",howMany)            
         def probesSent(self,planet,howMany):
             self.logAndPrint( '|      %s probe(s) sent to planet %s' % (howMany,planet)         )
-            if self.gui: self.gui.msgQueue.put(["probesSent",planet,howMany])            
+            self.dispatch("probesSent",planet,howMany)            
         def errorSendingProbes(self, planet, probesCount,reason):
             self.logAndPrint(  '|**    Error sending probes to planet %s (%s)' % (planet,reason))
-            if self.gui: self.gui.msgQueue.put(["errorSendingProbes",planet,probesCount,reason])             
+            self.dispatch("errorSendingProbes",planet,probesCount,reason)             
         def espionagesEnd(self):
             self.logAndPrint( ' \  All espionage(s) launched')
-            if self.gui: self.gui.msgQueue.put(["espionagesEnd"])            
+            self.dispatch("espionagesEnd")            
         def waitForReportsBegin(self,howMany):
             self.logAndPrint( ' / Waiting for all %s spy report(s) to arrive...' % howMany)
-            if self.gui: self.gui.msgQueue.put(["waitForReportsBegin",howMany])
+            self.dispatch("waitForReportsBegin",howMany)
         def waitForReportsEnd(self):
             self.logAndPrint( ' \  All spy report(s) arrived')
-            if self.gui: self.gui.msgQueue.put(["waitForReportsEnd"])            
+            self.dispatch("waitForReportsEnd")            
         def reportsAnalysisBegin(self,howMany):
             self.logAndPrint( ' / Analyzing %s spy reports ' % howMany)
-            if self.gui: self.gui.msgQueue.put(["reportsAnalysisBegin",howMany])            
+            self.dispatch("reportsAnalysisBegin",howMany)            
         def planetSkipped(self,planet,cause):
             self.logAndPrint( '|      Skipping planet %s because it has %s' % (planet, cause))
-            if self.gui: self.gui.msgQueue.put(["planetSkipped",planet,cause])            
+            self.dispatch("planetSkipped",planet,cause)            
         def reportsAnalysisEnd(self):
             self.logAndPrint( ' \  All spy report(s) analyzed')
-            if self.gui: self.gui.msgQueue.put(["reportsAnalysisEnd"])            
+            self.dispatch("reportsAnalysisEnd")            
         def attacksBegin(self,howMany):
             self.logAndPrint( ' / Starting %s attacks...' % howMany)
-            if self.gui: self.gui.msgQueue.put(["attacksBegin",howMany])            
+            self.dispatch("attacksBegin",howMany)            
         def planetAttacked(self,planet,fleet,resources,attacksLeft):
             self.logAndPrint( '|      Planet %s attacked by %s for %s resources. %s attacks left to this planet' % (planet,fleet,resources,attacksLeft))
-            if self.gui: self.gui.msgQueue.put(["planetAttacked",planet,fleet,resources,attacksLeft])            
+            self.dispatch("planetAttacked",planet,fleet,resources,attacksLeft)            
         def errorAttackingPlanet(self, planet, reason):
             self.logAndPrint(  '|**    Error attacking planet %s (%s)' % (planet,reason))
-            if self.gui: self.gui.msgQueue.put(["errorAttackingPlanet",planet,reason])            
+            self.dispatch("errorAttackingPlanet",planet,reason)            
         def attacksEnd(self):
             self.logAndPrint( ' \ Attacks finished')
-            if self.gui: self.gui.msgQueue.put(["attacksEnd"])            
+            self.dispatch("attacksEnd")            
         def waitForSlotBegin(self):
             self.logAndPrint( ' |         Simultaneous fleet limit reached. Waiting...')
-            if self.gui: self.gui.msgQueue.put(["waitForSlotBegin"])            
+            self.dispatch("waitForSlotBegin")            
         def waitForSlotEnd(self):
             self.logAndPrint( ' |')
-            if self.gui: self.gui.msgQueue.put(["waitForSlotEnd"])            
+            self.dispatch("waitForSlotEnd")            
         def waitForShipsBegin(self, shipType):
             self.logAndPrint( ' |         There are no available ships of type %s. Waiting...' % shipType)
-            if self.gui: self.gui.msgQueue.put(["waitForShipsBegin",shipType])            
+            self.dispatch("waitForShipsBegin",shipType)            
         def waitForShipsEnd(self): 
-            if self.gui: self.gui.msgQueue.put(["waitForShipsEnd"])            
+            self.dispatch("waitForShipsEnd")            
         def planetSkippedByPrecalculation(self,planet,reason):
             self.logAndPrint( "|      Skipping planet %s because %s" % (planet, reason))
-            if self.gui: self.gui.msgQueue.put(["planetSkippedByPrecalculation",planet,reason])
-        
+            self.dispatch("planetSkippedByPrecalculation",planet,reason)
+        def fatalException(self,exception):
+            self.logAndPrint("| Fatal error found, terminating. %s" % exception)
+            self.dispatch("fatalException",exception)
         
     def __init__(self,gui = None):   #only non-blocking tasks should go in constructor
         threading.Thread.__init__(self,name="BotThread")
@@ -137,11 +139,6 @@ class Bot(threading.Thread):
         self.myPlanets = []
         
         
-
-
-
-
-             
     def setLastSpiedCoords(self, value):
         self._lastSpiedCoords = copy.copy(value)
         self.saveState()
@@ -163,7 +160,8 @@ class Bot(threading.Thread):
                 break
             except BotFatalError, e:
                 self.stop()
-                print "Fatal error found, terminating. %s" % e
+                self._eventMgr.fatalException(e)
+                break
             except Exception:
                 traceback.print_exc()
             time.sleep(5)
@@ -376,15 +374,15 @@ class Bot(threading.Thread):
     def _checkThreadQueue(self):
         try:
             msg = self.msgQueue.get(False)
-            if   msg == ThreadMsgTypes.stop:
+            if   msg.type == GuiToBotMsg.stop:
                 raise ManuallyTerminated()
-            elif msg == ThreadMsgTypes.pause:
+            elif msg.type == GuiToBotMsg.pause:
                 print "Bot paused."
                 while True: # we are in paused mode
                     msg = self.msgQueue.get()
-                    if   msg == ThreadMsgTypes.stop:
+                    if   msg.type == GuiToBotMsg.stop:
                         raise ManuallyTerminated()
-                    elif msg == ThreadMsgTypes.resume:
+                    elif msg.type == GuiToBotMsg.resume:
                         print "Bot resumed."                        
                         break
         except Empty: pass        

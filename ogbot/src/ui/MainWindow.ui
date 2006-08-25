@@ -29,15 +29,15 @@
     <item>
      <widget class="QToolBox" name="toolBox" >
       <property name="currentIndex" >
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="botActivityPage" >
        <property name="geometry" >
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>546</width>
-         <height>426</height>
+         <width>210</width>
+         <height>114</height>
         </rect>
        </property>
        <attribute name="label" >
@@ -333,14 +333,34 @@
              <number>3</number>
             </property>
             <item>
-             <widget class="QLabel" name="label_2" >
-              <property name="text" >
-               <string>Spy reports archived for the planet</string>
+             <layout class="QHBoxLayout" >
+              <property name="margin" >
+               <number>0</number>
               </property>
-              <property name="alignment" >
-               <set>Qt::AlignCenter</set>
+              <property name="spacing" >
+               <number>6</number>
               </property>
-             </widget>
+              <item>
+               <widget class="QLabel" name="label_2" >
+                <property name="text" >
+                 <string>Spy reports</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="showAllReportsButton" >
+                <property name="maximumSize" >
+                 <size>
+                  <width>170</width>
+                  <height>18</height>
+                 </size>
+                </property>
+                <property name="text" >
+                 <string>Show all planet's last spy report</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <widget class="QTreeWidget" name="spyReportsTree" >
@@ -355,7 +375,17 @@
               </property>
               <column>
                <property name="text" >
+                <string>Code</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
                 <string>Date</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Coords</string>
                </property>
               </column>
               <column>

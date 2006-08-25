@@ -38,7 +38,7 @@ class BotFatalError (BotError): pass
 class FleetSendError(BotError): pass
 class ZeroShipsError (FleetSendError): pass
 class NoFreeSlotsError(FleetSendError): pass
-class ManuallyTerminated(BotFatalError): pass
+class ManuallyTerminated(BotError): pass
 
 
 SHIP_TYPES = {
@@ -69,9 +69,18 @@ class PlanetTypes(object):
     debris  = 2
     moon    = 3
 
-    
-class ThreadMsgTypes(object): 
+class ThreadMsg(object):    pass
+
+class BotToGuiMsg(ThreadMsg):
+    def __init__(self,methodName,*args):
+        self.methodName = methodName
+        self.args = args
+        
+class GuiToBotMsg(ThreadMsg):
     stop,pause,resume = range(3)
+    def __init__(self,type):
+        self.type = type
+
 
 class Coords(object):
     GALAXIES = 9
@@ -142,14 +151,14 @@ class Planet(object):
 
 
 class EnemyPlanet (Planet):
-    def __init__(self,coords,owner="",ownerstatus="",name="",alliance="",code=0):# CUIDADO SE CREA UNA LISTA COMUN PARA TODOS: spyReports = [] !!!!!!!):
+    def __init__(self,coords,owner="",ownerstatus="",name="",alliance="",code=0):
         Planet.__init__(self,coords, code, name)
         self.owner = owner
         self.alliance = alliance
         self.ownerStatus = ownerstatus
         self.spyReports = []
         
-
+    #def shouldAttack(self,ownCoords,resourcesByNow):
         
     def toStringList(self):
         return [str(self.coords),self.name,self.owner,self.alliance]
@@ -343,3 +352,7 @@ class BaseEventManager(object):
             msg = datetime.now().strftime("%X %x ") + msg
             print msg
             logging.info(msg)    
+        def dispatch(self,methodName,*args):
+            if self.gui:
+                msg = BotToGuiMsg(methodName,*args)
+                self.gui.msgQueue.put(msg)

@@ -41,6 +41,7 @@ spyReportTmp2 = r'<table .*?>%s(.*?)</table>'
 REGEXP_COORDS_STR  = r"([1-9]):([0-9]{1,3}):([0-9]{1,2})"
 REGEXP_SESSION_STR = r"[0-9A-Fa-f]{12}"
 
+
 REGEXPS = \
 {
     'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")',re.DOTALL),
@@ -53,11 +54,12 @@ REGEXPS = \
         'defense':  re.compile(spyReportTmp2 % _("Defensa")      ,re.DOTALL),
         'buildings':re.compile(spyReportTmp2 % _("Edificios")    ,re.DOTALL),
         'research': re.compile(spyReportTmp2 % _("Investigación"),re.DOTALL),
-        'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9]+)</td>"),
+        'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9]+)</td>")
     },
     'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" % _("Hora del servidor"),re.DOTALL),
     'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9]+)"'),
-    'maxSlots':re.compile(r"max\. ([0-9]+)")
+    'maxSlots':re.compile(r"max\. ([0-9]+)"),
+    'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" % _("Nivel"),re.LOCALE)
 }
 
 del(spyReportTmp)
@@ -77,10 +79,10 @@ class WebAdapter(object):
 
         def connectionError(self,reason):
             self.logAndPrint( "** CONNECTION ERROR: %s" % reason            )
-            if self.gui: self.gui.msgQueue.put(["connectionError",reason])            
+            self.dispatch("connectionError",reason)            
         def loggedIn(self,username,session):
-            self.logAndPrint( 'Logged in with user %s. Session identifier: %s' % (username,session)                    )
-            if self.gui: self.gui.msgQueue.put(["loggedIn",username,session])            
+            self.logAndPrint( 'Logged in with user %s. Session identifier: %s' % (username,session))
+            self.dispatch("loggedIn",username,session)
             
     def __init__(self,config,onQueueCheckCallback, gui = None):
         self.server = ''
@@ -237,6 +239,8 @@ class WebAdapter(object):
                 continue
             
             m = REGEXPS['spyReport']['all'].search(rawMessage)
+            if m == None: #theorically should never happen
+                continue
             planetName = m.group('planetName')
             coords = Coords()
             coords.parse(m.group('coords'))
@@ -305,7 +309,7 @@ class WebAdapter(object):
         form['system']    = str(destCoords.solarSystem)
         form['planet']    = str(destCoords.planet)
         form['planettype']= [str(destCoords.planetType)]
-        form['speed']     = [str(speed // 10)]
+        form['speed']     = [str(speed / 10)]
         # 3rd step:  select mission and resources to carry
         page = self._fetchForm(form)
         form = ParseResponse(page,backwards_compat=False)[0]
@@ -355,6 +359,13 @@ class WebAdapter(object):
         except ControlNotFoundError:
             pass
         self._fetchForm(form)
+        
+    def getInvestigationLevels(self):
+        page = self._fetchPhp('buildings.php',mode='Forschung').read()
+        levels = {}
+        for name,level in REGEXPS['techLevels'].findall(page):
+            levels[name] = level
+        return levels
 
     def saveState(self):
         file = open(STATE_FILE,'w')
