@@ -99,9 +99,9 @@ class Bot(threading.Thread):
         def attacksBegin(self,howMany):
             self.logAndPrint( ' / Starting %s attacks...' % howMany)
             self.dispatch("attacksBegin",howMany)            
-        def planetAttacked(self,planet,fleet,resources,attacksLeft):
-            self.logAndPrint( '|      Planet %s attacked by %s for %s resources. %s attacks left to this planet' % (planet,fleet,resources,attacksLeft))
-            self.dispatch("planetAttacked",planet,fleet,resources,attacksLeft)            
+        def planetAttacked(self,planet,fleet,resources):
+            self.logAndPrint( '|      Planet %s attacked by %s for %s' % (planet,fleet,resources))
+            self.dispatch("planetAttacked",planet,fleet,resources)            
         def errorAttackingPlanet(self, planet, reason):
             self.logAndPrint(  '|**    Error attacking planet %s (%s)' % (planet,reason))
             self.dispatch("errorAttackingPlanet",planet,reason)            
@@ -189,15 +189,13 @@ class Bot(threading.Thread):
         spyingFleet = {'espionageProbe':self.config['probesToSend']}
         probesToSend = int(self.config['probesToSend'])
         while True: # main application loop
-            self.config.load()
+            self.config.load()            
             spyStartTime = self._web.getMyPlanetsAndServerTime()[1]
-            freeSlots = self.waitForFreeSlot()
-            
-            self._eventMgr.targetsSearchBegin(freeSlots)
-            targetPlanets = self._findInactivePlanets(freeSlots)
-            
 
-                
+            freeSlots = self.waitForFreeSlot()                        
+            self._eventMgr.targetsSearchBegin(freeSlots)
+
+            targetPlanets = self._findInactivePlanets(freeSlots)
             self._eventMgr.targetsSearchEnd()
             
             self._eventMgr.espionagesBegin(freeSlots)
@@ -216,17 +214,18 @@ class Bot(threading.Thread):
             self._waitForSpyReports(targetPlanets,spyStartTime)
             self._eventMgr.waitForReportsEnd()
             
+            minTheft = int(self.config['minTheft'])
+            #filter:
             if len(targetPlanets) > 0:
                 self._eventMgr.reportsAnalysisBegin(len(targetPlanets))
                 for planet in targetPlanets[:]:
                     spyReport = planet.spyReports[-1]
                     spyReport.probesSent = probesToSend
-                    spyReport.calculateAttackWaves(self.attackingShip,int(self.config['minTheft']))
                     skippedCause = None
                     if spyReport.hasNonMissileDefense() or spyReport.hasFleet():
                         skippedCause = "defenses or fleet"
-                    elif len(spyReport.attackWaves) == 0:
-                        skippedCause = "only %s resources to steal" % (spyReport.resources.total() // 2)
+                    elif not spyReport.resources.areRentable(minTheft):
+                        skippedCause = "few resources: %s" % spyReport.resources
                     if skippedCause:
                         self._eventMgr.planetSkipped(planet,skippedCause)
                         spyReport.actionTook = "Skipped"
@@ -236,28 +235,29 @@ class Bot(threading.Thread):
             if len(targetPlanets) > 0:
                 #  definite attacking loop:
                 self._eventMgr.attacksBegin(len(targetPlanets))
-                # sort reports data structure so that: the first wave of each planet's current spy report is the key
-                getFirstWave = lambda planet: planet.spyReports[-1].attackWaves[0].shipCount
     
-                while len(targetPlanets) > 0: 
-                    targetPlanets.sort(key=getFirstWave)
-                    targetPlanet = targetPlanets[0]
-                    spyReport = targetPlanet.spyReports[-1] # report to attack in this iteration
-                    fleet = { self.attackingShip.name : spyReport.attackWaves[0].shipCount }
-                    try: 
-                        self.sendFleet(spyReport.coords,MissionTypes.attack,fleet)
-                        wave = spyReport.attackWaves.pop(0)
-                        spyReport.actionTook = "Attacked"
-                        self._planetDb.write(targetPlanet)
-                        self._eventMgr.planetAttacked(targetPlanet,fleet,wave.resourcesToSteal,len(spyReport.attackWaves))
-                        if len(spyReport.attackWaves) == 0: # we are done with that report
-                            targetPlanets.remove(targetPlanet)
-                    except FleetSendError, e:
-                        spyReport.actionTook = "Error when attacking"                    
-                        targetPlanets.remove(targetPlanet) # discard planet
-                        self._eventMgr.errorAttackingPlanet(targetPlanet,e)
-                        
+                for planet in targetPlanets:
+                    while True: 
+                        spyReport = planet.spyReports[-1] 
+                        if not spyReport.resources.areRentable(minTheft):
+                            break
+                        resourcesToSteal = spyReport.resources.half()
+                        ships = (resourcesToSteal.total() + 5000) / self.attackingShip.capacity
+                        fleet = { self.attackingShip.name : ships }
+                        try: 
+                            self.sendFleet(spyReport.coords,MissionTypes.attack,fleet)
+                        except FleetSendError, e:
+                            spyReport.actionTook = "Error when attacking"                    
+                            self._eventMgr.errorAttackingPlanet(planet,e)
+                        else:
+                            spyReport.actionTook = "Attacked"
+                            spyReport.resources = spyReport.resources - resourcesToSteal
+                            self._planetDb.write(planet)
+                            self._eventMgr.planetAttacked(planet,fleet,resourcesToSteal)
+                                                    
                 self._eventMgr.attacksEnd()
+
+
 
     
     def waitForFreeSlot(self):
@@ -310,16 +310,18 @@ class Bot(threading.Thread):
                     break
                 
                 # speculation  based on last spy report:
-                minTheft = int(self.config['minTheft'])                                    
-                speculated, resources = lastSpyReport.calculateResourcesByNow(minTheft)                    
-                if  resources/2 < minTheft:
-                    reason = "it'd have produced few resources (%s) since last espionage" % resources
-                    if speculated: reason += " (speculated)"
+          
+                speculated, resourcesByNow = lastSpyReport.calculateResourcesByNow()                    
+                if  not resourcesByNow.areRentable(int(self.config['minTheft'])):
+                    if speculated: 
+                        reason = "it has few resources: %s (speculated)" % resourcesByNow
+                    else:
+                        reason = "it has few resources: %s (calculated with last espionage)" % resourcesByNow
                     self._eventMgr.planetSkippedByPrecalculation(targetPlanet,reason)
                     continue
                 
                 if lastSpyReport.hasNonMissileDefense():
-                    self._eventMgr.planetSkippedByPrecalculation(targetPlanet,"it had defenses in last recent espionage")
+                    self._eventMgr.planetSkippedByPrecalculation(targetPlanet,"it had defenses less than 24h ago")
                     continue
                 
                 self._eventMgr.targetPlanetFound(targetPlanet)

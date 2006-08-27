@@ -35,7 +35,7 @@ from HelperClasses import *
 import BotResources
 
 class MyColors:
-    lightGreen,lightRed,lightYellow,lightGrey = (QColor(191,255,191),QColor(255,191,191),QColor(255,255,191),QColor(191,191,191))
+    lightGreen,lightRed,lightYellow,lightGrey,veryLightGrey = (QColor(191,255,191),QColor(255,191,191),QColor(255,255,191),QColor(191,191,191),QColor(223,223,223))
 
 
 formclass, baseclass = uic.loadUiType("src/ui/About.ui")
@@ -296,79 +296,65 @@ class MainWindow(baseclass,formclass):
         allReports = [planet.spyReports[-1] for planet in allPlanets if len(planet.spyReports) > 0]
         self._planetDb_fillReportsTree(allReports)
         
+    def initProgressBar(self, range):
+        self.progressBar.setVisible(True)        
+        self.progressBar.setMaximum(range)
+        self.progressBar.reset()
+    def increaseProgressBar(self):
+        value = self.progressBar.value()
+        self.progressBar.setValue(value + 1)    
+        
+    def addActivityTreeItem(self,coordsStr,texts,backColor):
+        item = QTreeWidgetItem()
+        self.botActivityTree.addTopLevelItem(item)        
+        for i in range(len(texts)):
+            item.setText(i,texts[i])
+            item.setBackgroundColor(i,backColor)            
+        self.botActivityTree.scrollToItem(item)        
+
+            
+    def setActivityTreeItem(self,coordsStr,texts,backColor):    
+        item = self.botActivityTree.findItems(coordsStr,Qt.MatchContains,1)[-1]
+        for i in range(len(texts)):
+            item.setText(i,texts[i])
+            item.setBackgroundColor(i,backColor)            
+        self.botActivityTree.scrollToItem(item)        
+        
     # bot events handler methods:
-    # --------------------------
+    # ------------------------------------------------------------------------
     
     def targetsSearchBegin(self,howMany): 
         self.botActivityLabel.setText("Searching %s target planets to attack..." % howMany)
-        self.progressBar.setVisible(True)        
-        self.progressBar.setMaximum(howMany)
-        self.progressBar.reset()
+        self.initProgressBar(howMany)
         
     def solarSystemAnalyzed(self,galaxy,solarSystem): pass          
+    
     def targetPlanetFound(self,planet):
-        value = self.progressBar.value()
-        self.progressBar.setValue(value + 1)
-                
-        items = self.botActivityTree.findItems(str(planet.coords),Qt.MatchContains,1)
-        if len(items) == 0:
-            item = QTreeWidgetItem()
-            self.botActivityTree.addTopLevelItem(item)
-        else: item = items[0]
-        
+        self.increaseProgressBar()                
         texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Queued for espionage"]
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,MyColors.lightYellow)            
-            
-        self.botActivityTree.scrollToItem(item)
+        self.addActivityTreeItem(str(planet.coords), texts, MyColors.lightYellow)
 
     def planetSkippedByPrecalculation(self,planet,reason):
-        items = self.botActivityTree.findItems(str(planet.coords),Qt.MatchContains,1)
-        if len(items) == 0:
-            item = QTreeWidgetItem()
-            self.botActivityTree.addTopLevelItem(item)
-        else: item = items[0]
-
         texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Skipped because %s" % reason]
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,MyColors.lightGrey)            
-            
-        self.botActivityTree.scrollToItem(item)
-
+        self.addActivityTreeItem(str(planet.coords), texts, MyColors.veryLightGrey)
         
     def targetsSearchEnd(self):
         self.progressBar.setVisible(False)   
         self.botActivityLabel.setText("")
+        
     def espionagesBegin(self,howMany):
         self.botActivityLabel.setText("Sending %s espionages" % howMany)
-        self.progressBar.reset()
-        self.progressBar.setMaximum(howMany)
-    def probesSent(self,planet,howMany):
-        value = self.progressBar.value()
-        self.progressBar.setValue(value + 1)
+        self.initProgressBar(howMany)
         
-        item = self.botActivityTree.findItems(str(planet.coords),Qt.MatchContains,1)[0]
+    def probesSent(self,planet,howMany):
+        self.increaseProgressBar()                
         texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["%s probes sent" % howMany]
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,MyColors.lightYellow)            
-            
-        self.botActivityTree.scrollToItem(item)            
-
+        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightYellow)            
             
     def errorSendingProbes(self, planet, probesCount,reason): 
-        value = self.progressBar.value()
-        self.progressBar.setValue(value + 1)                
-        
-        item = self.botActivityTree.findItems(str(planet.coords),Qt.MatchContains,1)[0]        
+        self.increaseProgressBar()                
         texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Error while sending probes: %s" % reason]
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,MyColors.lightRed)            
-            
-        self.botActivityTree.scrollToItem(item)        
+        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightRed)            
         
     def espionagesEnd(self):
         self.progressBar.setVisible(False)
@@ -381,17 +367,10 @@ class MainWindow(baseclass,formclass):
     def reportsAnalysisBegin(self,howMany):
         self.botActivityLabel.setText("Analyzing all %s reports..." % howMany)        
     def planetSkipped(self,planet,cause):
-        value = self.progressBar.value()
-        self.progressBar.setValue(value + 1)                
-        
-        item = self.botActivityTree.findItems(str(planet.coords),Qt.MatchContains,1)[0]
+        self.increaseProgressBar()                
         texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Skipped because it has %s" % cause]
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,MyColors.lightGrey)              
-            
-        self.botActivityTree.scrollToItem(item)
-                
+        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightGrey)                            
+        
     def reportsAnalysisEnd(self): 
         self.botActivityLabel.setText("")   
         items = self.botActivityTree.findItems("probes sent",Qt.MatchContains,5)
@@ -399,30 +378,16 @@ class MainWindow(baseclass,formclass):
             items[0].setText(5,"Queued for attack")
     def attacksBegin(self,howMany): 
         self.botActivityLabel.setText("Attacking %s planets" % howMany)
-    def planetAttacked(self,planet,fleet,resources,attacksLeft):
-        value = self.progressBar.value()
-        self.progressBar.setValue(value + 1)        
-        
-        item = self.botActivityTree.findItems(str(planet.coords),Qt.MatchContains,1)[0]
-        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Attacked with %s for %s resources. %s attack(s) left to this planet" % (fleet,resources,attacksLeft)]
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,MyColors.lightGreen)             
-            
-        self.botActivityTree.scrollToItem(item) 
-                    
+    def planetAttacked(self,planet,fleet,resources):
+        self.increaseProgressBar()                
+        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Attacked with %s for %s " % (fleet,resources)]
+        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightGreen)            
+                            
     def errorAttackingPlanet(self, planet, reason): 
-        value = self.progressBar.value()
-        self.progressBar.setValue(value + 1)        
-        
-        item = self.botActivityTree.findItems(str(planet.coords),Qt.MatchContains,1)[0]
+        self.increaseProgressBar()                
         texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Errror while attacking: %s" % reason]
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,MyColors.lightRed)            
-            
-        self.botActivityTree.scrollToItem(item)  
-        
+        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightRed)
+                
     def attacksEnd(self): 
         self.progressBar.setVisible(False)        
         self.botActivityLabel.setText("")
@@ -436,7 +401,6 @@ class MainWindow(baseclass,formclass):
         self.botStatusLabel.setPalette(QPalette(MyColors.lightYellow))             
     def waitForShipsEnd(self):
         self.setBotStatusRunning()                       
-        
     def connectionError(self,reason):
         self.connectionStatusLabel.setText("Connection error")        
         self.connectionStatusLabel.setPalette(QPalette(MyColors.lightRed))

@@ -161,7 +161,7 @@ class WebAdapter(object):
                         request['session'] = self.session
                     elif type(request) == urllib2.Request or type(request) == types.InstanceType: # check for new style object and old style too, 
                         for attr in dir(request):
-                            newValue = re.sub(oldSession,self.session,getattr(self,attr))  #FIXME: infinite loop sometimes here
+                            newValue = re.sub(oldSession,self.session,getattr(self,attr))  
                             setattr(self,attr,newValue)
                     else: raise BotError(request)
                     valid = False

@@ -129,7 +129,10 @@ class Resources(object):
         self.metal = int(metal)
         self.crystal = int(crystal)
         self.deuterium = int(deuterium)
-
+        
+    def areRentable(self,minTheft):
+        metalEquivalent = self.half().metalEquivalent()
+        return metalEquivalent >= minTheft
     def total(self):
         return self.metal + self.crystal + self.deuterium
     def metalEquivalent(self):
@@ -137,8 +140,12 @@ class Resources(object):
     def half(self):
         return Resources(self.metal/2, self.crystal/2, self.deuterium/2)
     def __repr__(self):
-        return "M: %s C: %s D: %s" % (self.metal, self.crystal, self.deuterium)
-
+        return "M: %s C: %s D: %s (total: %s)" % (self.metal, self.crystal, self.deuterium,self.total())
+    def __add__(self, toAdd):
+        return Resources(self.metal + toAdd.metal, self.crystal + toAdd.crystal, self.deuterium + toAdd.deuterium)
+    def __sub__(self, toSub):
+        return Resources(self.metal - toSub.metal, self.crystal - toSub.crystal, self.deuterium - toSub.deuterium) 
+   
 class Planet(object):
     def __init__(self,coords, code=0, name=""):
         self.coords = coords
@@ -157,16 +164,9 @@ class EnemyPlanet (Planet):
         self.alliance = alliance
         self.ownerStatus = ownerstatus
         self.spyReports = []
-        
-    #def shouldAttack(self,ownCoords,resourcesByNow):
-        
+
     def toStringList(self):
         return [str(self.coords),self.name,self.owner,self.alliance]
-        
-class Wave(object):
-    def __init__(self,shipCount, resourcesToSteal):
-        self.shipCount = shipCount
-        self.resourcesToSteal = resourcesToSteal
         
 class GameMessage(object):
     def __init__(self,code):
@@ -183,7 +183,6 @@ class SpyReport(GameMessage):
         self.defense = defense
         self.buildings = buildings
         self.research = research
-        self.attackWaves = []
         self.probesSent = 0
         self.actionTook = 'None'
     
@@ -213,32 +212,12 @@ class SpyReport(GameMessage):
         elif len(var) == 0: return "No"
         else: return "Yes"        
         
-    def calculateAttackWaves(self,attackingShip,minimumRobbery):
-        self.attackWaves = []
-        remainingResources = self.resources.total()
-        
-        while remainingResources/2 >= minimumRobbery :
-            shipCount = ((remainingResources / 2) + 5000) // attackingShip.capacity # add 5000 for carring voyage fuel and for the resources the planet has produced till the attack arrives
-            wave = Wave(shipCount,remainingResources // 2)            
-            remainingResources /= 2
-            self.attackWaves.append(wave)                    
-
-# waves calculation with metal-equivalent units:
-#        self.attackWaves = []
-#        remainingResources = copy.copy(self.resources)
-#        
-#        while remainingResources.half().metalEquivalent() >= minimumRobbery :
-#            half = remainingResources.half()
-#            shipCount = (half.total() + 5000) / attackingShip.capacity # add 5000 for carring voyage fuel and for the resources the planet has produced till the attack arrives
-#            wave = Wave(shipCount,half.total())    
-#            remainingResources = half
-#            self.attackWaves.append(wave)
 
     
     def calculateAge(self):
         return abs(datetime.now() - self.date)
             
-    def calculateResourcesByNow(self,minTheft):
+    def calculateResourcesByNow(self):
 
         if self.buildings:
             #mines:
@@ -251,18 +230,15 @@ class SpyReport(GameMessage):
             if not deuteriumMine: deuteriumMine = 0
         else:
             speculated = True
-            metalMine,crystalMine,deuteriumMine = 20,17,10
-        
-        if "Attacked" in self.actionTook:
-            previousResources = minTheft # at most we left that resources in the planet
-        else : previousResources = self.resources.total()
+            metalMine,crystalMine,deuteriumMine = 21,18,10
         
         hoursPassed = self.calculateAge().seconds / 3600.0
-        metalProduced     = 30 * metalMine     * 1.1 ** metalMine     * hoursPassed
-        crystalProduced   = 20 * crystalMine   * 1.1 ** crystalMine   * hoursPassed
-        deuteriumProduced = 10 * deuteriumMine * 1.1 ** deuteriumMine * hoursPassed * (-0.002 * 60 + 1.28) # 60 is the temperature of a planet in position 7
-        maxResourcesByNow = previousResources + metalProduced + crystalProduced + deuteriumProduced
-        return speculated,  int(maxResourcesByNow)
+        produced = Resources()
+        produced.metal     = 30 * metalMine     * 1.1 ** metalMine     * hoursPassed
+        produced.crystal   = 20 * crystalMine   * 1.1 ** crystalMine   * hoursPassed
+        produced.deuterium = 10 * deuteriumMine * 1.1 ** deuteriumMine * hoursPassed * (-0.002 * 60 + 1.28) # 60 is the temperature of a planet in position 7
+
+        return speculated,  self.resources + produced
                 
         
 class Configuration(dict):
@@ -320,7 +296,7 @@ class PlanetDb(object): # not used
         self._openMode = 'c'
         
     def _open(self,writeback=False):
-        self._db = shelve.open(self._fileName,self._openMode,pickle.HIGHEST_PROTOCOL)
+        self._db = shelve.open(self._fileName,self._openMode,pickle.HIGHEST_PROTOCOL,writeback)
         
     def write(self,planet):
         self._open()
