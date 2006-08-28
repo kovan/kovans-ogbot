@@ -2700,7 +2700,7 @@ class HTMLForm:
         header = "%s%s %s %s" % (
             (self.name and self.name+" " or ""),
             self.method, self.action, self.enctype)
-        #return header # by kovan
+        return header # by kovan
         rep = [header]
         for control in self.controls:
             rep.append("  %s" % str(control))

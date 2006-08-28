@@ -22,6 +22,7 @@ import logging
 import ConfigParser
 from datetime import datetime
 import sys
+import math
 import os.path
 
 class Spaceship(object):
@@ -130,15 +131,21 @@ class Resources(object):
         self.crystal = int(crystal)
         self.deuterium = int(deuterium)
         
-    def areRentable(self,minTheft):
+    def areRentable(self,minTheft): # TODO: a kitar
         metalEquivalent = self.half().metalEquivalent()
         return metalEquivalent >= minTheft
+    
+    def calculateRentability(self,systemsAway): #TODO : refactor to areRentable
+        referenceFlightTime = 3500 * math.sqrt((systemsAway * 5 * 19 + 2700) * 10 / 20000) + 10
+        return self.metalEquivalent() / referenceFlightTime
+    
     def total(self):
         return self.metal + self.crystal + self.deuterium
     def metalEquivalent(self):
         return int(self.metal + 1.5 * self.crystal + 3 * self.deuterium)
     def half(self):
         return Resources(self.metal/2, self.crystal/2, self.deuterium/2)
+    
     def __repr__(self):
         return "M: %s C: %s D: %s (total: %s)" % (self.metal, self.crystal, self.deuterium,self.total())
     def __add__(self, toAdd):
@@ -163,8 +170,22 @@ class EnemyPlanet (Planet):
         self.owner = owner
         self.alliance = alliance
         self.ownerStatus = ownerstatus
+        self.rentability = 0
         self.spyReports = []
+        
+    def updateRentability(self,systemsAway):
+        calculatedResources = self.spyReports[-1].calculateResourcesByNow()[1]
+        self.rentability = calculatedResources.calculateRentability(systemsAway)
 
+
+    def calculateRentability(self,ownSolarSystem):
+        
+        distance = abs(int(self.coords.solarSystem) - ownSolarSystem) * 5 * 19 + 2700
+        referenceFlightTime = 3500 * math.sqrt(distance * 10 / 20000) + 10
+        return self.resources.metalEquivalent() / referenceFlightTime
+
+
+        
     def toStringList(self):
         return [str(self.coords),self.name,self.owner,self.alliance]
         
@@ -212,8 +233,7 @@ class SpyReport(GameMessage):
         elif len(var) == 0: return "No"
         else: return "Yes"        
         
-
-    
+            
     def calculateAge(self):
         return abs(datetime.now() - self.date)
             
@@ -332,3 +352,27 @@ class BaseEventManager(object):
             if self.gui:
                 msg = BotToGuiMsg(methodName,*args)
                 self.gui.msgQueue.put(msg)
+                
+
+class Espionage(object):
+    sendFleetMethod = None
+    deleteMessageMethod = None
+    
+    def __init__(self,targetPlanet,probes):
+        self.targetPlanet = targetPlanet
+        self.probes = probes
+        self.launchTime = None
+        self.spyReport = None
+    def hasArrived(self,displayedReports):
+        reports = [report for report in displayedReports if report.coords == self.targetPlanet.coords]
+    
+        if len(reports) > 0 and reports[0].date >= self.launchTime:
+            self.spyReport = reports[0]
+            self.deleteMessageMethod(reports[0])
+            return True
+        return False
+    
+    def launch(self,currentTime):
+        fleet = { 'espionageProbe' : self.probes}
+        self.sendFleetMethod(self.targetPlanet.coords,MissionTypes.spy,fleet,False)
+        self.launchTime = currentTime      

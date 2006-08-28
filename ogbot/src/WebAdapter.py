@@ -59,7 +59,8 @@ REGEXPS = \
     'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" % _("Hora del servidor"),re.DOTALL),
     'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9]+)"'),
     'maxSlots':re.compile(r"max\. ([0-9]+)"),
-    'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" % _("Nivel"),re.LOCALE)
+    'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" % _("Nivel"),re.LOCALE),
+    'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<?P<value>th.*?>(.*?)</th>")
 }
 
 del(spyReportTmp)
@@ -125,11 +126,11 @@ class WebAdapter(object):
     def _fetchPhp(self,php,**params):
         params['session'] = self.session
         url = "http://%s/game/%s?%s" % (self.server,php,urllib.urlencode(params))
-#        print "        Fetching %s" % url
+        print "        Fetching %s" % url
         return self._fetchValidResponse(url)
     
     def _fetchForm(self,form):
-#        print "        Fetching %s" % form
+        print "        Fetching %s" % form
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self,request):
@@ -321,14 +322,19 @@ class WebAdapter(object):
         page = self._fetchForm(form).read()
             
         errors = REGEXPS['fleetSendError'].findall(page)
-        if len(errors) > 0:
+        if len(errors) > 0 or 'class="success"' not in page:
             if   _("Se ha alcanzado el número máximo de flotas") in errors:
                 raise NoFreeSlotsError()
             elif _("No seleccionaste ninguna nave") in errors:
                 raise ZeroShipsError()
             else: 
                 raise FleetSendError(errors)
-        
+        else:
+            result = {}
+            for name,type in REGEXPS['fleetSendResult'].findall(page):
+                result[name] = type
+        return result
+    
     def getFreeSlots(self):
         page = self._fetchPhp('flotten1.php',mode='Flotte').read()
         usedSlotsNums = re.findall(r"<th>([0-9]+)</th>",page)

@@ -13,6 +13,8 @@
 #     *                                                                       *
 #     *************************************************************************
 #
+from HelperClasses import NoFreeSlotsError
+from HelperClasses import FleetSendError
 
 # python library:
 import sys
@@ -153,7 +155,7 @@ class Bot(threading.Thread):
         while True:
             try:
                 self._connect()            
-                self._start()
+                self._newStart()
             except (KeyboardInterrupt,SystemExit,ManuallyTerminated):
                 self.stop()
                 print "Bot stopped."            
@@ -183,7 +185,107 @@ class Bot(threading.Thread):
              startCoords.solarSystem -= int(self.config['attackRadio'])
              startCoords.planet = 1
              self.lastSpiedCoords = startCoords
+
+    def _newStart(self): # unused ATM
+        sortByRentability = lambda planet: planet.rentability[1]
+        probesToSend, attackRadio = self.config['probesToSend'], int(self.config['attackRadio'])
+        Espionage.sendFleetMethod = self.sendFleet
+        Espionage.deleteMessageMethod = self._web.deleteMessage
+        mySolarSystem = self.myPlanets[0].coords.solarSystem
+        pendingEspionages = []        
         
+#        file = open("planets.tmp",'r')
+#        planets = pickle.load(file)
+#        file.close()
+        
+        planets  = self._findInactivePlanetsBis(range(mySolarSystem - attackRadio, mySolarSystem + attackRadio))
+        self._spyPlanets([planet for planet in planets if len(planet.spyReports) == 0],probesToSend)
+
+        file = open("planets.tmp",'w')
+        pickle.dump(planets,file)
+        file.close()
+        
+        targetPlanets = [planet for planet in planets if not planet.spyReports[-1].hasNonMissileDefense() and not planet.spyReports[-1].hasFleet()]
+        planets = targetPlanets
+
+        while True:
+            for planet in planets:
+                planet.updateRentability(abs(planet.coords.solarSystem - mySolarSystem))
+            planets.sort(key=lambda x:x.rentability,reverse=True)            
+
+
+            try:
+                startTime = self._web.getMyPlanetsAndServerTime()[1]
+                espionage = Espionage(planets[0],probesToSend)                
+                espionage.launch(startTime)
+                pendingEspionages.append(espionage)                
+                del planets[0] # so that is not spied again until this report arrives
+            except (NoFreeSlotsError,IndexError):
+                time.sleep(2)
+                displayedReports = self._web.getSpyReports()
+                for espionage in pendingEspionages[:]:
+                    if espionage.hasArrived(displayedReports):
+                        report = espionage.spyReport
+                        planet = espionage.targetPlanet
+                        planet.spyReports.append(report)
+                        pendingEspionages.remove(espionage)
+                        planets.append(planet) # restore planet in general planet list
+                        if not report.hasNonMissileDefense() and not report.hasFleet():
+                            self._attack(planet)
+
+                
+    def _findInactivePlanetsBis(self,range):
+        inactivePlanets = []
+        
+        for solarSystemNumber in range:
+            solarSystem = self._web.getSolarSystem(self.myPlanets[0].coords.galaxy,solarSystemNumber)    
+            #self._planetDb.writeMany(solarSystem.values())      
+            for planet in solarSystem.values():
+                if "inactive" in planet.ownerStatus:
+                    inactivePlanets.append(planet)
+        
+        return inactivePlanets
+
+    def _spyPlanets(self,planets,probesToSend):
+        # no threading usage results in.... unmantainable algorith!!! here it goes:
+        pendingEspionages = []
+        startTime = self._web.getMyPlanetsAndServerTime()[1]
+        for planet in planets:
+            try:
+                espionage = Espionage(planet,probesToSend)                
+                espionage.launch(startTime)
+                pendingEspionages.append(espionage)                
+            except NoFreeSlotsError:
+                displayedReports = self._web.getSpyReports()
+                for espionage in pendingEspionages[:]:
+                    if espionage.hasArrived(displayedReports):
+                        espionage.targetPlanet.spyReports.append(espionage.spyReport)
+                        pendingEspionages.remove(espionage)
+                time.sleep(5)                        
+                        
+        while len(pendingEspionages)>0:
+            displayedReports = self._web.getSpyReports()
+            for espionage in pendingEspionages[:]:
+                if espionage.hasArrived(displayedReports):
+                    espionage.targetPlanet.spyReports.append(espionage.spyReport)
+                    pendingEspionages.remove(espionage)       
+            time.sleep(5)
+        
+    def _attack(self,planet):
+        spyReport = planet.spyReports[-1]
+        resourcesToSteal = spyReport.resources.half()
+        ships = (resourcesToSteal.total() + 5000) / self.attackingShip.capacity
+        fleet = { self.attackingShip.name : ships }
+        try: 
+            self.sendFleet(spyReport.coords,MissionTypes.attack,fleet)
+        except FleetSendError, e:
+            spyReport.actionTook = "Error when attacking"                    
+            #self._eventMgr.errorAttackingPlanet(planet,e)
+        else:
+            spyReport.actionTook = "Attacked"
+            spyReport.resources = spyReport.resources - resourcesToSteal
+            #self._eventMgr.planetAttacked(planet,fleet,resourcesToSteal)        
+    
     def _start(self):
         
         spyingFleet = {'espionageProbe':self.config['probesToSend']}
@@ -345,13 +447,13 @@ class Bot(threading.Thread):
                     unpairedPlanets.remove(planet)
                     self._web.deleteMessage(spyReport)
                     
-    def sendFleet(self,destCoords,mission,fleet,resources=Resources(),waitForFreeSlot=True,waitIfNoShips=True,speed=100,sourcePlanetCode = 0):
+    def sendFleet(self,destCoords,mission,fleet,waitForFreeSlot=True,waitIfNoShips=True,resources=Resources(),speed=100,sourcePlanetCode = 0):
         waitingForShips = False
         waitingForSlot  = False
-        
+        result = None
         while True:
             try:
-                self._web.sendFleet(destCoords,mission,fleet,resources,speed,sourcePlanetCode)
+                result = self._web.sendFleet(destCoords,mission,fleet,resources,speed,sourcePlanetCode)
             except NoFreeSlotsError:
                 if not waitForFreeSlot:
                     raise
@@ -372,6 +474,7 @@ class Bot(threading.Thread):
                 break    
         if waitingForShips: self._eventMgr.waitForShipsEnd()
         if waitingForSlot: self._eventMgr.waitForSlotEnd()
+        return result
         
     def _checkThreadQueue(self):
         try:
@@ -413,6 +516,7 @@ class Bot(threading.Thread):
 
 
 if __name__ == "__main__":
+
     for i in "botdata","log","config":
         try: os.makedirs(i)
         except OSError, e: 
