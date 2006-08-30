@@ -126,11 +126,11 @@ class WebAdapter(object):
     def _fetchPhp(self,php,**params):
         params['session'] = self.session
         url = "http://%s/game/%s?%s" % (self.server,php,urllib.urlencode(params))
-        print "        Fetching %s" % url
+        print >>sys.stderr ,"        Fetching %s" % url
         return self._fetchValidResponse(url)
     
     def _fetchForm(self,form):
-        print "        Fetching %s" % form
+        #print sys.stderr >> "        Fetching %s" % form
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self,request):
@@ -142,7 +142,7 @@ class WebAdapter(object):
             try:
                 # MAIN PLACE TO CHECK CHECK FOR INTER-THREAD QUEUE MESSAGES:
                 #-----------------------------------------------------------
-                self._onQueueCheckCallback()
+               # self._onQueueCheckCallback()
                 #-----------------------------------------------------------
                                 
                 response = self.browser.open(request)
@@ -162,8 +162,8 @@ class WebAdapter(object):
                         request['session'] = self.session
                     elif type(request) == urllib2.Request or type(request) == types.InstanceType: # check for new style object and old style too, 
                         for attr in dir(request):
-                            newValue = re.sub(oldSession,self.session,getattr(self,attr))  
-                            setattr(self,attr,newValue)
+                            newValue = re.sub(oldSession,self.session,getattr(request,attr))  
+                            setattr(request,attr,newValue)
                     else: raise BotError(request)
                     valid = False
             except urllib2.URLError, e:
@@ -198,12 +198,13 @@ class WebAdapter(object):
         serverTime = datetime(*time.strptime(rawTime,"%Y %a %b %d %H:%M:%S")[0:6]) # example: 2006 Mon Aug 7 21:08:52
         return myPlanets,serverTime
 
-    def getSolarSystem(self,galaxy,solarSystem):
+    def getSolarSystem(self,galaxy,solarSystem,ensureCurrectPlanet=True):
         try:
             planets = {}        
             self.galaxyForm['galaxy'] = str(galaxy)
             self.galaxyForm['system'] = str(solarSystem)
-            self._fetchPhp('overview.php',cp=self.homePlanetCode)
+            if ensureCurrectPlanet:
+                self._fetchPhp('overview.php',cp=self.homePlanetCode)
             page = self._fetchForm(self.galaxyForm).read()
             html = BeautifulSoup(page)            
             galaxyTable = html.findAll('table',width="569")[0]
@@ -331,8 +332,9 @@ class WebAdapter(object):
                 raise FleetSendError(errors)
         else:
             result = {}
-            for name,type in REGEXPS['fleetSendResult'].findall(page):
-                result[name] = type
+            for type,value in REGEXPS['fleetSendResult'].findall(page):
+                result[type] = value
+                
         return result
     
     def getFreeSlots(self):

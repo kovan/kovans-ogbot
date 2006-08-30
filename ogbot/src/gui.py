@@ -62,7 +62,7 @@ class OptionsDialog(baseclass,formclass):
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")
             control.setText(self.config[i])
-        for i in ['universe','attackRadio','probesToSend','minTheft']:            
+        for i in ['universe','attackRadio','probesToSend']:            
             control = getattr(self,i + "SpinBox")
             control.setValue(int(self.config[i]))
         
@@ -76,7 +76,7 @@ class OptionsDialog(baseclass,formclass):
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")
             self.config[i] = control.text()
-        for i in ['universe','attackRadio','probesToSend','minTheft']:            
+        for i in ['universe','attackRadio','probesToSend']:            
             control = getattr(self,i + "SpinBox")
             self.config[i] = str(control.value())        
             
@@ -239,7 +239,7 @@ class MainWindow(baseclass,formclass):
         for planet in self._planetDb.readAll():
             attrName = re.sub(r" (\w)",lambda m: m.group(0).upper().strip(),columnToFilter.lower()) # convert names from style "Player status" to style "playerStatus"
             columnValue = str(getattr(planet,attrName))
-            spyReportCount = str(len(planet.spyReports))
+            spyReportCount = str(len(planet.spyReportHistory))
             if spyReportCount == '0' : spyReportCount = '-'
             if filterText.lower() in columnValue.lower():
                 item = QTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, spyReportCount])
@@ -251,7 +251,7 @@ class MainWindow(baseclass,formclass):
         coordsStr = str(planetTreeSelectedItem.text(0))
         self.spyReportsTree.clear()
         planet = self._planetDb.read(coordsStr)
-        self._planetDb_fillReportsTree(planet.spyReports)
+        self._planetDb_fillReportsTree(planet.spyReportHistory)
         
     def _planetDb_fillReportsTree(self,spyReports):
         if len(spyReports) == 0:
@@ -278,7 +278,7 @@ class MainWindow(baseclass,formclass):
         coordsStr = str(spyReportsTreeSelectedItem.text(2))
         
         planet =  self._planetDb.read(coordsStr)
-        spyReport = [report for report in planet.spyReports if str(report.code) == codeStr][0]
+        spyReport = [report for report in planet.spyReportHistory if str(report.code) == codeStr][0]
         
         for i in ["fleet","defense","buildings","research"]:
             tree = getattr(self,i + "Tree")
@@ -293,7 +293,7 @@ class MainWindow(baseclass,formclass):
 
     def showAllReports(self):
         allPlanets = self._planetDb.readAll()
-        allReports = [planet.spyReports[-1] for planet in allPlanets if len(planet.spyReports) > 0]
+        allReports = [planet.spyReportHistory[-1] for planet in allPlanets if len(planet.spyReportHistory) > 0]
         self._planetDb_fillReportsTree(allReports)
         
     def initProgressBar(self, range):

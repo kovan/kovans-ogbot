@@ -131,11 +131,8 @@ class Resources(object):
         self.crystal = int(crystal)
         self.deuterium = int(deuterium)
         
-    def areRentable(self,minTheft): # TODO: a kitar
-        metalEquivalent = self.half().metalEquivalent()
-        return metalEquivalent >= minTheft
     
-    def calculateRentability(self,systemsAway): #TODO : refactor to areRentable
+    def calculateRentability(self,systemsAway): 
         referenceFlightTime = 3500 * math.sqrt((systemsAway * 5 * 19 + 2700) * 10 / 20000) + 10
         return self.metalEquivalent() / referenceFlightTime
     
@@ -162,8 +159,6 @@ class Planet(object):
     def __repr__(self):
         return self.name + " " + str(self.coords)
 
-
-
 class EnemyPlanet (Planet):
     def __init__(self,coords,owner="",ownerstatus="",name="",alliance="",code=0):
         Planet.__init__(self,coords, code, name)
@@ -171,23 +166,23 @@ class EnemyPlanet (Planet):
         self.alliance = alliance
         self.ownerStatus = ownerstatus
         self.rentability = 0
-        self.spyReports = []
+        self.workingSpyReport = None
+        self.spyReportHistory = []
         
-    def updateRentability(self,systemsAway):
-        calculatedResources = self.spyReports[-1].calculateResourcesByNow()[1]
-        self.rentability = calculatedResources.calculateRentability(systemsAway)
-
-
-    def calculateRentability(self,ownSolarSystem):
+    def updateSimulations(self,serverTime):
+        self.workingSpyReport.updateResourcesBySimulation(serverTime)
+    def updateRentability(self,systemsAway):        
+        self.rentability = self.workingSpyReport.resources.calculateRentability(systemsAway)
         
-        distance = abs(int(self.coords.solarSystem) - ownSolarSystem) * 5 * 19 + 2700
-        referenceFlightTime = 3500 * math.sqrt(distance * 10 / 20000) + 10
-        return self.resources.metalEquivalent() / referenceFlightTime
+    def setWorkingSpyReport(self,spyReport):
+        self.spyReportHistory.append(spyReport)
+        self.workingSpyReport = spyReport
 
-
-        
     def toStringList(self):
         return [str(self.coords),self.name,self.owner,self.alliance]
+    
+
+
         
 class GameMessage(object):
     def __init__(self,code):
@@ -198,7 +193,7 @@ class SpyReport(GameMessage):
         GameMessage.__init__(self,code)
         self.coords = coords
         self.planetName = planetName
-        self.date = date
+        self.date = date # always server time not local time
         self.resources = resources
         self.fleet = fleet
         self.defense = defense
@@ -215,6 +210,9 @@ class SpyReport(GameMessage):
     
     def hasDefense(self):
         return self.defense != None and len(self.defense) > 0
+    
+    def getAge(self,serverTime):
+        return serverTime - self.date
     
     def hasNonMissileDefense(self):
         if self.defense is None:
@@ -233,15 +231,9 @@ class SpyReport(GameMessage):
         elif len(var) == 0: return "No"
         else: return "Yes"        
         
-            
-    def calculateAge(self):
-        return abs(datetime.now() - self.date)
-            
-    def calculateResourcesByNow(self):
+    def updateResourcesBySimulation(self,serverTime):
 
         if self.buildings:
-            #mines:
-            speculated = False
             metalMine = self.buildings.get(_("Mina de metal"))
             crystalMine = self.buildings.get(_("Mina de cristal"))
             deuteriumMine = self.buildings.get(_("Sintetizador de deuterio"))
@@ -249,16 +241,15 @@ class SpyReport(GameMessage):
             if not crystalMine: crystalMine = 0                
             if not deuteriumMine: deuteriumMine = 0
         else:
-            speculated = True
-            metalMine,crystalMine,deuteriumMine = 21,18,10
+            metalMine,crystalMine,deuteriumMine = 22,19,10
         
-        hoursPassed = self.calculateAge().seconds / 3600.0
+        hoursPassed = self.getAge(serverTime).seconds / 3600.0
         produced = Resources()
         produced.metal     = 30 * metalMine     * 1.1 ** metalMine     * hoursPassed
         produced.crystal   = 20 * crystalMine   * 1.1 ** crystalMine   * hoursPassed
         produced.deuterium = 10 * deuteriumMine * 1.1 ** deuteriumMine * hoursPassed * (-0.002 * 60 + 1.28) # 60 is the temperature of a planet in position 7
 
-        return speculated,  self.resources + produced
+        self.resources = self.resources + produced
                 
         
 class Configuration(dict):
@@ -276,7 +267,6 @@ class Configuration(dict):
         self['attackRadio'] = 20
         self['probesToSend'] = 3
         self['attackingShip'] = 'smallCargo'
-        self['minTheft'] = 30000 
 
                 
     def load(self):
@@ -306,7 +296,7 @@ class Configuration(dict):
                 self.configParser.add_section(section)
         for option in 'universe','webpage','username','password':
             self.configParser.set('general', option, str(self[option]))
-        for option in 'attackRadio','probesToSend','minTheft','attackingShip':
+        for option in 'attackRadio','probesToSend','attackingShip':
             self.configParser.set('automated attacks', option, str(self[option]))        
         self.configParser.write(open(self.file,'w'))
         
@@ -364,9 +354,9 @@ class Espionage(object):
         self.launchTime = None
         self.spyReport = None
     def hasArrived(self,displayedReports):
-        reports = [report for report in displayedReports if report.coords == self.targetPlanet.coords]
-    
-        if len(reports) > 0 and reports[0].date >= self.launchTime:
+        reports = [report for report in displayedReports if report.coords == self.targetPlanet.coords and report.date >= self.launchTime]
+        reports.sort(key=lambda x:x.date,reverse=True)
+        if len(reports) > 0:
             self.spyReport = reports[0]
             self.deleteMessageMethod(reports[0])
             return True
@@ -376,3 +366,6 @@ class Espionage(object):
         fleet = { 'espionageProbe' : self.probes}
         self.sendFleetMethod(self.targetPlanet.coords,MissionTypes.spy,fleet,False)
         self.launchTime = currentTime      
+        
+    def __repr__(self):
+        return str(self.targetPlanet)
