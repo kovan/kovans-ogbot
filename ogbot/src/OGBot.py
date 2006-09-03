@@ -13,14 +13,12 @@
 #     *                                                                       *
 #     *************************************************************************
 #
-from HelperClasses import NoFreeSlotsError
-from HelperClasses import FleetSendError
-
 # python library:
 import sys
 sys.path.append('lib')
 sys.path.append('src')
 
+import gc
 import bsddb,anydbm,dbhash,dumbdbm
 import logging, logging.handlers
 import threading
@@ -41,10 +39,13 @@ from datetime import datetime,timedelta
 from HelperClasses import *
 from WebAdapter import WebAdapter
 
-
-CONFIG_FILE = "config/config.ini"
-STATE_FILE = 'botdata/bot.state.dat'
-PLANETDB_FILE = 'botdata/planets.db'
+BOTDATA_PREFIX = 'botdata'
+CONFIG_PREFIX = 'config'
+LOG_PREFIX = 'log'
+CONFIG_FILE = CONFIG_PREFIX+"/config.ini"
+STATE_FILE = BOTDATA_PREFIX +'/bot.state.dat'
+PLANETDB_FILE = BOTDATA_PREFIX +'/planets.db'
+PLANETS_FILE = BOTDATA_PREFIX +'/planets.dat'
 LOG_FILE = 'log/ogbot.log'
 
 LOG_FILE = os.path.abspath(LOG_FILE)
@@ -136,7 +137,7 @@ class Bot(threading.Thread):
         self._planetDb = PlanetDb(PLANETDB_FILE)
         self.config = Configuration(CONFIG_FILE)                
         self._web = None
-        self.attackingShip = SHIP_TYPES[self.config['attackingShip']]                        
+        self.attackingShip = INGAME_TYPES_BY_NAME[self.config['attackingShip']]                        
         self.myPlanets = []
         self.planets = []
         
@@ -157,10 +158,10 @@ class Bot(threading.Thread):
                 break
             except Exception:
                 traceback.print_exc()
-            time.sleep(5)
+            sleep(5)
     
     def stop(self):
-        file = open("planets.tmp",'w')
+        file = open(PLANETS_FILE,'w')
         pickle.dump(self.planets,file)
         file.close()
         
@@ -183,13 +184,14 @@ class Bot(threading.Thread):
         mySolarSystem = self.myPlanets[0].coords.solarSystem
         pendingEspionages = []        
         
+        loadedPlanets = []
         try:
-            file = open("planets.tmp",'r')
+            file = open(PLANETS_FILE,'r')
             loadedPlanets = pickle.load(file)
             file.close()
         except (EOFError,IOError):
             try:
-                os.remove("planets.tmp")            
+                os.remove(PLANETS_FILE)            
             except Exception : pass
 
         inactivePlanets = self._findInactivePlanets(range(mySolarSystem - attackRadio, mySolarSystem + attackRadio))
@@ -201,28 +203,43 @@ class Bot(threading.Thread):
                 planet.workingSpyReport = l[0].workingSpyReport
         
         self._spyPlanets([planet for planet in inactivePlanets if not planet.workingSpyReport],probesToSend)
+        for planet in inactivePlanets[:]:
+            if not planet.workingSpyReport:
+                inactivePlanets.remove(planet)
+                
+        planetsWithFleetOnly = [planet for planet in inactivePlanets if planet.workingSpyReport.hasFleet() and not planet.workingSpyReport.hasNonMissileDefense()]
+        planetsWithDefense = [planet for planet in inactivePlanets if planet.workingSpyReport.hasNonMissileDefense()]
         
-        undefendedPlanets = [planet for planet in inactivePlanets if planet.workingSpyReport and not planet.workingSpyReport.hasNonMissileDefense() and not planet.workingSpyReport.hasFleet()]
-        self.planets = undefendedPlanets
+        file = open("defendedplanets.tmp",'w')
+        pickle.dump(planetsWithFleetOnly,file)
+        pickle.dump(planetsWithDefense,file)        
+        file.close()
         
-        file = open("planets.tmp",'w')
+        interestingPlanets = [planet for planet in inactivePlanets if planet not in planetsWithDefense and planet not in planetsWithFleetOnly]
+        self.planets = interestingPlanets
+        
+        file = open(PLANETS_FILE,'w')
         pickle.dump(self.planets,file)
         file.close()
 
         
         while True:
             self._checkThreadQueue()
-            serverTime = self._web.getMyPlanetsAndServerTime()[1]            
+            serverTime = self._web.getMyPlanetsAndServerTime()[1]
+
             for planet in self.planets:
-                planet.updateSimulations(serverTime)
-                planet.updateRentability(abs(planet.coords.solarSystem - mySolarSystem))
-            self.planets.sort(key=lambda x: x.rentability,reverse=True)            
+                    planet.workingSpyReport.updateRentability(mySolarSystem,serverTime)
+            self.planets.sort(key=lambda x: x.workingSpyReport.rentability,reverse=True)
             for planet in self.planets:
-                print "%s\t%s\t%s\t\t\t%s\tMEU: %s\tDistance: %s\tSimulated: %s" % (planet.rentability, planet.workingSpyReport.getAge(serverTime), planet.name, planet.workingSpyReport.resources, planet.workingSpyReport.resources.metalEquivalent(),abs(planet.coords.solarSystem - mySolarSystem),planet.workingSpyReport.buildings is None)
+                print "%s\t%s\t\t%s\t\t\t%s\tMEU: %s\tDistance: %s\tSimulated: %s" % (planet.workingSpyReport.rentability, planet.workingSpyReport.getAge(serverTime), planet, planet.workingSpyReport.resources, planet.workingSpyReport.resources.metalEquivalent(),abs(planet.coords.solarSystem - mySolarSystem),planet.workingSpyReport.buildings is None)
             
-            if len(self.planets) > 0:
+            if len(self.planets) > 0: # launch attacking espionages/attacks
                 targetPlanet = self.planets[0]
                 age = targetPlanet.workingSpyReport.getAge(serverTime)
+                
+                #print >>sys.stderr ,"        Fetching %s" % url
+                gc.set_debug(gc.DEBUG_UNCOLLECTABLE)
+                
                 if age.seconds < 600:
                     try: self._attack(targetPlanet) ; print "    %s: attacking  %s" % (datetime.now(),targetPlanet)
                     except NoFreeSlotsError: print "no slots while attacking"
@@ -238,7 +255,9 @@ class Bot(threading.Thread):
                     else:
                         self.planets.remove(targetPlanet) # so that is not spied again until this report arrives                        
                         pendingEspionages.append(espionage)
-                        
+            
+
+            # check for arrived espionages
             if len(pendingEspionages) > 0:
                 displayedReports = self._web.getSpyReports()
                 for espionage in pendingEspionages[:]:
@@ -247,10 +266,10 @@ class Bot(threading.Thread):
                         pendingEspionages.remove(espionage)
                         self.planets.append(espionage.targetPlanet) # restore planet in general planet list
                         
-            file = open("planets.tmp",'w')
+            file = open(PLANETS_FILE,'w')
             pickle.dump(self.planets,file)
             file.close()                        
-            time.sleep(2)     
+            sleep(5)     
 
                     
     def _findInactivePlanets(self,range):
@@ -273,11 +292,12 @@ class Bot(threading.Thread):
         startTime = self._web.getMyPlanetsAndServerTime()[1]
 
         while len(pendingEspionages) or len(planets):
+            serverTime = self._web.getMyPlanetsAndServerTime()[1]            
             if len(planets):
                 try: 
                     planet = planets.pop()
                     espionage = Espionage(planet,probesToSend)                                    
-                    espionage.launch(startTime)
+                    espionage.launch(serverTime)
                     pendingEspionages.append(espionage)                                    
                 except NoFreeSlotsError: 
                     planets.append(planet)
@@ -287,20 +307,26 @@ class Bot(threading.Thread):
             if len(pendingEspionages):
                 displayedReports = self._web.getSpyReports()
                 for espionage in pendingEspionages[:]:
-                    if espionage.hasArrived(displayedReports):
-                        espionage.targetPlanet.setWorkingSpyReport(espionage.spyReport)
+                    horalimite = espionage.launchTime + timedelta(minutes=10)
+                    caducado = serverTime > horalimite
+                    if  espionage.hasArrived(displayedReports):
                         pendingEspionages.remove(espionage)
                         validPlanets.append(espionage.targetPlanet)
+                        espionage.targetPlanet.setWorkingSpyReport(espionage.spyReport)
+                    elif caducado:    
+                        pendingEspionages.remove(espionage)
+                        planets.append(espionage.targetPlanet)
+                            
             
-            time.sleep(2) 
+            sleep(5) 
                         
         return validPlanets
         
     def _attack(self,planet):
         resourcesToSteal = planet.workingSpyReport.resources.half()
-        ships = int((resourcesToSteal.total() + 4000) / self.attackingShip.capacity)
+        ships = int((resourcesToSteal.total() + 5000) / self.attackingShip.capacity)
         fleet = { self.attackingShip.name : ships }
-        self.sendFleet(planet.workingSpyReport.coords,MissionTypes.attack,fleet,False)
+        self.sendFleet(planet.workingSpyReport.coords,Mission.Types.attack,fleet,False)
         planet.workingSpyReport.actionTook = "Attacked"
         planet.workingSpyReport.resources = planet.workingSpyReport.resources - resourcesToSteal
 
@@ -313,8 +339,8 @@ class Bot(threading.Thread):
             if not waitingForSlot:
                 self._eventMgr.waitForSlotBegin()
                 waitingForSlot = True
-            time.sleep(10)
-        else: time.sleep(10)
+            sleep(10)
+        else: sleep(10)
         if waitingForSlot: 
             self._eventMgr.waitForSlotEnd()
         return freeSlots
@@ -333,15 +359,15 @@ class Bot(threading.Thread):
                     if not waitingForSlot:
                         self._eventMgr.waitForSlotBegin()
                         waitingForSlot = True
-                    time.sleep(10)
-            except ZeroShipsError, e:
+                    sleep(10)
+            except NotEnoughShipsError, e:
                 if not waitIfNoShips:
                     raise
                 else:
                     if not waitingForShips:
                         self._eventMgr.waitForShipsBegin(e)
                         waitingForShips = True
-                    time.sleep(10)
+                    sleep(10)
             else:
                 break    
         if waitingForShips: self._eventMgr.waitForShipsEnd()
@@ -368,9 +394,15 @@ class Bot(threading.Thread):
     def getControlUrl(self):
         return self._web.getControlUrl()
 
+#    #-------------------------------- non bot functions:
+#    
+#    def autobuild(self,planetCode):
+#        self._connect() #33905100
+#        self._web.buildBuildings(,)
+    
 
 if __name__ == "__main__":
-    for i in "botdata","log","config":
+    for i in BOTDATA_PREFIX, CONFIG_PREFIX, LOG_PREFIX:
         try: os.makedirs(i)
         except OSError, e: 
             if "File exists" in e: pass   
@@ -378,12 +410,14 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.CRITICAL,format = '%(message)s') 
     handler = logging.handlers.RotatingFileHandler(LOG_FILE,'a',100000,10)
     handler.setLevel(logging.INFO)
-    logging.getLogger('').addHandler(handler)
-
+    
     if len(sys.argv) > 1 and sys.argv[1] == "console":
         bot = Bot()
-        bot.start()
-        bot.join()
+        if len(sys.argv) > 2:
+            getattr(bot,sys.argv[2])(sys.argv[3:])
+        else:
+            bot.start()
+            bot.join()
     else:
         from gui import guiMain
         guiMain()

@@ -7,4 +7,4 @@ import py2exe
 
 uis = "src/ui",["src/ui/About.ui","src/ui/Options.ui","src/ui/MainWindow.ui"]
 rest = ".",["instructions.txt","license.txt"]
-setup( windows=['src/OGBot.py'] ,data_files = [uis,rest])
+setup( console=['src/OGBot.py'] ,data_files = [uis,rest])

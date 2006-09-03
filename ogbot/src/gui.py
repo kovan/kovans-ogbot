@@ -51,7 +51,7 @@ class OptionsDialog(baseclass,formclass):
         baseclass.__init__(self)        
         self.setupUi(self)
         QObject.connect(self.okButton,SIGNAL("clicked()"),self.saveOptions)
-        self.attackingShipComboBox.addItems([shiptype for shiptype in SHIP_TYPES.keys()])
+        self.attackingShipComboBox.addItems([shiptype for shiptype in INGAME_TYPES.keys()])
         self.config = Configuration(OGBot.CONFIG_FILE)
         try: self.config.load()
         except BotError: pass

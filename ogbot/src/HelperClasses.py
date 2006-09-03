@@ -19,57 +19,113 @@ import shelve
 import copy
 import pickle
 import logging
+import time
 import ConfigParser
 from datetime import datetime
 import sys
 import math
 import os.path
+import random
 
-class Spaceship(object):
-    def __init__(self,name,capacity, code, consumption):
-        self.name = name
-        self.capacity = capacity
-        self.code = code
-        self.consumption = consumption
+class IngameType(object):
+    def __init__(self,name,fullName,code):
+        self.name = name        
+        self.fullName = fullName
+        self.code = code    
     def __repr__(self):
-        return self.name
+        return self.fullName    
     
+class Ship(IngameType):
+    def __init__(self,name,fullName,code,capacity,consumption):
+        IngameType.__init__(self,name,fullName,code)
+        self.capacity = capacity        
+        self.consumption = consumption
+class Building(IngameType):
+    def __init__(self,name,fullName, code):
+        IngameType.__init__(self,name,fullName,code)        
+class Defense(IngameType):
+    def __init__(self,name,fullName, code):
+        IngameType.__init__(self,name,fullName,code)        
+class Research(IngameType):
+    def __init__(self,name,fullName, code):
+        IngameType.__init__(self,name,fullName,code)        
+    
+
+
+INGAME_TYPES = [
+    Ship('smallCargo',_('Nave pequeña de carga'), 'ship202', 5000, 20),
+    Ship('largeCargo',_('Nave grande de carga'), 'ship203', 25000, 50),
+    Ship('lightFighter',_('Cazador ligero'),'ship204', 50, 20),
+    Ship('heavyFighter',_('Cazador pesado'),'ship205', 100, 75),
+    Ship('cruiser',_('Crucero'),'ship206', 800, 300),
+    Ship('battleShip',_('Nave de batalla'),'ship207', 1500, 500),
+    Ship('colonyShip',_('Colonizador'),'ship208', 7500,1000), 
+    Ship('recycler',_('Reciclador'),'ship209', 20000, 300),
+    Ship('espionageProbe',_('Sonda de espionaje'),'ship210', 5, 1),
+    Ship('bomber',_('Bombardero'),'ship211', 500,1000),
+    Ship('solarSatellite',_('Satélite solar'),'ship212', 0,0), 
+    Ship('destroyer',_('Destructor'),'ship213', 2000,1000),
+    Ship('deathStar',_('Estrella de la muerte'),'ship214', 1000000,1),
+    
+    Building('metalMine',_("Mina de metal"),1), 
+    Building('crystalMine',_("Mina de cristal"),2), 
+    Building('deuteriumSynthesizer',_("Sintetizador de deuterio"),3), 
+    Building('solarPlant',_("Planta de energía solar"),4), 
+    Building('fusionReactor',_("Planta de fusión"),12),
+    Building('roboticsFactory',_("Fábrica de Robots"),14),
+    Building('naniteFactory',_("Fábrica de nanobots"),15), 
+    Building('shipyard',_("Hangar"),21), 
+    Building('metalStorage',_("Almacén de metal"),22), 
+    Building('crystalStorage',_("Almacén de cristal"),23), 
+    Building('deuteriumTank',_("Contenedor de deuterio"),24), 
+    Building('researchLab',_("Laboratorio de investigación"),31), 
+    Building('terraformer',_("Terraformer"),33), 
+    Building('allianceDepot',_("Depósito de alianza"),34), 
+    Building('lunarBase',_("Base lunar"),41), 
+    Building('sensorPhalanx',_("Sensor Phalanx"),42), 
+    Building('jumpGate',_("Salto cuántico"),43), 
+    Building('missileSilo',_("Silo"),44), 
+    
+    Defense('rocketLauncher',_('Lanzamisiles'),401), 
+    Defense('lightLaser',_('Láser pequeño'),402),
+    Defense('heavyLaser',_('Láser grande'),403), 
+    Defense('gaussCannon',_('Cañón Gauss'),404), 
+    Defense('ionCannon',_('Cañón iónico'),405), 
+    Defense('plasmaTurret',_('Cañón de plasma'),406), 
+    Defense('smallShieldDome',_('Cúpula pequeña de protección'),407),
+    Defense('largeShieldDome',_('Cúpula grande de protección'),408), 
+    Defense('antiBallisticMissile',_('Misil de intercepción'),502), 
+    Defense('interplanetaryMissile',_('Misil interplanetario'),503),
+    
+    Research('espionageTechnology',_('Tecnología de espionaje'),106),
+    Research('computerTechnology',_('Tecnología de computación'),108),
+    Research('weaponsTechnology',_('Tecnología militar'),109),
+    Research('shieldingTechnology',_('Tecnología de defensa'),110),
+    Research('armourTechnology',_('Tecnología de blindaje'),111),
+    Research('energyTechnology',_('Tecnología de energía'),113),
+    Research('hyperspaceTechnology',_('Tecnología de hiperespacio'),114),
+    Research('combustionDrive',_('Motor de combustión'),115),
+    Research('impulseDrive',_('Motor de impulso'),117),
+    Research('hyperspaceDrive',_('Propulsor hiperespacial'),118),
+    Research('laserTechnology',_('Tecnología láser'),120),
+    Research('ionTechnology',_('Tecnología iónica'),121),
+    Research('plasmaTechnology',_('Tecnología de plasma'),122),
+    Research('intergalacticResearchNetwork',_('Red de investigación intergaláctica'),123),
+    Research('gravitonTechnology',_('Tecnología de gravitón'),199),
+]
+
+INGAME_TYPES_BY_NAME = dict([ (type.name,type) for type in INGAME_TYPES  ])
+INGAME_TYPES_BY_CODE = dict([ (type.code,type) for type in INGAME_TYPES  ])
+INGAME_TYPES_BY_FULLNAME = dict([ (type.fullName,type) for type in INGAME_TYPES  ])
+
 class BotError(Exception): pass
 class BotFatalError (BotError): pass
 class FleetSendError(BotError): pass
-class ZeroShipsError (FleetSendError): pass
+class NotEnoughShipsError (FleetSendError): pass
 class NoFreeSlotsError(FleetSendError): pass
 class ManuallyTerminated(BotError): pass
 
-
-SHIP_TYPES = {
-    'smallCargo' :     Spaceship('smallCargo', 5000, 'ship202', 20),
-    'largeCargo' :     Spaceship('largeCargo', 25000, 'ship203', 50),
-    'lightFighter' :   Spaceship('lightFighter',50,'ship204', 20),
-    'heavyFighter' :   Spaceship('heavyFighter',100,'ship205', 75),
-    'cruiser' :        Spaceship('cruiser',800,'ship206', 300),
-    'battleShip' :     Spaceship('battleship',1500,'ship207', 500),
-    'colonyShip' :     Spaceship('colonyShip',7500,'ship208',1000),    
-    'recycler' :       Spaceship('recycler',20000,'ship209', 300),
-    'espionageProbe' : Spaceship('espionageProbe',5,'ship210', 1),
-    'bomber' :         Spaceship('bomber',500,'ship211',1000),
-    'destroyer' :      Spaceship('destroyer',2000,'ship213',1000),
-    'deathStar' :      Spaceship('deathStar',1000000,'ship214',1)
-}
-
-class MissionTypes(object):
-    unknown   = 0
-    attack    = 1
-    transport = 3    
-    deploy    = 4
-    spy       = 6
-    # colonize, recycle, 
-class PlanetTypes(object):
-    unknown = 0
-    normal  = 1
-    debris  = 2
-    moon    = 3
-
+    
 class ThreadMsg(object):    pass
 
 class BotToGuiMsg(ThreadMsg):
@@ -82,14 +138,29 @@ class GuiToBotMsg(ThreadMsg):
     def __init__(self,type):
         self.type = type
 
+class Planet(object):
+    def __init__(self,coords, code=0, name=""):
+        self.coords = coords
+        self.name = name
+        self.code = code
+
+    def __repr__(self):
+        return self.name + " " + str(self.coords)
+
 
 class Coords(object):
+    class Types(object):
+        unknown = 0
+        normal  = 1
+        debris  = 2
+        moon    = 3
+    
     GALAXIES = 9
     SOLAR_SYSTEMS = 499
     PLANETS_PER_SYSTEM = 15
     REGEXP_COORDS    = re.compile(r"([1-9]):([0-9]{1,3}):([0-9]{1,2})")
     
-    def __init__(self,galaxy=0,solarSystem=0,planet=0,planetType=PlanetTypes.normal):
+    def __init__(self,galaxy=0,solarSystem=0,planet=0,planetType=Types.normal):
         self.galaxy = int(galaxy)
         self.solarSystem = int(solarSystem)
         self.planet = int(planet)
@@ -150,14 +221,6 @@ class Resources(object):
     def __sub__(self, toSub):
         return Resources(self.metal - toSub.metal, self.crystal - toSub.crystal, self.deuterium - toSub.deuterium) 
    
-class Planet(object):
-    def __init__(self,coords, code=0, name=""):
-        self.coords = coords
-        self.name = name
-        self.code = code
-
-    def __repr__(self):
-        return self.name + " " + str(self.coords)
 
 class EnemyPlanet (Planet):
     def __init__(self,coords,owner="",ownerstatus="",name="",alliance="",code=0):
@@ -165,14 +228,11 @@ class EnemyPlanet (Planet):
         self.owner = owner
         self.alliance = alliance
         self.ownerStatus = ownerstatus
-        self.rentability = 0
+
         self.workingSpyReport = None
         self.spyReportHistory = []
-        
-    def updateSimulations(self,serverTime):
-        self.workingSpyReport.updateResourcesBySimulation(serverTime)
-    def updateRentability(self,systemsAway):        
-        self.rentability = self.workingSpyReport.resources.calculateRentability(systemsAway)
+        self.attackTime = None
+        self.activeMissions = []
         
     def setWorkingSpyReport(self,spyReport):
         self.spyReportHistory.append(spyReport)
@@ -201,7 +261,8 @@ class SpyReport(GameMessage):
         self.research = research
         self.probesSent = 0
         self.actionTook = 'None'
-    
+        self.rentability = 0
+            
     def __repr__(self):
         return "%s %s %s %s %s %s %s %s" % (self.planetName, self.coords, self.date, self.resources, self.fleet, self.defense, self.buildings, self.research)
     
@@ -214,12 +275,20 @@ class SpyReport(GameMessage):
     def getAge(self,serverTime):
         return serverTime - self.date
     
+    def hasExpired(self,serverTime):
+        age = self.getAge(serverTime)
+        if self.hasNonMissileDefense():
+            return age.days >= 2
+        elif self.hasFleet():
+            return age.days >= 1
+        else: 
+            return False
+    
     def hasNonMissileDefense(self):
         if self.defense is None:
             return True
         for defense in self.defense.keys():
-            if  defense != _("Misil de intercepción") \
-            and defense != _("Misil interplanetario"):
+            if  defense is not 'antiBallisticMissile' and defense is not 'interplanetaryMissile':
                 return True
         return False
     
@@ -228,18 +297,20 @@ class SpyReport(GameMessage):
             raise BotError()
         var = getattr(self, info)
         if  var is None:   return "Unknown"
-        elif len(var) == 0: return "No"
-        else: return "Yes"        
+        elif len(var): return "Yes"
+        else: return "No"        
         
-    def updateResourcesBySimulation(self,serverTime):
+    def updateRentability(self,ownSystem,serverTime):        
+        systemsAway = abs(ownSystem - int(self.coords.solarSystem))
+        resourcesByNow = self.resourcesByNow(serverTime)
+        self.rentability = resourcesByNow.calculateRentability(systemsAway)
+        
+    def resourcesByNow(self,serverTime):
 
         if self.buildings:
-            metalMine = self.buildings.get(_("Mina de metal"))
-            crystalMine = self.buildings.get(_("Mina de cristal"))
-            deuteriumMine = self.buildings.get(_("Sintetizador de deuterio"))
-            if not metalMine: metalMine = 0            
-            if not crystalMine: crystalMine = 0                
-            if not deuteriumMine: deuteriumMine = 0
+            metalMine = self.buildings.get('metalMine',0)
+            crystalMine = self.buildings.get('crystalMine',0)
+            deuteriumMine = self.buildings.get('deuteriumSynthesizer',0)
         else:
             metalMine,crystalMine,deuteriumMine = 22,19,10
         
@@ -249,7 +320,7 @@ class SpyReport(GameMessage):
         produced.crystal   = 20 * crystalMine   * 1.1 ** crystalMine   * hoursPassed
         produced.deuterium = 10 * deuteriumMine * 1.1 ** deuteriumMine * hoursPassed * (-0.002 * 60 + 1.28) # 60 is the temperature of a planet in position 7
 
-        self.resources = self.resources + produced
+        return self.resources + produced
                 
         
 class Configuration(dict):
@@ -287,7 +358,7 @@ class Configuration(dict):
             self.update(self.configParser.items(section))
             
         self['webpage'] = self['webpage'].replace("http://","")
-        if self['attackingShip'] not in SHIP_TYPES.keys():
+        if self['attackingShip'] not in INGAME_TYPES_BY_NAME.keys():
             raise BotError("Invalid attacking ship type in config.ini file")
         
     def save(self):
@@ -344,6 +415,40 @@ class BaseEventManager(object):
                 self.gui.msgQueue.put(msg)
                 
 
+
+class Mission(object):
+    sendFleetMethod = None    
+    class Types(object):
+        unknown   = 0
+        attack    = 1
+        transport = 3    
+        deploy    = 4
+        spy       = 6
+        # colonize, recycle, 
+    
+    def __init__(self,type,targetPlanet,fleet):
+        self.targetPlanet = targetPlanet
+        self.fleet = fleet
+        self.missionType = type
+        
+        self.distance = 0
+        self.speed = 0
+        self.consumption = 0
+        self.sourceCoords = Coords()
+        self.launchTime = None
+        self.arriveTime = None
+        self.returnTime = None
+        
+    def launch(self):    
+        result = self.sendFleetMethod(self.targetPlanet.coords,self.missionType,self.fleet,False)
+
+    def hasArrived(self):
+        pass
+    def hasReturned(self):
+        pass
+    def __repr__(self):
+        return str(self.targetPlanet)
+    
 class Espionage(object):
     sendFleetMethod = None
     deleteMessageMethod = None
@@ -354,6 +459,9 @@ class Espionage(object):
         self.launchTime = None
         self.spyReport = None
     def hasArrived(self,displayedReports):
+        if self.spyReport:
+            return True
+        
         reports = [report for report in displayedReports if report.coords == self.targetPlanet.coords and report.date >= self.launchTime]
         reports.sort(key=lambda x:x.date,reverse=True)
         if len(reports) > 0:
@@ -364,8 +472,13 @@ class Espionage(object):
     
     def launch(self,currentTime):
         fleet = { 'espionageProbe' : self.probes}
-        self.sendFleetMethod(self.targetPlanet.coords,MissionTypes.spy,fleet,False)
+        self.sendFleetMethod(self.targetPlanet.coords,Mission.Types.spy,fleet,False)
         self.launchTime = currentTime      
-        
     def __repr__(self):
         return str(self.targetPlanet)
+        
+    
+    
+def sleep(seconds):
+    for dummy in range(0,random.randrange(seconds-5,seconds+5)):
+        time.sleep(1)

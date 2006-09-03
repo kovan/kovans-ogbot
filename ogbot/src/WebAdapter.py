@@ -23,6 +23,7 @@ import urllib2
 import types
 import copy
 import sys
+import httplib
 from Queue import *
 from datetime import datetime
 from mechanize import *
@@ -40,7 +41,6 @@ spyReportTmp2 = r'<table .*?>%s(.*?)</table>'
 
 REGEXP_COORDS_STR  = r"([1-9]):([0-9]{1,3}):([0-9]{1,2})"
 REGEXP_SESSION_STR = r"[0-9A-Fa-f]{12}"
-
 
 REGEXPS = \
 {
@@ -60,7 +60,7 @@ REGEXPS = \
     'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9]+)"'),
     'maxSlots':re.compile(r"max\. ([0-9]+)"),
     'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" % _("Nivel"),re.LOCALE),
-    'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<?P<value>th.*?>(.*?)</th>")
+    'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<?P<value>th.*?>(.*?)</th>"),
 }
 
 del(spyReportTmp)
@@ -161,16 +161,18 @@ class WebAdapter(object):
                         request.action = request.action.replace(REGEXP_SESSION_STR,self.session)
                         request['session'] = self.session
                     elif type(request) == urllib2.Request or type(request) == types.InstanceType: # check for new style object and old style too, 
-                        for attr in dir(request):
-                            newValue = re.sub(oldSession,self.session,getattr(request,attr))  
-                            setattr(request,attr,newValue)
+                        for attrName in dir(request):
+                            attr = getattr(request,attrName)
+                            if type(attr) == str:
+                                newValue = re.sub(oldSession,self.session,attr)  
+                                setattr(request,attr,newValue)
                     else: raise BotError(request)
                     valid = False
-            except urllib2.URLError, e:
+            except (urllib2.URLError,httplib.IncompleteRead), e:
                 self._eventMgr.connectionError(e)
                 valid = False
             if not valid: 
-                time.sleep(5)
+                sleep(5)
         return response
     
     def doLogin(self):
@@ -253,36 +255,40 @@ class WebAdapter(object):
             spyReport = SpyReport(coords, planetName, date, resources, code)
             
             for i in "fleet","defense","buildings","research":
-                var = None
+                dict = None
                 match = REGEXPS['spyReport'][i].search(rawMessage)
                 if match:
-                    var = {}
-                    for type,cuantity in REGEXPS['spyReport']['details'].findall(match.group(1)):
-                        var[type] = int(cuantity)
-                setattr(spyReport,i,var)
+                    dict = {}
+                    for fullName,cuantity in REGEXPS['spyReport']['details'].findall(match.group(1)):
+                        dict[INGAME_TYPES_BY_FULLNAME[fullName].name] = int(cuantity)
+                        
+                setattr(spyReport,i,dict)
                 
             reports.append(spyReport)
             
         return reports
         
-    def buildSpaceships(self,spaceships={},sourcePlanetCode = 0):
+    def buildShips(self,ships={},sourcePlanetCode = 0):
         return 
         # FIXME: ATM ParseResponse :
         # with python 2.4. sgmlib doesnt parse well indexed controls, all of them get the root name, no index. the bug that corrected it in python 2.5 introduced the bug below
         # with python 2.5: hangs when tryping to parse buildings.php # bug in python 2.5's sgmllib discovered!, already reported 
         if sourcePlanetCode == 0:
             sourcePlanetCode = self.homePlanetCode    
-        if len(spaceships) == 0:
+        if len(ships) == 0:
             return
         page = self._fetchPhp('buildings.php',mode='Flotte', cp=sourcePlanetCode)
         form = ParseResponse(page,backwards_compat=False)[-1]
-        for shipType,cuantity in spaceships.items():
+        for shipType,cuantity in ships.items():
             try:
-                controlName = "fmenge[%s]" % SHIP_TYPES[shipType].code[-3:]
+                controlName = "fmenge[%s]" % INGAME_TYPES_BY_NAME[shipType].code[-3:]
                 form[controlName] = str(cuantity)
             except ControlNotFoundError:
                 raise BotError(shipType)
         self._fetchForm(form)
+        
+    def buildBuildings(self,buildingCode,planetCode):
+        self._fetchPhp('b_building.php',bau=buildingCode,cp=planetCode)
         
     def sendFleet(self,destCoords,mission,fleet,resources=Resources(),speed=100,sourcePlanetCode = 0):
         ''' Comments:
@@ -296,10 +302,15 @@ class WebAdapter(object):
         page = self._fetchPhp('flotten1.php',mode='Flotte', cp=sourcePlanetCode)
         form = ParseResponse(page,backwards_compat=False)[-1]
         for shipType,cuantity in fleet.items():
+            shipCode = INGAME_TYPES_BY_NAME[shipType].code
             try:
-                form[SHIP_TYPES[shipType].code] = str(cuantity)
+                form[shipCode] = str(cuantity)
             except ControlNotFoundError:
-                raise ZeroShipsError(shipType)
+                raise NotEnoughShipsError(shipType)
+            else: 
+                if int(form['max'+shipCode]) < int(cuantity):
+                    raise NotEnoughShipsError(shipType)
+                
         # 2nd step: select destination and speed
         page = self._fetchForm(form)
         
@@ -327,15 +338,21 @@ class WebAdapter(object):
             if   _("Se ha alcanzado el número máximo de flotas") in errors:
                 raise NoFreeSlotsError()
             elif _("No seleccionaste ninguna nave") in errors:
-                raise ZeroShipsError()
+                raise NotEnoughShipsError()
             else: 
                 raise FleetSendError(errors)
         else:
-            result = {}
+            resultPage = {}
             for type,value in REGEXPS['fleetSendResult'].findall(page):
-                result[type] = value
+                resultPage[type] = value
+#            
+#            distance = int(resultPage[_("Distancia")])
+#            speed = int(resultPage[_("Velocidad")])
+#            consumption = int(resultPage[_("Consumo")])
+#            sourceCoords.parse(resultPage[_("Comienzo")])
+            
                 
-        return result
+        return resultPage
     
     def getFreeSlots(self):
         page = self._fetchPhp('flotten1.php',mode='Flotte').read()
@@ -352,9 +369,8 @@ class WebAdapter(object):
             planetCode = self.homePlanetCode
         page = self._fetchPhp('flotten1.php',mode='Flotte',cp=planetCode).read()
         fleet = {}
-        for type, cuantity in REGEXPS['availableFleet'].findall(page):
-            name = [ship.name for ship in SHIP_TYPES.values() if ship.code == type ][0]
-            fleet[name] = int(cuantity)
+        for code, cuantity in REGEXPS['availableFleet'].findall(page):
+            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity)
         return fleet
     
     def deleteMessage(self,message):
@@ -371,8 +387,8 @@ class WebAdapter(object):
     def getInvestigationLevels(self):
         page = self._fetchPhp('buildings.php',mode='Forschung').read()
         levels = {}
-        for name,level in REGEXPS['techLevels'].findall(page):
-            levels[name] = level
+        for fullName,level in REGEXPS['techLevels'].findall(page):
+            levels[INGAME_TYPES_BY_FULLNAME[fullName].name] = level
         return levels
 
     def saveState(self):
