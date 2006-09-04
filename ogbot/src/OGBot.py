@@ -39,13 +39,10 @@ from datetime import datetime,timedelta
 from HelperClasses import *
 from WebAdapter import WebAdapter
 
-BOTDATA_PREFIX = 'botdata'
-CONFIG_PREFIX = 'config'
-LOG_PREFIX = 'log'
-CONFIG_FILE = CONFIG_PREFIX+"/config.ini"
-STATE_FILE = BOTDATA_PREFIX +'/bot.state.dat'
-PLANETDB_FILE = BOTDATA_PREFIX +'/planets.db'
-PLANETS_FILE = BOTDATA_PREFIX +'/planets.dat'
+CONFIG_FILE = 'botdata/config.ini'
+STATE_FILE = 'botdata/bot.state.dat'
+PLANETDB_FILE = 'botdata/planets.db'
+PLANETS_FILE ='botdata/planets.dat'
 LOG_FILE = 'log/ogbot.log'
 
 LOG_FILE = os.path.abspath(LOG_FILE)
@@ -237,7 +234,6 @@ class Bot(threading.Thread):
                 targetPlanet = self.planets[0]
                 age = targetPlanet.workingSpyReport.getAge(serverTime)
                 
-                #print >>sys.stderr ,"        Fetching %s" % url
                 gc.set_debug(gc.DEBUG_UNCOLLECTABLE)
                 
                 if age.seconds < 600:
@@ -289,7 +285,6 @@ class Bot(threading.Thread):
         # no threading usage results in.... unmantainable algorith. Here it goes:
         pendingEspionages = []
         validPlanets = []
-        startTime = self._web.getMyPlanetsAndServerTime()[1]
 
         while len(pendingEspionages) or len(planets):
             serverTime = self._web.getMyPlanetsAndServerTime()[1]            
@@ -394,16 +389,10 @@ class Bot(threading.Thread):
     def getControlUrl(self):
         return self._web.getControlUrl()
 
-#    #-------------------------------- non bot functions:
-#    
-#    def autobuild(self,planetCode):
-#        self._connect() #33905100
-#        self._web.buildBuildings(,)
-    
 
 if __name__ == "__main__":
-    for i in BOTDATA_PREFIX, CONFIG_PREFIX, LOG_PREFIX:
-        try: os.makedirs(i)
+    for i in 'log','botdata','config':
+        try: os.makedirs('files/'+i)
         except OSError, e: 
             if "File exists" in e: pass   
             
@@ -413,11 +402,8 @@ if __name__ == "__main__":
     
     if len(sys.argv) > 1 and sys.argv[1] == "console":
         bot = Bot()
-        if len(sys.argv) > 2:
-            getattr(bot,sys.argv[2])(sys.argv[3:])
-        else:
-            bot.start()
-            bot.join()
+        bot.start()
+        bot.join()
     else:
         from gui import guiMain
         guiMain()

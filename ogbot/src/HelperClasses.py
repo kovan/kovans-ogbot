@@ -80,7 +80,7 @@ INGAME_TYPES = [
     Building('deuteriumTank',_("Contenedor de deuterio"),24), 
     Building('researchLab',_("Laboratorio de investigación"),31), 
     Building('terraformer',_("Terraformer"),33), 
-    Building('allianceDepot',_("Depósito de alianza"),34), 
+    Building('allianceDepot',_("Depósito de la alianza"),34), 
     Building('lunarBase',_("Base lunar"),41), 
     Building('sensorPhalanx',_("Sensor Phalanx"),42), 
     Building('jumpGate',_("Salto cuántico"),43), 

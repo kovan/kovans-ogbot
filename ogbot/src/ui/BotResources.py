@@ -1,6 +1,6 @@
 # Resource object code
 #
-# Created: dom 3. sep 04:26:10 2006
+# Created: lun 4. sep 01:15:49 2006
 #      by: The Resource Compiler for PyQt (Qt v4.1.4)
 #
 # WARNING! All changes made in this file will be lost!
