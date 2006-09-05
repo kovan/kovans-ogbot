@@ -67,8 +67,6 @@ del(spyReportTmp)
 del(spyReportTmp2)
 
 
-STATE_FILE = 'botdata/webadapter.state.dat'
-
 class WebAdapter(object):
     """Encapsulates the details of the communication with the ogame servers. This involves
         HTTP protocol encapsulation and HTML parsing.
@@ -155,12 +153,12 @@ class WebAdapter(object):
                 if _("Problema de base de datos") in p or _("Hasta la  próxima!") in p or "Grund 5" in p:
                     oldSession = self.session
                     self.doLogin()
-                    if   type(request) == str:
+                    if   isinstance(request,str):
                         request = request.replace(oldSession,self.session)
-                    elif type(request) == HTMLForm:
+                    elif isinstance(request,HTMLForm):
                         request.action = request.action.replace(REGEXP_SESSION_STR,self.session)
                         request['session'] = self.session
-                    elif type(request) == urllib2.Request or type(request) == types.InstanceType: # check for new style object and old style too, 
+                    elif isinstance(request,urllib2.Request) or isinstance(request,types.InstanceType): # check for new style object and old style too, 
                         for attrName in dir(request):
                             attr = getattr(request,attrName)
                             if type(attr) == str:
@@ -392,20 +390,20 @@ class WebAdapter(object):
         return levels
 
     def saveState(self):
-        file = open(STATE_FILE,'w')
+        file = open(FILE_PATHS.webstate,'w')
         pickle.dump(self.server,file)        
         pickle.dump(self.session,file)
         file.close()
         
     def loadState(self):
         try:
-            file = open(STATE_FILE,'r')
+            file = open(FILE_PATHS.webstate,'r')
             self.server = pickle.load(file)              
             self.session = pickle.load(file)
             file.close()
         except (EOFError,IOError):
             try:
-                os.remove(STATE_FILE)            
+                os.remove(FILE_PATHS.webstate)            
             except Exception : pass
             return False
         return True   
