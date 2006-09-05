@@ -24,13 +24,13 @@ import types
 import copy
 import sys
 import httplib
-from Queue import *
 from datetime import datetime
 from mechanize import *
 from ClientForm import HTMLForm,ParseResponse,ControlNotFoundError;
 from BeautifulSoup import *
-from HelperClasses import *
-
+from CommonClasses import *
+from Constants import *
+from GameEntities import *
 
 spyReportTmp  = r'%s (?P<planetName>.*?) (?P<coords>\[[0-9:]+\]) \w+ (?P<date>.*?)</td></tr>\n' %  _("Recursos en")
 spyReportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9]+)</td>\n'
