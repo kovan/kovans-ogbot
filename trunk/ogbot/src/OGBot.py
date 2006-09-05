@@ -14,6 +14,7 @@
 #     *************************************************************************
 #
 # python library:
+
 import sys
 sys.path.append('lib')
 sys.path.append('src')
@@ -36,10 +37,85 @@ gettext.install('ogbot')
 # and libraries:
 from datetime import datetime,timedelta
 # bot classes:
-from HelperClasses import *
+from GameEntities import *
+from CommonClasses import *
 from WebAdapter import WebAdapter
+from Constants import *
+
+def createDirs():
+    prefix = 'files'        
+    for attrName in vars(FILE_PATHS).keys():
+        if attrName is '__module__' or attrName is '__doc__':
+            continue
+        try: 
+            path = os.path.dirname(getattr(FILE_PATHS,attrName))
+            os.makedirs(path)
+        except OSError, e: 
+            if "File exists" in e: pass           
 
 
+
+class Mission(object):
+    sendFleetMethod = None    
+    class Types(object):
+        unknown   = 0
+        attack    = 1
+        transport = 3    
+        deploy    = 4
+        spy       = 6
+        # colonize, recycle, 
+    
+    def __init__(self,type,targetPlanet,fleet):
+        self.targetPlanet = targetPlanet
+        self.fleet = fleet
+        self.missionType = type
+        
+        self.distance = 0
+        self.speed = 0
+        self.consumption = 0
+        self.sourceCoords = Coords()
+        self.launchTime = None
+        self.arriveTime = None
+        self.returnTime = None
+        
+    def launch(self):    
+        result = self.sendFleetMethod(self.targetPlanet.coords,self.missionType,self.fleet,False)
+
+    def hasArrived(self):
+        pass
+    def hasReturned(self):
+        pass
+    def __repr__(self):
+        return str(self.targetPlanet)
+    
+class Espionage(object):
+    sendFleetMethod = None
+    deleteMessageMethod = None
+    
+    def __init__(self,targetPlanet,probes):
+        self.targetPlanet = targetPlanet
+        self.probes = probes
+        self.launchTime = None
+        self.spyReport = None
+    def hasArrived(self,displayedReports):
+        if self.spyReport:
+            return True
+        
+        reports = [report for report in displayedReports if report.coords == self.targetPlanet.coords and report.date >= self.launchTime]
+        reports.sort(key=lambda x:x.date,reverse=True)
+        if len(reports) > 0:
+            self.spyReport = reports[0]
+            self.deleteMessageMethod(reports[0])
+            return True
+        return False
+    
+    def launch(self,currentTime):
+        fleet = { 'espionageProbe' : self.probes}
+        self.sendFleetMethod(self.targetPlanet.coords,Mission.Types.spy,fleet,False)
+        self.launchTime = currentTime      
+    def __repr__(self):
+        return str(self.targetPlanet)
+        
 
 
 

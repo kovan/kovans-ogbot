@@ -20,6 +20,7 @@ import os
 import os.path
 import shelve
 import pickle
+from datetime import datetime,timedelta
 from Queue import *
 
 import PyQt4
@@ -29,8 +30,9 @@ from PyQt4.QtGui import *
 import sip
 sys.path.append('src/ui')
 
-import OGBot
-from HelperClasses import *
+from OGBot import *
+from CommonClasses import *
+from Constants import *
 import BotResources
 
 class MyColors:
@@ -177,7 +179,7 @@ class MainWindow(baseclass,formclass):
         if self.startButton.text() == "Start":
             if self.bot and self.bot.isAlive():
                 self.bot.join()
-            self.bot = OGBot.Bot(self)
+            self.bot = Bot(self)
             self.bot.start()
             self.botActivityLabel.setText("Starting bot...")
             self.setBotStatusRunning()
