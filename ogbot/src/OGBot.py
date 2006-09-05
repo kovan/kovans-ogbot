@@ -39,13 +39,9 @@ from datetime import datetime,timedelta
 from HelperClasses import *
 from WebAdapter import WebAdapter
 
-CONFIG_FILE = 'botdata/config.ini'
-STATE_FILE = 'botdata/bot.state.dat'
-PLANETDB_FILE = 'botdata/planets.db'
-PLANETS_FILE ='botdata/planets.dat'
-LOG_FILE = 'log/ogbot.log'
 
-LOG_FILE = os.path.abspath(LOG_FILE)
+
+
 
 class Bot(threading.Thread):
     """Contains the bot logic, independent from the communications with the server.
@@ -131,8 +127,8 @@ class Bot(threading.Thread):
         self.gui = gui
         self.msgQueue = Queue()
         self._eventMgr = Bot.EventManager(gui)
-        self._planetDb = PlanetDb(PLANETDB_FILE)
-        self.config = Configuration(CONFIG_FILE)                
+        self._planetDb = PlanetDb(FILE_PATHS.planetdb)
+        self.config = Configuration(FILE_PATHS.config)                
         self._web = None
         self.attackingShip = INGAME_TYPES_BY_NAME[self.config['attackingShip']]                        
         self.myPlanets = []
@@ -158,7 +154,7 @@ class Bot(threading.Thread):
             sleep(5)
     
     def stop(self):
-        file = open(PLANETS_FILE,'w')
+        file = open(FILE_PATHS.planets,'w')
         pickle.dump(self.planets,file)
         file.close()
         
@@ -183,12 +179,12 @@ class Bot(threading.Thread):
         
         loadedPlanets = []
         try:
-            file = open(PLANETS_FILE,'r')
+            file = open(FILE_PATHS.planets,'r')
             loadedPlanets = pickle.load(file)
             file.close()
         except (EOFError,IOError):
             try:
-                os.remove(PLANETS_FILE)            
+                os.remove(FILE_PATHS.planets)            
             except Exception : pass
 
         inactivePlanets = self._findInactivePlanets(range(mySolarSystem - attackRadio, mySolarSystem + attackRadio))
@@ -215,7 +211,7 @@ class Bot(threading.Thread):
         interestingPlanets = [planet for planet in inactivePlanets if planet not in planetsWithDefense and planet not in planetsWithFleetOnly]
         self.planets = interestingPlanets
         
-        file = open(PLANETS_FILE,'w')
+        file = open(FILE_PATHS.planets,'w')
         pickle.dump(self.planets,file)
         file.close()
 
@@ -262,7 +258,7 @@ class Bot(threading.Thread):
                         pendingEspionages.remove(espionage)
                         self.planets.append(espionage.targetPlanet) # restore planet in general planet list
                         
-            file = open(PLANETS_FILE,'w')
+            file = open(FILE_PATHS.planets,'w')
             pickle.dump(self.planets,file)
             file.close()                        
             sleep(5)     
@@ -391,13 +387,11 @@ class Bot(threading.Thread):
 
 
 if __name__ == "__main__":
-    for i in 'log','botdata','config':
-        try: os.makedirs('files/'+i)
-        except OSError, e: 
-            if "File exists" in e: pass   
-            
+
+    createDirs()
+    
     logging.basicConfig(level=logging.CRITICAL,format = '%(message)s') 
-    handler = logging.handlers.RotatingFileHandler(LOG_FILE,'a',100000,10)
+    handler = logging.handlers.RotatingFileHandler(os.path.abspath(FILE_PATHS.log),'a',100000,10)
     handler.setLevel(logging.INFO)
     
     if len(sys.argv) > 1 and sys.argv[1] == "console":

@@ -14,7 +14,6 @@
 #     *************************************************************************
 #
 
-from OGBot import CONFIG_FILE
 
 import sys
 import os
@@ -51,12 +50,16 @@ class OptionsDialog(baseclass,formclass):
         baseclass.__init__(self)        
         self.setupUi(self)
         QObject.connect(self.okButton,SIGNAL("clicked()"),self.saveOptions)
-        self.attackingShipComboBox.addItems([shiptype for shiptype in INGAME_TYPES.keys()])
-        self.config = Configuration(OGBot.CONFIG_FILE)
+        self.attackingShipComboBox.addItems([str(shiptype) for shiptype in INGAME_TYPES_BY_FULLNAME.values() if isinstance(shiptype,Ship)])
+        self.loadOptions()
+        
+    def loadOptions(self):
+        
+        self.config = Configuration(FILE_PATHS.config)
         try: self.config.load()
         except BotError: pass
 
-        index = self.attackingShipComboBox.findText(self.config['attackingShip'])
+        index = self.attackingShipComboBox.findText(INGAME_TYPES_BY_NAME[self.config['attackingShip']].fullName)
         self.attackingShipComboBox.setCurrentIndex(index)
         
         for i in ['webpage','username','password']:
@@ -72,7 +75,9 @@ class OptionsDialog(baseclass,formclass):
             QMessageBox.critical(self,"Error","Required data missing")
             return
         
-        self.config['attackingShip'] = self.attackingShipComboBox.currentText()
+        selected = str(self.attackingShipComboBox.currentText().toAscii())
+ 
+        self.config['attackingShip'] = INGAME_TYPES_BY_FULLNAME[selected].name
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")
             self.config[i] = control.text()
@@ -136,7 +141,7 @@ class MainWindow(baseclass,formclass):
 
         import WebAdapter
         try:
-            file = open(WebAdapter.STATE_FILE,'r')
+            file = open(FILE_PATHS.webstate,'r')
             self.server = pickle.load(file)        
             self.session = pickle.load(file)
             file.close()
@@ -144,7 +149,7 @@ class MainWindow(baseclass,formclass):
             self.server, self.session = '',''
             self.launchBrowserButton.setEnabled(False)
             
-        config = Configuration(CONFIG_FILE)
+        config = Configuration(FILE_PATHS.config)
         try: config.load()
         except BotError: self.showOptions()
         
@@ -205,7 +210,7 @@ class MainWindow(baseclass,formclass):
         QProcess(self).start(command)
         
     def viewLog(self):
-        command = 'cmd /c start "%s"' % OGBot.LOG_FILE
+        command = 'cmd /c start "%s"' % FILE_PATHS.log
         QProcess(self).start(command)
 
     def showAbout(self):
@@ -234,7 +239,7 @@ class MainWindow(baseclass,formclass):
         filterText     = str(self.planetFilterLineEdit.text())
         columnToFilter = str(self.planetFilterComboBox.currentText())
         self.planetsTree.clear()
-        self._planetDb = PlanetDb(OGBot.PLANETDB_FILE)
+        self._planetDb = PlanetDb(FILE_PATHS.planetdb)
                 
         for planet in self._planetDb.readAll():
             attrName = re.sub(r" (\w)",lambda m: m.group(0).upper().strip(),columnToFilter.lower()) # convert names from style "Player status" to style "playerStatus"
