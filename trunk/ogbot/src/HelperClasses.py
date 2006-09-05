@@ -27,6 +27,26 @@ import math
 import os.path
 import random
 
+class FILE_PATHS:
+    config = 'files/botdata/config.ini'
+    botstate =  'files/botdata/bot.state.dat'
+    webstate = 'files/botdata/webadapter.state.dat'
+    planetdb =  'files/botdata/planets.db'
+    planets = 'files/botdata/planets.dat'
+    log = 'files/log/ogbot.log'
+
+def createDirs():
+    prefix = 'files'        
+    for attrName in vars(FILE_PATHS).keys():
+        if attrName is '__module__' or attrName is '__doc__':
+            continue
+        try: 
+            path = os.path.dirname(getattr(FILE_PATHS,attrName))
+            os.makedirs(path)
+        except OSError, e: 
+            if "File exists" in e: pass           
+
+
 class IngameType(object):
     def __init__(self,name,fullName,code):
         self.name = name        
@@ -37,18 +57,18 @@ class IngameType(object):
     
 class Ship(IngameType):
     def __init__(self,name,fullName,code,capacity,consumption):
-        IngameType.__init__(self,name,fullName,code)
+        super(Ship,self).__init__(name,fullName,code)
         self.capacity = capacity        
         self.consumption = consumption
 class Building(IngameType):
     def __init__(self,name,fullName, code):
-        IngameType.__init__(self,name,fullName,code)        
+        super(Building,self).__init__(name,fullName,code)        
 class Defense(IngameType):
     def __init__(self,name,fullName, code):
-        IngameType.__init__(self,name,fullName,code)        
+        super(Defense,self).__init__(name,fullName,code)        
 class Research(IngameType):
     def __init__(self,name,fullName, code):
-        IngameType.__init__(self,name,fullName,code)        
+        super(Research,self).__init__(name,fullName,code)        
     
 
 
@@ -348,10 +368,10 @@ class Configuration(dict):
         self.configParser.read(self.file)
 
         # quit Bot if mandatory parameters are missing in the .ini
-        if not self.configParser.has_option('general','universe') \
-        or not self.configParser.has_option('general','username') \
-        or not self.configParser.has_option('general','password') \
-        or not self.configParser.has_option('general','webpage'):        
+        if not self.configParser.has_option('options','universe') \
+        or not self.configParser.has_option('options','username') \
+        or not self.configParser.has_option('options','password') \
+        or not self.configParser.has_option('options','webpage'):        
             raise BotError("Mandatory parameter(s) missing in config.ini file")
 
         for section in self.configParser.sections():
@@ -362,13 +382,11 @@ class Configuration(dict):
             raise BotError("Invalid attacking ship type in config.ini file")
         
     def save(self):
-        for section in 'general','automated attacks':
-            if not self.configParser.has_section(section):
-                self.configParser.add_section(section)
-        for option in 'universe','webpage','username','password':
-            self.configParser.set('general', option, str(self[option]))
-        for option in 'attackRadio','probesToSend','attackingShip':
-            self.configParser.set('automated attacks', option, str(self[option]))        
+        if not self.configParser.has_section('options'):
+            self.configParser.add_section('options')
+        
+        for key,value in self.items():
+            self.configParser.set('options', key,str(value))
         self.configParser.write(open(self.file,'w'))
         
 class PlanetDb(object): # not used
