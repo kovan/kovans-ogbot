@@ -91,11 +91,9 @@ class Coords(object):
         return str(self) != str(otherCoords)
     
     def distanceTo(self,coords):
-        self.convertToInts() # TODO: remove this
-        coords.convertToInts() # TODO: remove this        
         
         distance = 0
-        if coords.galaxy - self.galaxy != 0:
+        if   coords.galaxy - self.galaxy != 0:
             distance = abs(coords.galaxy - self.galaxy) * 20000
         elif coords.solarSystem - self.solarSystem != 0:
             distance = abs(coords.solarSystem - self.solarSystem) * 5 * 19 + 2700
@@ -220,15 +218,19 @@ class SpyReport(GameMessage):
         else: return "No"        
         
     def updateRentability(self,ownCoords,serverTime):        
+        distance = self.coords.distanceTo(ownCoords)
+        referenceFlightTime = 3500 * math.sqrt(distance * 10 / 26000.0) + 10
+        resourcesByNow = self.resourcesByNow(serverTime)
+        rentability =  resourcesByNow.metalEquivalent() / referenceFlightTime
+        
         if not self.hasFleet() and not self.hasNonMissileDefense():
-            referenceFlightTime = 3500 * math.sqrt(self.coords.distanceTo(ownCoords) * 10 / 20000) + 10
-            self.rentability =  self.resourcesByNow(serverTime).metalEquivalent() / referenceFlightTime
+            self.rentability = rentability
         else:
-            self.rentability = 0
+            self.rentability = -rentability
         
     def resourcesByNow(self,serverTime):
 
-        if self.buildings:
+        if self.buildings is not None:
             metalMine = self.buildings.get('metalMine',0)
             crystalMine = self.buildings.get('crystalMine',0)
             deuteriumMine = self.buildings.get('deuteriumSynthesizer',0)

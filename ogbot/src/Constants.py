@@ -45,7 +45,7 @@ INGAME_TYPES = [
     Building('solarPlant',_("Planta de energía solar"),4), 
     Building('fusionReactor',_("Planta de fusión"),12),
     Building('roboticsFactory',_("Fábrica de Robots"),14),
-    Building('naniteFactory',_("Fábrica de nanobots"),15), 
+    Building('naniteFactory',_("Fábrica de Nanobots"),15), 
     Building('shipyard',_("Hangar"),21), 
     Building('metalStorage',_("Almacén de metal"),22), 
     Building('crystalStorage',_("Almacén de cristal"),23), 
