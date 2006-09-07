@@ -65,17 +65,22 @@ class Coords(object):
     REGEXP_COORDS    = re.compile(r"([1-9]):([0-9]{1,3}):([0-9]{1,2})")
     
     def __init__(self,galaxy=0,solarSystem=0,planet=0,planetType=Types.normal):
-        self.galaxy = int(galaxy)
-        self.solarSystem = int(solarSystem)
-        self.planet = int(planet)
+        self.galaxy = galaxy
+        self.solarSystem = solarSystem
+        self.planet = planet
         self.planetType = planetType
-
+        self.convertToInts()
+        
     def parse(self,newCoords):
         match = self.REGEXP_COORDS.search(newCoords)
         if not match:
             raise "Error parsing coords: " + newCoords
         self.galaxy,self.solarSystem,self.planet = match.groups()
-
+        self.convertToInts()
+        
+    def convertToInts(self):
+        self.galaxy,self.solarSystem,self.planet = int(self.galaxy),int(self.solarSystem),int(self.planet)
+        
     def __repr__(self):
         return "%-10s" % ("[%s:%s:%s]" % (self.galaxy,self.solarSystem,self.planet))
     
@@ -86,6 +91,9 @@ class Coords(object):
         return str(self) != str(otherCoords)
     
     def distanceTo(self,coords):
+        self.convertToInts() # TODO: remove this
+        coords.convertToInts() # TODO: remove this        
+        
         distance = 0
         if coords.galaxy - self.galaxy != 0:
             distance = abs(coords.galaxy - self.galaxy) * 20000
