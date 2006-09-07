@@ -28,7 +28,7 @@ import math
 import os.path
 import random
 
-from Constants import *
+
 
 class BotError(Exception): pass
 class BotFatalError (BotError): pass
@@ -111,7 +111,9 @@ class Configuration(dict):
         self['probesToSend'] = 3
         self['attackingShip'] = 'smallCargo'
 
-                
+    def __getattr__(self,attrName):
+        return self[attrName]
+                    
     def load(self):
         if not os.path.isfile(self.file):
             raise BotError("File %s does not exist" % self.file)
@@ -130,6 +132,7 @@ class Configuration(dict):
             self.update(self.configParser.items(section))
             
         self['webpage'] = self['webpage'].replace("http://","")
+        from Constants import INGAME_TYPES_BY_NAME
         if self['attackingShip'] not in INGAME_TYPES_BY_NAME.keys():
             raise BotError("Invalid attacking ship type in config.ini file")
         

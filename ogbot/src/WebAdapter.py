@@ -94,7 +94,7 @@ class WebAdapter(object):
         self.browser.set_handle_refresh(True,0,False) # HTTPRefreshProcessor(0,False)        
         self.browser.set_handle_robots(False) # do not obey website's anti-bot indications
         self.browser.addheaders = [('User-agent', 'Mozilla/5.0')] # self-identify as Mozilla
-        self.webpage = "http://"+ config['webpage'] +"/portal/?frameset=1"
+        self.webpage = "http://"+ config.webpage +"/portal/?frameset=1"
         
         if not self.loadState():
             self.session = '000000000000'
@@ -103,7 +103,7 @@ class WebAdapter(object):
         page = self._fetchValidResponse(self.webpage)
         form = ParseResponse(page,backwards_compat=False)[0]
         select = form.find_control(name = "Uni")
-        self.server = select.get(label = self.config['universe'] +'. '+ _("Universo"),nr=0).name
+        self.server = select.get(label = self.config.universe +'. '+ _("Universo"),nr=0).name
         
         # retrieve and store galaxy fetching form
         page = self._fetchPhp('galaxy.php')
@@ -128,7 +128,7 @@ class WebAdapter(object):
         return self._fetchValidResponse(url)
     
     def _fetchForm(self,form):
-        #print sys.stderr >> "        Fetching %s" % form
+        print >>sys.stderr,  "        Fetching %s" % form
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self,request):
@@ -161,7 +161,7 @@ class WebAdapter(object):
                     elif isinstance(request,urllib2.Request) or isinstance(request,types.InstanceType): # check for new style object and old style too, 
                         for attrName in dir(request):
                             attr = getattr(request,attrName)
-                            if type(attr) == str:
+                            if isinstance(attr,str):
                                 newValue = re.sub(oldSession,self.session,attr)  
                                 setattr(request,attr,newValue)
                     else: raise BotError(request)
@@ -178,12 +178,12 @@ class WebAdapter(object):
         page = self._fetchValidResponse(self.webpage)
         form = ParseResponse(page,backwards_compat=False)[0]
         form["Uni"]   = [self.server]
-        form["login"] = self.config['username']
-        form["pass"]  = self.config['password']
+        form["login"] = self.config.username
+        form["pass"]  = self.config.password
         form.action = "http://"+self.server+"/game/reg/login2.php"
         page = self._fetchForm(form).read()
         self.session = re.findall(REGEXP_SESSION_STR,page)[0]
-        self._eventMgr.loggedIn(self.config['username'],self.session)
+        self._eventMgr.loggedIn(self.config.username,self.session)
 
     def getMyPlanetsAndServerTime(self):
         page = self._fetchPhp('overview.php').read()
@@ -192,18 +192,18 @@ class WebAdapter(object):
         for code,name,galaxy,ss,pos in REGEXPS['myPlanets'].findall(page):
             planet = Planet(Coords(galaxy,ss,pos),code,name)
             myPlanets.append(planet)
-        self.homePlanetCode = myPlanets[0].code
+        self.homePlanetCode = myPlanets[8].code
         
         rawTime = "%s %s" % (datetime.now().year, REGEXPS['serverTime'].findall(page)[0] )
         serverTime = datetime(*time.strptime(rawTime,"%Y %a %b %d %H:%M:%S")[0:6]) # example: 2006 Mon Aug 7 21:08:52
         return myPlanets,serverTime
 
-    def getSolarSystem(self,galaxy,solarSystem,ensureCurrectPlanet=True):
+    def getSolarSystem(self,galaxy,solarSystem,ensureCorrectPlanet=True):
         try:
             planets = {}        
             self.galaxyForm['galaxy'] = str(galaxy)
             self.galaxyForm['system'] = str(solarSystem)
-            if ensureCurrectPlanet:
+            if ensureCorrectPlanet:
                 self._fetchPhp('overview.php',cp=self.homePlanetCode)
             page = self._fetchForm(self.galaxyForm).read()
             html = BeautifulSoup(page)            
