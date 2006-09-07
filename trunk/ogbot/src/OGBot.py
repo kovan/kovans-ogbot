@@ -43,7 +43,6 @@ from WebAdapter import WebAdapter
 from Constants import *
 
 def createDirs():
-    prefix = 'files'        
     for attrName in vars(FILE_PATHS).keys():
         if attrName is '__module__' or attrName is '__doc__':
             continue
@@ -206,7 +205,7 @@ class Bot(threading.Thread):
         self._planetDb = PlanetDb(FILE_PATHS.planetdb)
         self.config = Configuration(FILE_PATHS.config)                
         self._web = None
-        self.attackingShip = INGAME_TYPES_BY_NAME[self.config['attackingShip']]                        
+        self.attackingShip = INGAME_TYPES_BY_NAME[self.config.attackingShip]                        
         self.myPlanets = []
         self.planets = []
         
@@ -249,10 +248,10 @@ class Bot(threading.Thread):
 
     def _start(self): 
 
-        probesToSend, attackRadio = self.config['probesToSend'], int(self.config['attackRadio'])
-        mySolarSystem = self.myPlanets[0].coords.solarSystem
-        pendingEspionages = []        
-        
+        probesToSend, attackRadio = self.config.probesToSend, int(self.config.attackRadio)
+        mySolarSystem = self.myPlanets[8].coords.solarSystem
+        notArrivedEspionages = []        
+        espionageQueue = []
         loadedPlanets = []
         try:
             file = open(FILE_PATHS.planets,'r')
@@ -276,17 +275,18 @@ class Bot(threading.Thread):
             if not planet.workingSpyReport:
                 inactivePlanets.remove(planet)
                 
-        planetsWithFleetOnly = [planet for planet in inactivePlanets if planet.workingSpyReport.hasFleet() and not planet.workingSpyReport.hasNonMissileDefense()]
-        planetsWithDefense = [planet for planet in inactivePlanets if planet.workingSpyReport.hasNonMissileDefense()]
+#        planetsWithFleetOnly = [planet for planet in inactivePlanets if planet.workingSpyReport.hasFleet() and not planet.workingSpyReport.hasNonMissileDefense()]
+#        planetsWithDefense = [planet for planet in inactivePlanets if planet.workingSpyReport.hasNonMissileDefense()]
+#        
+#        file = open("defendedplanets.tmp",'w')
+#        pickle.dump(planetsWithFleetOnly,file)
+#        pickle.dump(planetsWithDefense,file)        
+#        file.close()
         
-        file = open("defendedplanets.tmp",'w')
-        pickle.dump(planetsWithFleetOnly,file)
-        pickle.dump(planetsWithDefense,file)        
-        file.close()
-        
-        interestingPlanets = [planet for planet in inactivePlanets if planet not in planetsWithDefense and planet not in planetsWithFleetOnly]
-        self.planets = interestingPlanets
-        
+#        interestingPlanets = [planet for planet in inactivePlanets if planet not in planetsWithDefense and planet not in planetsWithFleetOnly]
+#        self.planets = interestingPlanets
+
+        self.planets = inactivePlanets
         file = open(FILE_PATHS.planets,'w')
         pickle.dump(self.planets,file)
         file.close()
@@ -297,7 +297,9 @@ class Bot(threading.Thread):
             serverTime = self._web.getMyPlanetsAndServerTime()[1]
 
             for planet in self.planets:
-                    planet.workingSpyReport.updateRentability(mySolarSystem,serverTime)
+                planet.workingSpyReport.updateRentability(self.myPlanets[8].coords,serverTime)
+                if planet.workingSpyReport.hasExpired(serverTime):
+                    espionageQueue.append(Espionage(planet,probesToSend))
             self.planets.sort(key=lambda x: x.workingSpyReport.rentability,reverse=True)
             for planet in self.planets:
                 print "%s\t%s\t\t%s\t\t\t%s\tMEU: %s\tDistance: %s\tSimulated: %s" % (planet.workingSpyReport.rentability, planet.workingSpyReport.getAge(serverTime), planet, planet.workingSpyReport.resources, planet.workingSpyReport.resources.metalEquivalent(),abs(planet.coords.solarSystem - mySolarSystem),planet.workingSpyReport.buildings is None)
@@ -315,23 +317,25 @@ class Bot(threading.Thread):
                         self.planets.remove(targetPlanet) 
                 else:
                     try:
-                        espionage = Espionage(targetPlanet,probesToSend)                
+                        if len(espionageQueue) is 0:
+                            espionageQueue.append(Espionage(targetPlanet,probesToSend))
+                        espionage = espionageQueue.pop(0)
                         espionage.launch(serverTime) ; print  "    %s: spying  %s" % (datetime.now(),targetPlanet)
                     except NoFreeSlotsError: print "no slots while spying"
                     except FleetSendError: 
                         self.planets.remove(targetPlanet)                   
                     else:
                         self.planets.remove(targetPlanet) # so that is not spied again until this report arrives                        
-                        pendingEspionages.append(espionage)
+                        notArrivedEspionages.append(espionage)
             
 
             # check for arrived espionages
-            if len(pendingEspionages) > 0:
+            if len(notArrivedEspionages) > 0:
                 displayedReports = self._web.getSpyReports()
-                for espionage in pendingEspionages[:]:
+                for espionage in notArrivedEspionages[:]:
                     if espionage.hasArrived(displayedReports):
                         espionage.targetPlanet.setWorkingSpyReport(espionage.spyReport)
-                        pendingEspionages.remove(espionage)
+                        notArrivedEspionages.remove(espionage)
                         self.planets.append(espionage.targetPlanet) # restore planet in general planet list
                         
             file = open(FILE_PATHS.planets,'w')
@@ -344,7 +348,7 @@ class Bot(threading.Thread):
         inactivePlanets = []
         
         for solarSystemNumber in range:
-            solarSystem = self._web.getSolarSystem(self.myPlanets[0].coords.galaxy,solarSystemNumber,False)    
+            solarSystem = self._web.getSolarSystem(self.myPlanets[8].coords.galaxy,solarSystemNumber,False)    
             #self._planetDb.writeMany(solarSystem.values())      
             for planet in solarSystem.values():
                 if "inactive" in planet.ownerStatus:
@@ -355,41 +359,43 @@ class Bot(threading.Thread):
     def _spyPlanets(self,planets,probesToSend):
         # planets with send error will be removed from list argument
         # no threading usage results in.... unmantainable algorith. Here it goes:
-        pendingEspionages = []
+        notArrivedEspionages = []
         validPlanets = []
 
-        while len(pendingEspionages) or len(planets):
+        while len(notArrivedEspionages) or len(planets):
             serverTime = self._web.getMyPlanetsAndServerTime()[1]            
             if len(planets):
                 try: 
                     planet = planets.pop()
                     espionage = Espionage(planet,probesToSend)                                    
-                    espionage.launch(serverTime)
-                    pendingEspionages.append(espionage)                                    
+                    espionage.launch(serverTime); print "spying %s" %planet
+                    notArrivedEspionages.append(espionage)                                    
                 except NoFreeSlotsError: 
-                    planets.append(planet)
+                    planets.append(planet); print "slots full"
                 except FleetSendError, e:
                     print str(planet) + str(e)
             
-            if len(pendingEspionages):
+            if len(notArrivedEspionages):
                 displayedReports = self._web.getSpyReports()
-                for espionage in pendingEspionages[:]:
+                for espionage in notArrivedEspionages[:]:
                     horalimite = espionage.launchTime + timedelta(minutes=10)
                     caducado = serverTime > horalimite
                     if  espionage.hasArrived(displayedReports):
-                        pendingEspionages.remove(espionage)
+                        notArrivedEspionages.remove(espionage)
                         validPlanets.append(espionage.targetPlanet)
                         espionage.targetPlanet.setWorkingSpyReport(espionage.spyReport)
                     elif caducado:    
-                        pendingEspionages.remove(espionage)
+                        notArrivedEspionages.remove(espionage)
                         planets.append(espionage.targetPlanet)
                             
             
-            sleep(5) 
+
                         
         return validPlanets
         
     def _attack(self,planet):
+        if planet.workingSpyReport.hasFleet() or planet.workingSpyReport.hasNonMissileDefense(): # TODO: this should be an assert
+            raise "Planet %s has defenses! can't attack" % planet
         resourcesToSteal = planet.workingSpyReport.resources.half()
         ships = int((resourcesToSteal.total() + 5000) / self.attackingShip.capacity)
         fleet = { self.attackingShip.name : ships }

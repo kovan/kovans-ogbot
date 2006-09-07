@@ -84,6 +84,18 @@ class Coords(object):
     
     def __ne__(self,otherCoords):
         return str(self) != str(otherCoords)
+    
+    def distanceTo(self,coords):
+        distance = 0
+        if coords.galaxy - self.galaxy != 0:
+            distance = abs(coords.galaxy - self.galaxy) * 20000
+        elif coords.solarSystem - self.solarSystem != 0:
+            distance = abs(coords.solarSystem - self.solarSystem) * 5 * 19 + 2700
+        elif coords.planet - self.planet != 0:
+            distance = abs(coords.planet - self.planet) * 5 + 1000
+        else:
+            distance = 5
+        return distance
 
     def increment(self):
         self.planet += 1
@@ -106,11 +118,6 @@ class Resources(object):
         self.crystal = int(crystal)
         self.deuterium = int(deuterium)
         
-    
-    def calculateRentability(self,systemsAway): 
-        referenceFlightTime = 3500 * math.sqrt((systemsAway * 5 * 19 + 2700) * 10 / 20000) + 10
-        return self.metalEquivalent() / referenceFlightTime
-    
     def total(self):
         return self.metal + self.crystal + self.deuterium
     def metalEquivalent(self):
@@ -192,7 +199,7 @@ class SpyReport(GameMessage):
         if self.defense is None:
             return True
         for defense in self.defense.keys():
-            if  defense is not 'antiBallisticMissile' and defense is not 'interplanetaryMissile':
+            if  'antiBallisticMissile' not in defense  and 'interplanetaryMissile' not in defense:
                 return True
         return False
     
@@ -204,10 +211,12 @@ class SpyReport(GameMessage):
         elif len(var): return "Yes"
         else: return "No"        
         
-    def updateRentability(self,ownSystem,serverTime):        
-        systemsAway = abs(ownSystem - int(self.coords.solarSystem))
-        resourcesByNow = self.resourcesByNow(serverTime)
-        self.rentability = resourcesByNow.calculateRentability(systemsAway)
+    def updateRentability(self,ownCoords,serverTime):        
+        if not self.hasFleet() and not self.hasNonMissileDefense():
+            referenceFlightTime = 3500 * math.sqrt(self.coords.distanceTo(ownCoords) * 10 / 20000) + 10
+            self.rentability =  self.resourcesByNow(serverTime).metalEquivalent() / referenceFlightTime
+        else:
+            self.rentability = 0
         
     def resourcesByNow(self,serverTime):
 

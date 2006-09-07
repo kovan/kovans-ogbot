@@ -61,7 +61,7 @@ class OptionsDialog(baseclass,formclass):
         try: self.config.load()
         except BotError: pass
 
-        index = self.attackingShipComboBox.findText(INGAME_TYPES_BY_NAME[self.config['attackingShip']].fullName)
+        index = self.attackingShipComboBox.findText(INGAME_TYPES_BY_NAME[self.config.attackingShip].fullName)
         self.attackingShipComboBox.setCurrentIndex(index)
         
         for i in ['webpage','username','password']:
@@ -79,7 +79,7 @@ class OptionsDialog(baseclass,formclass):
         
         selected = str(self.attackingShipComboBox.currentText().toAscii())
  
-        self.config['attackingShip'] = INGAME_TYPES_BY_FULLNAME[selected].name
+        self.config.attackingShip = INGAME_TYPES_BY_FULLNAME[selected].name
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")
             self.config[i] = control.text()
