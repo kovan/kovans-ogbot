@@ -57,38 +57,50 @@ class Coords(object):
         unknown = 0
         normal  = 1
         debris  = 2
-        moon    = 3
+        moon = 3
+        @classmethod
+        def toStr(self,type):
+            return [i for i in self.__dict__ if getattr(self,i) == type][0]
     
     GALAXIES = 9
     SOLAR_SYSTEMS = 499
     PLANETS_PER_SYSTEM = 15
-    REGEXP_COORDS    = re.compile(r"([1-9]):([0-9]{1,3}):([0-9]{1,2})")
+    _REGEXP_COORDS    = re.compile(r"([1-9]):([0-9]{1,3}):([0-9]{1,2})")
     
-    def __init__(self,galaxy=0,solarSystem=0,planet=0,planetType=Types.normal):
-        self.galaxy = galaxy
-        self.solarSystem = solarSystem
-        self.planet = planet
+    def __init__(self,galaxyOrStr,solarSystem=0,planet=0,planetType=Types.normal):
+        ''' 
+            First parameter can be a string to be parsed e.g: [1:259:12] or the galaxy. 
+            If it's the galaxy, solarSystem and planet must also be supplied.
+        '''
+        try: self.parse(galaxyOrStr)
+        except Exception:
+            self.galaxy = galaxyOrStr
+            self.solarSystem = solarSystem
+            self.planet = planet
+            self.convertToInts()            
         self.planetType = planetType
-        self.convertToInts()
         
     def parse(self,newCoords):
-        match = self.REGEXP_COORDS.search(newCoords)
+        match = self._REGEXP_COORDS.search(newCoords)
         if not match:
-            raise "Error parsing coords: " + newCoords
+            raise Exception("Error parsing coords: " + newCoords)
         self.galaxy,self.solarSystem,self.planet = match.groups()
         self.convertToInts()
         
+    def tuple(self):
+        return self.galaxy, self.solarSystem, self.planet
+    
     def convertToInts(self):
         self.galaxy,self.solarSystem,self.planet = int(self.galaxy),int(self.solarSystem),int(self.planet)
         
     def __repr__(self):
-        return "%-10s" % ("[%s:%s:%s]" % (self.galaxy,self.solarSystem,self.planet))
+        return "[%s:%s:%s] %s" % (self.galaxy,self.solarSystem,self.planet,self.Types.toStr(self.planetType))
     
     def __eq__(self,otherCoords):
-        return str(self) == str(otherCoords)
+        return self.tuple() == otherCoords.tuple() and self.planetType == otherCoords.planetType 
     
     def __ne__(self,otherCoords):
-        return str(self) != str(otherCoords)
+        return not self.__eq__()
     
     def distanceTo(self,coords):
         
@@ -211,7 +223,7 @@ class SpyReport(GameMessage):
     
     def hasInfoAbout(self,info):
         if info not in ["fleet","defense","buildings","research"]:
-            raise "No info about " + info
+            raise Exception("No info about " + info)
         var = getattr(self, info)
         if  var is None:   return "Unknown"
         elif len(var): return "Yes"

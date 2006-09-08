@@ -72,7 +72,7 @@ class Mission(object):
         self.distance = 0
         self.speed = 0
         self.consumption = 0
-        self.sourceCoords = Coords()
+        self.sourceCoords = None
         self.launchTime = None
         self.arriveTime = None
         self.returnTime = None
@@ -271,20 +271,14 @@ class Bot(threading.Thread):
                 planet.workingSpyReport = l[0].workingSpyReport
         
         self._spyPlanets([planet for planet in inactivePlanets if not planet.workingSpyReport],probesToSend)
+        
+        if __debug__: 
+            for planet in inactivePlanets: assert planet.workingSpyReport is not None
+            
         for planet in inactivePlanets[:]:
             if not planet.workingSpyReport:
                 inactivePlanets.remove(planet)
                 
-#        planetsWithFleetOnly = [planet for planet in inactivePlanets if planet.workingSpyReport.hasFleet() and not planet.workingSpyReport.hasNonMissileDefense()]
-#        planetsWithDefense = [planet for planet in inactivePlanets if planet.workingSpyReport.hasNonMissileDefense()]
-#        
-#        file = open("defendedplanets.tmp",'w')
-#        pickle.dump(planetsWithFleetOnly,file)
-#        pickle.dump(planetsWithDefense,file)        
-#        file.close()
-        
-#        interestingPlanets = [planet for planet in inactivePlanets if planet not in planetsWithDefense and planet not in planetsWithFleetOnly]
-#        self.planets = interestingPlanets
 
         self.planets = inactivePlanets
         file = open(FILE_PATHS.planets,'w')
@@ -312,7 +306,8 @@ class Bot(threading.Thread):
                 
                 if age.seconds < 600:
                     try: self._attack(targetPlanet) ; print "    %s: attacking  %s" % (datetime.now(),targetPlanet)
-                    except NoFreeSlotsError: print "no slots while attacking"
+                    except NoFreeSlotsError: 
+                        self._onIdleTime();print "no slots while attacking"
                     except FleetSendError: 
                         self.planets.remove(targetPlanet) 
                 else:
@@ -321,7 +316,8 @@ class Bot(threading.Thread):
                             espionageQueue.append(Espionage(targetPlanet,probesToSend))
                         espionage = espionageQueue.pop(0)
                         espionage.launch(serverTime) ; print  "    %s: spying  %s" % (datetime.now(),targetPlanet)
-                    except NoFreeSlotsError: print "no slots while spying"
+                    except NoFreeSlotsError: 
+                        self._onIdleTime();print "no slots while spying"
                     except FleetSendError: 
                         self.planets.remove(targetPlanet)                   
                     else:
@@ -343,7 +339,9 @@ class Bot(threading.Thread):
             file.close()                        
             sleep(5)     
 
-                    
+    def _onIdleTime(self): # only short tasks should go here
+        pass
+        
     def _findInactivePlanets(self,range):
         inactivePlanets = []
         
@@ -371,6 +369,7 @@ class Bot(threading.Thread):
                     espionage.launch(serverTime); print "spying %s" %planet
                     notArrivedEspionages.append(espionage)                                    
                 except NoFreeSlotsError: 
+                    self._onIdleTime()
                     planets.append(planet); print "slots full"
                 except FleetSendError, e:
                     print str(planet) + str(e)
@@ -394,8 +393,7 @@ class Bot(threading.Thread):
         return validPlanets
         
     def _attack(self,planet):
-        if planet.workingSpyReport.hasFleet() or planet.workingSpyReport.hasNonMissileDefense(): # TODO: this should be an assert
-            raise "Planet %s has defenses! can't attack" % planet
+        assert not planet.workingSpyReport.hasFleet() and not planet.workingSpyReport.hasNonMissileDefense()
         resourcesToSteal = planet.workingSpyReport.resources.half()
         ships = int((resourcesToSteal.total() + 5000) / self.attackingShip.capacity)
         fleet = { self.attackingShip.name : ships }
