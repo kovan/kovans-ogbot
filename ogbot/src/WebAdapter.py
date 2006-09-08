@@ -244,8 +244,7 @@ class WebAdapter(object):
             if m == None: #theorically should never happen
                 continue
             planetName = m.group('planetName')
-            coords = Coords()
-            coords.parse(m.group('coords'))
+            coords = Coords(m.group('coords'))
             datestring = "%s-%s" % (datetime.now().year, m.group('date') )
             date = datetime(*time.strptime(datestring,"%Y-%m-%d %H:%M:%S")[0:6])
             resources = Resources(m.group('metal'),m.group('crystal'),m.group('deuterium'))
