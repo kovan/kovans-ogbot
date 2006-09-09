@@ -101,7 +101,6 @@ class Configuration(dict):
         self.configParser = ConfigParser.SafeConfigParser()
         self.configParser.optionxform = str # prevent ini parser from converting vars to lowercase        
         self.loadDefaults()
-    
     def loadDefaults(self):
         self['universe'] = 0
         self['username'] = ''
@@ -110,10 +109,9 @@ class Configuration(dict):
         self['attackRadio'] = 20
         self['probesToSend'] = 3
         self['attackingShip'] = 'smallCargo'
-
     def __getattr__(self,attrName):
         return self[attrName]
-                    
+        
     def load(self):
         if not os.path.isfile(self.file):
             raise BotError("File %s does not exist" % self.file)
@@ -145,6 +143,10 @@ class Configuration(dict):
         self.configParser.write(open(self.file,'w'))
 
     
+def Enum(object):
+    @classmethod
+    def toStr(self,type):
+        return [i for i in self.__dict__ if getattr(self,i) == type][0]    
     
 def sleep(seconds):
     for dummy in range(0,random.randrange(seconds-5,seconds+5)):

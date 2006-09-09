@@ -53,10 +53,29 @@ def createDirs():
             if "File exists" in e: pass           
 
 
+#class Simulator(object):
+#    class Simulation(object):
+#        def __init__(self,baseResources,rentability):
+#            self.date = datetime.now()
+#            self.baseResources = baseResources
+#    def __init__(self):
+#        self._simulations = {}
+#    def setSimulation(self,planet,simulation):
+#        self._simulations[planet] = simulation
+#        
+#    def insertPlanet(self,planet):
+#        baseResources = copy.copy(planet.spyReportHistory[-1].resources)
+#        self._simulations[planet] = self.Simulation(baseResources)
+#
+#    def updateAll(self): 
+#        for planet,simulation in self._simulations:
+#            
+#    def getMostResources(self): pass
+
+
 
 class Mission(object):
-    sendFleetMethod = None    
-    class Types(object):
+    class Types(Enum):
         unknown   = 0
         attack    = 1
         transport = 3    
@@ -64,28 +83,21 @@ class Mission(object):
         spy       = 6
         # colonize, recycle, 
     
-    def __init__(self,type,targetPlanet,fleet):
-        self.targetPlanet = targetPlanet
-        self.fleet = fleet
-        self.missionType = type
-        
+    def __init__(self):
+        self.targetPlanet = None
+        self.sourcePlanet = None
+        self.missionType = self.Types.unknown
+        self.fleet = None
         self.distance = 0
         self.speed = 0
         self.consumption = 0
-        self.sourceCoords = None
         self.launchTime = None
         self.arriveTime = None
         self.returnTime = None
         
-    def launch(self):    
-        result = self.sendFleetMethod(self.targetPlanet.coords,self.missionType,self.fleet,False)
 
-    def hasArrived(self):
-        pass
-    def hasReturned(self):
-        pass
     def __repr__(self):
-        return str(self.targetPlanet)
+        return "%s to %s with %s" % (self.Types.toStr(self.missionType).title() ,self.targetPlanet  + self.fleet)
     
 class Espionage(object):
     sendFleetMethod = None
@@ -244,8 +256,12 @@ class Bot(threading.Thread):
         self._web = WebAdapter(self.config,self._checkThreadQueue,self.gui)
         Espionage.sendFleetMethod = self.sendFleet
         Espionage.deleteMessageMethod = self._web.deleteMessage                
-        self.myPlanets = self._web.getMyPlanetsAndServerTime()[0]
+        self.myPlanets,serverTime = self._web.getMyPlanetsAndServerTime()
+        self.serverTimeDelta = datetime.now() - serverTime
 
+    def serverTime(self):
+        return self.serverTimeDelta + datetime.now()
+    
     def _start(self): 
 
         probesToSend, attackRadio = self.config.probesToSend, int(self.config.attackRadio)
@@ -272,9 +288,6 @@ class Bot(threading.Thread):
         
         self._spyPlanets([planet for planet in inactivePlanets if not planet.workingSpyReport],probesToSend)
         
-        if __debug__: 
-            for planet in inactivePlanets: assert planet.workingSpyReport is not None
-            
         for planet in inactivePlanets[:]:
             if not planet.workingSpyReport:
                 inactivePlanets.remove(planet)
@@ -399,6 +412,7 @@ class Bot(threading.Thread):
         fleet = { self.attackingShip.name : ships }
         self.sendFleet(planet.workingSpyReport.coords,Mission.Types.attack,fleet,False)
         planet.workingSpyReport.actionTook = "Attacked"
+        planet.workingSpyReport.date = self.serverTime()
         planet.workingSpyReport.resources = planet.workingSpyReport.resources - resourcesToSteal
 
     def waitForFreeSlot(self):

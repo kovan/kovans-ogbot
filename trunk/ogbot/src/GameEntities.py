@@ -16,7 +16,7 @@
 
 import math
 import re
-
+from CommonClasses import Enum
 
 
 class IngameType(object):
@@ -43,24 +43,25 @@ class Research(IngameType):
         super(Research,self).__init__(name,fullName,code)        
     
 class Planet(object):
-    def __init__(self,coords, code=0, name=""):
+    def __init__(self,coords, name=""):
         self.coords = coords
         self.name = name
-        self.code = code
-
     def __repr__(self):
         return self.name + " " + str(self.coords)
+    
+class OwnPlanet(object):
+    def __init__(self,coords, name="",code=0,isMainPlanet=False):
+        super(OwnPlanet,self).__init__(coords,name)
+        self.code = code
+        self.isMainPlanet=isMainPlanet
 
 
 class Coords(object):
-    class Types(object):
+    class Types(Enum):
         unknown = 0
         normal  = 1
         debris  = 2
         moon = 3
-        @classmethod
-        def toStr(self,type):
-            return [i for i in self.__dict__ if getattr(self,i) == type][0]
     
     GALAXIES = 9
     SOLAR_SYSTEMS = 499
@@ -114,7 +115,10 @@ class Coords(object):
         else:
             distance = 5
         return distance
-
+    
+    def flightTimeTo(self,coords,speed=26000):
+       return 3500 * math.sqrt(self.distanceTo(coords) * 10 / float(speed)) + 10
+        
     def increment(self):
         self.planet += 1
         if self.planet > self.PLANETS_PER_SYSTEM:
@@ -142,7 +146,12 @@ class Resources(object):
         return int(self.metal + 1.5 * self.crystal + 3 * self.deuterium)
     def half(self):
         return Resources(self.metal/2, self.crystal/2, self.deuterium/2)
-    
+    def tuple(self):
+        return self.metal,self.crystal,self.deuterium
+    def __eq__(self,otherResources):
+        return self.tuple() == otherResources.tuple()
+    def __ne__(self,otherResources):
+        return not self.__eq__()
     def __repr__(self):
         return "M: %s C: %s D: %s (total: %s)" % (self.metal, self.crystal, self.deuterium,self.total())
     def __add__(self, toAdd):
@@ -152,8 +161,8 @@ class Resources(object):
    
 
 class EnemyPlanet (Planet):
-    def __init__(self,coords,owner="",ownerstatus="",name="",alliance="",code=0):
-        Planet.__init__(self,coords, code, name)
+    def __init__(self,coords,owner="",ownerstatus="",name="",alliance=""):
+        super(EnemyPlanet,self).__init__(coords, name)
         self.owner = owner
         self.alliance = alliance
         self.ownerStatus = ownerstatus
@@ -195,11 +204,11 @@ class SpyReport(GameMessage):
     def __repr__(self):
         return "%s %s %s %s %s %s %s %s" % (self.planetName, self.coords, self.date, self.resources, self.fleet, self.defense, self.buildings, self.research)
     
-    def hasFleet(self):
-        return self.fleet != None and len(self.fleet) > 0
+    def hasFleet(self): # actually is has or might have fleet
+        return self.fleet == None or len(self.fleet) > 0
     
     def hasDefense(self):
-        return self.defense != None and len(self.defense) > 0
+        return self.defense == None or len(self.defense) > 0
     
     def getAge(self,serverTime):
         return serverTime - self.date
@@ -239,6 +248,7 @@ class SpyReport(GameMessage):
             self.rentability = rentability
         else:
             self.rentability = -rentability
+
         
     def resourcesByNow(self,serverTime):
 
