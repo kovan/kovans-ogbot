@@ -190,8 +190,9 @@ class WebAdapter(object):
         
         myPlanets = []
         for code,name,galaxy,ss,pos in REGEXPS['myPlanets'].findall(page):
-            planet = Planet(Coords(galaxy,ss,pos),code,name)
+            planet = OwnPlanet(Coords(galaxy,ss,pos),code,name)
             myPlanets.append(planet)
+        myPlanets[0].isMainPlanet = True
         self.homePlanetCode = myPlanets[8].code
         
         rawTime = "%s %s" % (datetime.now().year, REGEXPS['serverTime'].findall(page)[0] )
