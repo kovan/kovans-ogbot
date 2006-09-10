@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: ISO-8859-1 -*-
 #
-#     Kovan's OGBot
-#     Copyright (c) 2006 by kovan 
+#          Kovan's OGBot
+#          Copyright (c) 2006 by kovan 
 #
-#     *************************************************************************
-#     *                                                                       *
-#     * This program is free software; you can redistribute it and/or modify  *
-#     * it under the terms of the GNU General Public License as published by  *
-#     * the Free Software Foundation; either version 2 of the License, or     *
-#     * (at your option) any later version.                                   *
-#     *                                                                       *
-#     *************************************************************************
+#          *************************************************************************
+#          *                                                                                                                                             *
+#          * This program is free software; you can redistribute it and/or modify  *
+#          * it under the terms of the GNU General Public License as published by  *
+#          * the Free Software Foundation; either version 2 of the License, or          *
+#          * (at your option) any later version.                                                                      *
+#          *                                                                                                                                             *
+#          *************************************************************************
 #
 from GameEntities import Ship, Defense, Building, Research
 
 class FILE_PATHS:
-    config = 'files/botdata/config.ini'
+    config = 'files/config/config.ini'
     botstate =  'files/botdata/bot.state.dat'
     webstate = 'files/botdata/webadapter.state.dat'
     planetdb =  'files/botdata/planets.db'
