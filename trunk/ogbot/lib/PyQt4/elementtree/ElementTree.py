@@ -132,11 +132,9 @@ class _SimpleElementPath:
 try:
     import ElementPath
 except ImportError:
-    # FIXME: issue warning in this case?
     ElementPath = _SimpleElementPath()
 
-# TODO: add support for custom namespace resolvers/default namespaces
-# TODO: add improved support for incremental parsing
+
 
 VERSION = "1.2.6"
 
@@ -721,7 +719,6 @@ class ElementTree:
 # @defreturn flag
 
 def iselement(element):
-    # FIXME: not sure about this; might be a better idea to look
     # for tag/attrib/text attributes
     return isinstance(element, _ElementInterface) or hasattr(element, "tag")
 
@@ -818,7 +815,7 @@ def _escape_attrib(text, encoding=None, replace=string.replace):
             except UnicodeError:
                 return _encode_entity(text)
         text = replace(text, "&", "&amp;")
-        text = replace(text, "'", "&apos;") # FIXME: overkill
+        text = replace(text, "'", "&apos;")
         text = replace(text, "\"", "&quot;")
         text = replace(text, "<", "&lt;")
         text = replace(text, ">", "&gt;")
