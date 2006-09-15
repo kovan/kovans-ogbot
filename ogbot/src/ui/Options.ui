@@ -8,8 +8,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>281</width>
-    <height>403</height>
+    <width>318</width>
+    <height>423</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -30,7 +30,7 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>310</y>
+     <y>330</y>
      <width>141</width>
      <height>36</height>
     </rect>
@@ -110,7 +110,7 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>290</y>
+     <y>310</y>
      <width>81</width>
      <height>20</height>
     </rect>
@@ -122,99 +122,21 @@
     <cstring>attackRadioSpinBox</cstring>
    </property>
   </widget>
-  <widget class="QLineEdit" name="passwordLineEdit" >
-   <property name="geometry" >
-    <rect>
-     <x>130</x>
-     <y>100</y>
-     <width>141</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="echoMode" >
-    <enum>QLineEdit::Password</enum>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="probesToSendSpinBox" >
-   <property name="geometry" >
-    <rect>
-     <x>220</x>
-     <y>320</y>
-     <width>51</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="minimum" >
-    <number>1</number>
-   </property>
-  </widget>
   <widget class="QSpinBox" name="attackRadioSpinBox" >
    <property name="geometry" >
     <rect>
-     <x>220</x>
-     <y>290</y>
+     <x>260</x>
+     <y>310</y>
      <width>51</width>
      <height>22</height>
     </rect>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="universeSpinBox" >
-   <property name="geometry" >
-    <rect>
-     <x>220</x>
-     <y>40</y>
-     <width>51</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="minimum" >
-    <number>1</number>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="usernameLineEdit" >
-   <property name="geometry" >
-    <rect>
-     <x>130</x>
-     <y>70</y>
-     <width>141</width>
-     <height>22</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="webpageLineEdit" >
-   <property name="geometry" >
-    <rect>
-     <x>130</x>
-     <y>10</y>
-     <width>141</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string/>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="cancelButton" >
-   <property name="geometry" >
-    <rect>
-     <x>180</x>
-     <y>370</y>
-     <width>91</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Cancel</string>
-   </property>
-   <property name="autoDefault" >
-    <bool>false</bool>
    </property>
   </widget>
   <widget class="QComboBox" name="attackingShipComboBox" >
    <property name="geometry" >
     <rect>
-     <x>130</x>
-     <y>260</y>
+     <x>170</x>
+     <y>280</y>
      <width>141</width>
      <height>20</height>
     </rect>
@@ -224,7 +146,7 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>380</y>
+     <y>410</y>
      <width>46</width>
      <height>14</height>
     </rect>
@@ -233,12 +155,41 @@
     <string/>
    </property>
   </widget>
+  <widget class="QLabel" name="label_2" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>280</y>
+     <width>95</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Attacking spaceship</string>
+   </property>
+   <property name="buddy" >
+    <cstring>attackingShipComboBox</cstring>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="probesToSendSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>260</x>
+     <y>340</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
+  </widget>
   <widget class="Line" name="line_2" >
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>350</y>
-     <width>261</width>
+     <y>370</y>
+     <width>301</width>
      <height>20</height>
     </rect>
    </property>
@@ -249,8 +200,8 @@
   <widget class="QPushButton" name="okButton" >
    <property name="geometry" >
     <rect>
-     <x>80</x>
-     <y>370</y>
+     <x>120</x>
+     <y>390</y>
      <width>92</width>
      <height>26</height>
     </rect>
@@ -262,22 +213,87 @@
     <bool>false</bool>
    </property>
   </widget>
+  <widget class="QPushButton" name="cancelButton" >
+   <property name="geometry" >
+    <rect>
+     <x>220</x>
+     <y>390</y>
+     <width>91</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Cancel</string>
+   </property>
+   <property name="autoDefault" >
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="passwordLineEdit" >
+   <property name="geometry" >
+    <rect>
+     <x>190</x>
+     <y>100</y>
+     <width>121</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="echoMode" >
+    <enum>QLineEdit::Password</enum>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="usernameLineEdit" >
+   <property name="geometry" >
+    <rect>
+     <x>190</x>
+     <y>70</y>
+     <width>121</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="webpageLineEdit" >
+   <property name="geometry" >
+    <rect>
+     <x>190</x>
+     <y>10</y>
+     <width>121</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string/>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="universeSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>260</x>
+     <y>40</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
+  </widget>
   <widget class="QGroupBox" name="groupBox" >
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>120</y>
-     <width>261</width>
+     <y>130</y>
+     <width>301</width>
      <height>131</height>
     </rect>
    </property>
    <property name="title" >
     <string>Source of attacks planet selection</string>
    </property>
-   <widget class="QRadioButton" name="radioButton" >
+   <widget class="QRadioButton" name="mainPlanetRadio" >
     <property name="geometry" >
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>20</y>
       <width>81</width>
       <height>19</height>
@@ -286,34 +302,27 @@
     <property name="text" >
      <string>Main planet</string>
     </property>
+    <property name="checked" >
+     <bool>true</bool>
+    </property>
    </widget>
-   <widget class="QRadioButton" name="radioButton_2" >
+   <widget class="QRadioButton" name="rotatePlanetsRadio" >
     <property name="geometry" >
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>40</y>
-      <width>141</width>
+      <width>161</width>
       <height>19</height>
      </rect>
     </property>
     <property name="text" >
-     <string>Planets with coords in list:</string>
+     <string>Rotate through planets in list:</string>
     </property>
    </widget>
-   <widget class="QListView" name="listView" >
+   <widget class="QToolButton" name="addPlanetButton" >
     <property name="geometry" >
      <rect>
-      <x>170</x>
-      <y>50</y>
-      <width>61</width>
-      <height>71</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QToolButton" name="toolButton_2" >
-    <property name="geometry" >
-     <rect>
-      <x>140</x>
+      <x>150</x>
       <y>60</y>
       <width>23</width>
       <height>22</height>
@@ -329,10 +338,10 @@
      <enum>Qt::RightArrow</enum>
     </property>
    </widget>
-   <widget class="QToolButton" name="toolButton" >
+   <widget class="QToolButton" name="removePlanetButton" >
     <property name="geometry" >
      <rect>
-      <x>140</x>
+      <x>150</x>
       <y>80</y>
       <width>23</width>
       <height>22</height>
@@ -348,10 +357,10 @@
      <enum>Qt::LeftArrow</enum>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit" >
+   <widget class="QLineEdit" name="addPlanetLineEdit" >
     <property name="geometry" >
      <rect>
-      <x>70</x>
+      <x>80</x>
       <y>70</y>
       <width>61</width>
       <height>22</height>
@@ -367,22 +376,35 @@
      <set>Qt::AlignHCenter</set>
     </property>
    </widget>
-  </widget>
-  <widget class="QLabel" name="label_2" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>260</y>
-     <width>95</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Attacking spaceship</string>
-   </property>
-   <property name="buddy" >
-    <cstring>attackingShipComboBox</cstring>
-   </property>
+   <widget class="QListWidget" name="sourcePlanetsList" >
+    <property name="geometry" >
+     <rect>
+      <x>180</x>
+      <y>20</y>
+      <width>111</width>
+      <height>101</height>
+     </rect>
+    </property>
+    <property name="horizontalScrollBarPolicy" >
+     <enum>Qt::ScrollBarAlwaysOff</enum>
+    </property>
+    <property name="textElideMode" >
+     <enum>Qt::ElideLeft</enum>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="isMoonCheckBox" >
+    <property name="geometry" >
+     <rect>
+      <x>80</x>
+      <y>100</y>
+      <width>61</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>is moon</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <pixmapfunction></pixmapfunction>
@@ -409,7 +431,7 @@
    <hints>
     <hint type="sourcelabel" >
      <x>269</x>
-     <y>283</y>
+     <y>413</y>
     </hint>
     <hint type="destinationlabel" >
      <x>179</x>
