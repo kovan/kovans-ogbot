@@ -5,15 +5,14 @@
 #      Copyright (c) 2006 by kovan 
 #
 #      *************************************************************************
-#      *                                                                         *
+#      *                                                                       *
 #      * This program is free software; you can redistribute it and/or modify  *
 #      * it under the terms of the GNU General Public License as published by  *
-#      * the Free Software Foundation; either version 2 of the License, or      *
-#      * (at your option) any later version.                                      *
-#      *                                                                         *
+#      * the Free Software Foundation; either version 2 of the License, or     *
+#      * (at your option) any later version.                                   *
+#      *                                                                       *
 #      *************************************************************************
 #
-
 
 import re
 import shelve
@@ -106,10 +105,12 @@ class Configuration( dict ):
         self['username'] = ''
         self['password'] = ''
         self['webpage'] = 'ogame.com.es'
+        self['serverLanguaje'] = 'spanish'        
         self['attackRadio'] = 20
         self['probesToSend'] = 3
         self['attackingShip'] = 'smallCargo'
         self['sourcePlanets'] = []
+
         
     def __getattr__( self, attrName ):
         return self[attrName]
@@ -118,7 +119,7 @@ class Configuration( dict ):
         if not os.path.isfile( self.file ):
             raise BotError( "File %s does not exist" % self.file )
             
-        self.configParser.read( self.file )
+        self.configParser.read(self.file)
 
         # ensure no mandatory parameters are missing in the .ini
         if not self.configParser.has_option( 'options', 'universe' ) \

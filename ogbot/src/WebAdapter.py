@@ -5,12 +5,12 @@
 #      Copyright (c) 2006 by kovan 
 #
 #      *************************************************************************
-#      *                                                                         *
+#      *                                                                       *
 #      * This program is free software; you can redistribute it and/or modify  *
 #      * it under the terms of the GNU General Public License as published by  *
-#      * the Free Software Foundation; either version 2 of the License, or      *
-#      * (at your option) any later version.                                      *
-#      *                                                                         *
+#      * the Free Software Foundation; either version 2 of the License, or     *
+#      * (at your option) any later version.                                   *
+#      *                                                                       *
 #      *************************************************************************
 #
 import time
@@ -69,7 +69,9 @@ del( spyReportTmp2 )
 
 
 def parseTime( strTime ):
-    return datetime( *time.strptime( "%s %s" % ( datetime.now().year, strTime ), "%Y %a %b %d %H:%M:%S" )[0:6] ) # example: 2006 Mon Aug 7 21:08:52                        
+    strTime2 = "_%s %s_" % ( datetime.now().year, strTime )
+    tuple = time.strptime(strTime2, "%Y %a %b %d %H:%M:%S" ) # example: 2006 Mon Aug 7 21:08:52                        
+    return datetime( *tuple[0:6] )
 
 class WebAdapter( object ):
     """Encapsulates the details of the communication with the ogame servers. This involves
