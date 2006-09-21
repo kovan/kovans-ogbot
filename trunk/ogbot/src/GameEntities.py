@@ -5,12 +5,12 @@
 #      Copyright (c) 2006 by kovan 
 #
 #      *************************************************************************
-#      *                                                                         *
+#      *                                                                       *
 #      * This program is free software; you can redistribute it and/or modify  *
 #      * it under the terms of the GNU General Public License as published by  *
-#      * the Free Software Foundation; either version 2 of the License, or      *
-#      * (at your option) any later version.                                      *
-#      *                                                                         *
+#      * the Free Software Foundation; either version 2 of the License, or     *
+#      * (at your option) any later version.                                   *
+#      *                                                                       *
 #      *************************************************************************
 #
 
@@ -92,7 +92,7 @@ class Coords( object ):
         return self.tuple() == otherCoords.tuple() and self.coordsType == otherCoords.coordsType 
     
     def __ne__( self, otherCoords ):
-        return not self.__eq__()
+        return not self.__eq__(otherCoords)
     
     def distanceTo( self, coords ):
         
@@ -142,7 +142,7 @@ class Resources( object ):
     def __eq__( self, otherResources ):
         return self.tuple() == otherResources.tuple()
     def __ne__( self, otherResources ):
-        return not self.__eq__()
+        return not self.__eq__(otherResources)
     def __repr__( self ):
         return "M: %s C: %s D: %s (total: %s)" % ( self.metal, self.crystal, self.deuterium, self.total() )
     def __add__( self, toAdd ):

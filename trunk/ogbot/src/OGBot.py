@@ -2,17 +2,18 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #      Kovan's OGBot
-#      Copyright (c) 2006 by kovan
+#      Copyright (c) 2006 by kovan 
 #
 #      *************************************************************************
-#      *                                                                         *
+#      *                                                                       *
 #      * This program is free software; you can redistribute it and/or modify  *
 #      * it under the terms of the GNU General Public License as published by  *
-#      * the Free Software Foundation; either version 2 of the License, or      *
-#      * (at your option) any later version.                                      *
-#      *                                                                         *
+#      * the Free Software Foundation; either version 2 of the License, or     *
+#      * (at your option) any later version.                                   *
+#      *                                                                       *
 #      *************************************************************************
 #
+
 # python library:
 
 import sys
@@ -32,12 +33,18 @@ import pickle
 import urllib2
 import itertools
 import os
+
 if os.getcwd().endswith( "src" ):
     os.chdir( ".." )	
-gettext.install( 'ogbot' )
+    
 from datetime import datetime, timedelta
 from optparse import OptionParser
 # bot classes:
+
+ENGLISH = gettext.translation('ogbot', '.')
+SPANISH = gettext.translation('ogbot', '.')
+SPANISH.install()    
+
 
 from GameEntities import *
 from CommonClasses import *
@@ -203,6 +210,7 @@ class Bot( threading.Thread ):
 #        except BotError, e: raise BotFatalError(e)
         self.config.load()
         self._web = WebAdapter(self.config,self._checkThreadQueue,self.gui)
+        print datetime.now()
         self.myPlanets,serverTime = self._web.getMyPlanetsAndServerTime()
         self.serverTimeDelta = datetime.now() - serverTime
 
