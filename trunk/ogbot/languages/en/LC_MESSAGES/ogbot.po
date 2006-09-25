@@ -1,0 +1,326 @@
+# Kovan's OGBot, english translation file.
+# Copyright (C) 2006 kovan
+# FIRST AUTHOR <jsceballos@gmail.com>, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ogbot\n"
+"POT-Creation-Date: 2006-09-19 22:29+CEST\n"
+"PO-Revision-Date: 2006-09-24 03:48+0100\n"
+"Last-Translator: kovan <jsceballos@gmail.com>\n"
+"Language-Team: kovan <jsceballos@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Poedit-Language: English\n"
+"X-Poedit-SourceCharset: iso-8859-1\n"
+
+#: Constants.py:28
+msgid "Nave pequeña de carga"
+msgstr ""
+
+#: Constants.py:29
+msgid "Nave grande de carga"
+msgstr ""
+
+#: Constants.py:30
+msgid "Cazador ligero"
+msgstr ""
+
+#: Constants.py:31
+msgid "Cazador pesado"
+msgstr ""
+
+#: Constants.py:32
+msgid "Crucero"
+msgstr ""
+
+#: Constants.py:33
+msgid "Nave de batalla"
+msgstr ""
+
+#: Constants.py:34
+msgid "Colonizador"
+msgstr ""
+
+#: Constants.py:35
+msgid "Reciclador"
+msgstr ""
+
+#: Constants.py:36
+msgid "Sonda de espionaje"
+msgstr ""
+
+#: Constants.py:37
+msgid "Bombardero"
+msgstr ""
+
+#: Constants.py:38
+msgid "Satélite solar"
+msgstr ""
+
+#: Constants.py:39
+msgid "Destructor"
+msgstr ""
+
+#: Constants.py:40
+msgid "Estrella de la muerte"
+msgstr ""
+
+#: Constants.py:42
+msgid "Mina de metal"
+msgstr ""
+
+#: Constants.py:43
+msgid "Mina de cristal"
+msgstr ""
+
+#: Constants.py:44
+msgid "Sintetizador de deuterio"
+msgstr ""
+
+#: Constants.py:45
+msgid "Planta de energía solar"
+msgstr ""
+
+#: Constants.py:46
+msgid "Planta de fusión"
+msgstr ""
+
+#: Constants.py:47
+msgid "Fábrica de Robots"
+msgstr ""
+
+#: Constants.py:48
+msgid "Fábrica de Nanobots"
+msgstr ""
+
+#: Constants.py:49
+msgid "Hangar"
+msgstr ""
+
+#: Constants.py:50
+msgid "Almacén de metal"
+msgstr ""
+
+#: Constants.py:51
+msgid "Almacén de cristal"
+msgstr ""
+
+#: Constants.py:52
+msgid "Contenedor de deuterio"
+msgstr ""
+
+#: Constants.py:53
+msgid "Laboratorio de investigación"
+msgstr ""
+
+#: Constants.py:54
+msgid "Terraformer"
+msgstr ""
+
+#: Constants.py:55
+msgid "Depósito de la Alianza"
+msgstr ""
+
+#: Constants.py:56
+msgid "Base lunar"
+msgstr ""
+
+#: Constants.py:57
+msgid "Sensor Phalanx"
+msgstr ""
+
+#: Constants.py:58
+msgid "Salto cuántico"
+msgstr ""
+
+#: Constants.py:59
+msgid "Silo"
+msgstr ""
+
+#: Constants.py:61
+msgid "Lanzamisiles"
+msgstr ""
+
+#: Constants.py:62
+msgid "Láser pequeño"
+msgstr ""
+
+#: Constants.py:63
+msgid "Láser grande"
+msgstr ""
+
+#: Constants.py:64
+msgid "Cañón Gauss"
+msgstr ""
+
+#: Constants.py:65
+msgid "Cañón iónico"
+msgstr ""
+
+#: Constants.py:66
+msgid "Cañón de plasma"
+msgstr ""
+
+#: Constants.py:67
+msgid "Cúpula pequeña de protección"
+msgstr ""
+
+#: Constants.py:68
+msgid "Cúpula grande de protección"
+msgstr ""
+
+#: Constants.py:69
+msgid "Misil de intercepción"
+msgstr ""
+
+#: Constants.py:70
+msgid "Misil interplanetario"
+msgstr ""
+
+#: Constants.py:72
+msgid "Tecnología de espionaje"
+msgstr ""
+
+#: Constants.py:73
+msgid "Tecnología de computación"
+msgstr ""
+
+#: Constants.py:74
+msgid "Tecnología militar"
+msgstr ""
+
+#: Constants.py:75
+msgid "Tecnología de defensa"
+msgstr ""
+
+#: Constants.py:76
+msgid "Tecnología de blindaje"
+msgstr ""
+
+#: Constants.py:77
+msgid "Tecnología de energía"
+msgstr ""
+
+#: Constants.py:78
+msgid "Tecnología de hiperespacio"
+msgstr ""
+
+#: Constants.py:79
+msgid "Motor de combustión"
+msgstr ""
+
+#: Constants.py:80
+msgid "Motor de impulso"
+msgstr ""
+
+#: Constants.py:81
+msgid "Propulsor hiperespacial"
+msgstr ""
+
+#: Constants.py:82
+msgid "Tecnología láser"
+msgstr ""
+
+#: Constants.py:83
+msgid "Tecnología iónica"
+msgstr ""
+
+#: Constants.py:84
+msgid "Tecnología de plasma"
+msgstr ""
+
+#: Constants.py:85
+msgid "Red de investigación intergaláctica"
+msgstr ""
+
+#: Constants.py:86
+msgid "Tecnología de gravitón"
+msgstr ""
+
+#: WebAdapter.py:36
+msgid "Recursos en"
+msgstr "Resources on"
+
+#: WebAdapter.py:54
+msgid "Flotas"
+msgstr "Fleets"
+
+#: WebAdapter.py:55
+msgid "Defensa"
+msgstr "Defense"
+
+#: WebAdapter.py:56
+msgid "Edificios"
+msgstr "Buildings"
+
+#: WebAdapter.py:57
+msgid "Investigación"
+msgstr "Research"
+
+#: WebAdapter.py:60
+msgid "Hora del servidor"
+msgstr "Server time"
+
+#: WebAdapter.py:63
+msgid "Nivel"
+msgstr "Level"
+
+#: WebAdapter.py:111
+msgid "Universo"
+msgstr "Universe"
+
+#: WebAdapter.py:154
+msgid "Página de errores OGame"
+msgstr "Ogame error page"
+
+#: WebAdapter.py:158
+msgid "Hasta la  próxima!"
+msgstr "Until next time!"
+
+#: WebAdapter.py:158
+msgid "Problema de base de datos"
+msgstr "DB problem"
+
+#: WebAdapter.py:301
+msgid "Se ha alcanzado el máximo de flotas"
+msgstr "Se ha alcanzado el máximo de flotas"
+
+#: WebAdapter.py:338
+msgid "Se ha alcanzado el número máximo de flotas"
+msgstr "Se ha alcanzado el número máximo de flotas"
+
+#: WebAdapter.py:340
+msgid "No seleccionaste ninguna nave"
+msgstr "No seleccionaste ninguna nave"
+
+#: WebAdapter.py:352
+msgid "Hora de llegada"
+msgstr "Hora de llegada"
+
+#: WebAdapter.py:353
+msgid "Hora de vuelta"
+msgstr "Hora de vuelta"
+
+#: WebAdapter.py:356
+msgid "Distancia"
+msgstr "Distance"
+
+#: WebAdapter.py:357
+msgid "Consumo"
+msgstr "Consumption"
+
+#: WebAdapter.py:361
+msgid "Velocidad"
+msgstr "Speed"
+
+#: WebAdapter.py:365
+msgid "Comienzo"
+msgstr "Comienzo"
+
+#: WebAdapter.py:366
+msgid "Objetivo"
+msgstr "Objetivo"
+
