@@ -136,9 +136,10 @@ class Configuration( dict ):
         sourcePlanets = []
         if self.configParser.has_option('options','sourcePlanets'):
             from GameEntities import Coords
-            for coordsStr in self['sourcePlanets'].split(','):
-                coords = Coords(coordsStr)
-                sourcePlanets.append(coords)
+            if '[]' not in self['sourcePlanets']:
+                for coordsStr in self['sourcePlanets'].split(','):
+                    coords = Coords(coordsStr)
+                    sourcePlanets.append(coords)
         self['sourcePlanets'] = sourcePlanets
         
         from Constants import INGAME_TYPES_BY_NAME

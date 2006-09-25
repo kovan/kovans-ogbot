@@ -470,7 +470,7 @@ if __name__ == "__main__":
         except OSError, e: 
             if "File exists" in e: pass             
     if __debug__:
-        try: os.makedirs ( os.path.dirname('debug') )
+        try: os.makedirs ( 'debug' )
         except OSError, e: 
             if "File exists" in e: pass      
 
