@@ -149,7 +149,14 @@ class WebAdapter( object ):
                                 
                 response = self.browser.open( request )
                 p = response.read()
-                #if __debug__:
+                if __debug__:
+                    files = os.listdir('debug')
+                    if len(files) >= 20:
+                        files.sort()
+                        os.remove('debug/'+files[0])
+                    file = open('debug/'+str(datetime.now())+".html",'w')
+                    file.write(p)
+                    file.close()
                     
                 response.seek( 0 )
                 if "<title>%s</title>" % _( "Página de errores OGame" ) in p:
