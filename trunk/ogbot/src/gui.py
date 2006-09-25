@@ -69,8 +69,8 @@ class OptionsDialog(baseclass,formclass):
         index = self.attackingShipComboBox.findText(INGAME_TYPES_BY_NAME[self.config.attackingShip].fullName)
         self.attackingShipComboBox.setCurrentIndex(index)
         
-        index = self.serverLanguajeComboBox.findText(self.config.serverLanguaje.title())
-        self.serverLanguajeComboBox.setCurrentIndex(index)
+        index = self.serverLanguageComboBox.findText(self.config.serverLanguage.title())
+        self.serverLanguageComboBox.setCurrentIndex(index)
                 
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")
@@ -94,8 +94,8 @@ class OptionsDialog(baseclass,formclass):
         selected = str(self.attackingShipComboBox.currentText().toAscii())
         self.config['attackingShip'] = INGAME_TYPES_BY_FULLNAME[selected].name
 
-        selected = str(self.serverLanguajeComboBox.currentText().toAscii()).lower()
-        self.config['serverLanguaje'] = selected
+        selected = str(self.serverLanguageComboBox.currentText().toAscii()).lower()
+        self.config['serverLanguage'] = selected
         
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")

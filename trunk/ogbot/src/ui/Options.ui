@@ -275,7 +275,7 @@
     </rect>
    </property>
    <property name="text" >
-    <string>Server languaje</string>
+    <string>Server language</string>
    </property>
    <property name="buddy" >
     <cstring>passwordLineEdit</cstring>
@@ -422,7 +422,7 @@
     </property>
    </widget>
   </widget>
-  <widget class="QComboBox" name="serverLanguajeComboBox" >
+  <widget class="QComboBox" name="serverLanguageComboBox" >
    <property name="geometry" >
     <rect>
      <x>260</x>
