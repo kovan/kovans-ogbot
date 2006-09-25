@@ -20,7 +20,6 @@ import urllib
 import types
 import pickle
 import urllib2
-import types
 import copy
 import sys
 import httplib
@@ -150,6 +149,8 @@ class WebAdapter( object ):
                                 
                 response = self.browser.open( request )
                 p = response.read()
+                #if __debug__:
+                    
                 response.seek( 0 )
                 if "<title>%s</title>" % _( "Página de errores OGame" ) in p:
                     if "Esta cuenta no existe" in p:                 

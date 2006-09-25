@@ -41,8 +41,8 @@ from datetime import datetime, timedelta
 from optparse import OptionParser
 # bot classes:
 
-ENGLISH = gettext.translation('ogbot', '.')
-SPANISH = gettext.translation('ogbot', '.')
+ENGLISH = gettext.translation('ogbot','languages',languages=['en'])
+SPANISH = gettext.translation('ogbot','languages',languages=['es'])
 SPANISH.install()    
 
 
@@ -451,6 +451,7 @@ class Bot( threading.Thread ):
 
 
 if __name__ == "__main__":
+    print _("Flotas")
     
     parser = OptionParser()
     parser.add_option("-c", "--console",action="store_true",help="Run in console mode'")
@@ -468,6 +469,10 @@ if __name__ == "__main__":
         try: os.makedirs ( os.path.dirname(path) )
         except OSError, e: 
             if "File exists" in e: pass             
+    if __debug__:
+        try: os.makedirs ( os.path.dirname('debug') )
+        except OSError, e: 
+            if "File exists" in e: pass      
 
     logging.basicConfig( level=logging.CRITICAL, format = '%(message)s' ) 
     handler = logging.handlers.RotatingFileHandler( os.path.abspath( FILE_PATHS['log'] ), 'a', 100000, 10 )

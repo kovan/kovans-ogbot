@@ -1,12 +1,12 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR ORGANIZATION
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Kovan's OGBot, spanish translation file.
+# Copyright (C) 2006 kovan
+# FIRST AUTHOR <jsceballos@gmail.com>, 2006.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: ogbot\n"
 "POT-Creation-Date: 2006-09-19 22:29+CEST\n"
-"PO-Revision-Date: 2006-09-19 22:41+0100\n"
+"PO-Revision-Date: 2006-09-25 02:48+0100\n"
 "Last-Translator: kovan <jsceballos@gmail.com>\n"
 "Language-Team: kovan <jsceballos@gmail.com>\n"
 "MIME-Version: 1.0\n"
@@ -18,271 +18,271 @@ msgstr ""
 
 #: Constants.py:28
 msgid "Nave pequeña de carga"
-msgstr ""
+msgstr "Nave pequeña de carga"
 
 #: Constants.py:29
 msgid "Nave grande de carga"
-msgstr ""
+msgstr "Nave grande de carga"
 
 #: Constants.py:30
 msgid "Cazador ligero"
-msgstr ""
+msgstr "Cazador ligero"
 
 #: Constants.py:31
 msgid "Cazador pesado"
-msgstr ""
+msgstr "Cazador pesado"
 
 #: Constants.py:32
 msgid "Crucero"
-msgstr ""
+msgstr "Crucero"
 
 #: Constants.py:33
 msgid "Nave de batalla"
-msgstr ""
+msgstr "Nave de batalla"
 
 #: Constants.py:34
 msgid "Colonizador"
-msgstr ""
+msgstr "Colonizador"
 
 #: Constants.py:35
 msgid "Reciclador"
-msgstr ""
+msgstr "Reciclador"
 
 #: Constants.py:36
 msgid "Sonda de espionaje"
-msgstr ""
+msgstr "Sonda de espionaje"
 
 #: Constants.py:37
 msgid "Bombardero"
-msgstr ""
+msgstr "Bombardero"
 
 #: Constants.py:38
 msgid "Satélite solar"
-msgstr ""
+msgstr "Satélite solar"
 
 #: Constants.py:39
 msgid "Destructor"
-msgstr ""
+msgstr "Destructor"
 
 #: Constants.py:40
 msgid "Estrella de la muerte"
-msgstr ""
+msgstr "Estrella de la muerte"
 
 #: Constants.py:42
 msgid "Mina de metal"
-msgstr ""
+msgstr "Mina de metal"
 
 #: Constants.py:43
 msgid "Mina de cristal"
-msgstr ""
+msgstr "Mina de cristal"
 
 #: Constants.py:44
 msgid "Sintetizador de deuterio"
-msgstr ""
+msgstr "Sintetizador de deuterio"
 
 #: Constants.py:45
 msgid "Planta de energía solar"
-msgstr ""
+msgstr "Planta de energía solar"
 
 #: Constants.py:46
 msgid "Planta de fusión"
-msgstr ""
+msgstr "Planta de fusión"
 
 #: Constants.py:47
 msgid "Fábrica de Robots"
-msgstr ""
+msgstr "Fábrica de Robots"
 
 #: Constants.py:48
 msgid "Fábrica de Nanobots"
-msgstr ""
+msgstr "Fábrica de Nanobots"
 
 #: Constants.py:49
 msgid "Hangar"
-msgstr ""
+msgstr "Hangar"
 
 #: Constants.py:50
 msgid "Almacén de metal"
-msgstr ""
+msgstr "Almacén de metal"
 
 #: Constants.py:51
 msgid "Almacén de cristal"
-msgstr ""
+msgstr "Almacén de cristal"
 
 #: Constants.py:52
 msgid "Contenedor de deuterio"
-msgstr ""
+msgstr "Contenedor de deuterio"
 
 #: Constants.py:53
 msgid "Laboratorio de investigación"
-msgstr ""
+msgstr "Laboratorio de investigación"
 
 #: Constants.py:54
 msgid "Terraformer"
-msgstr ""
+msgstr "Terraformer"
 
 #: Constants.py:55
 msgid "Depósito de la Alianza"
-msgstr ""
+msgstr "Depósito de la Alianza"
 
 #: Constants.py:56
 msgid "Base lunar"
-msgstr ""
+msgstr "Base lunar"
 
 #: Constants.py:57
 msgid "Sensor Phalanx"
-msgstr ""
+msgstr "Sensor Phalanx"
 
 #: Constants.py:58
 msgid "Salto cuántico"
-msgstr ""
+msgstr "Salto cuántico"
 
 #: Constants.py:59
 msgid "Silo"
-msgstr ""
+msgstr "Silo"
 
 #: Constants.py:61
 msgid "Lanzamisiles"
-msgstr ""
+msgstr "Lanzamisiles"
 
 #: Constants.py:62
 msgid "Láser pequeño"
-msgstr ""
+msgstr "Láser pequeño"
 
 #: Constants.py:63
 msgid "Láser grande"
-msgstr ""
+msgstr "Láser grande"
 
 #: Constants.py:64
 msgid "Cañón Gauss"
-msgstr ""
+msgstr "Cañón Gauss"
 
 #: Constants.py:65
 msgid "Cañón iónico"
-msgstr ""
+msgstr "Cañón iónico"
 
 #: Constants.py:66
 msgid "Cañón de plasma"
-msgstr ""
+msgstr "Cañón de plasma"
 
 #: Constants.py:67
 msgid "Cúpula pequeña de protección"
-msgstr ""
+msgstr "Cúpula pequeña de protección"
 
 #: Constants.py:68
 msgid "Cúpula grande de protección"
-msgstr ""
+msgstr "Cúpula grande de protección"
 
 #: Constants.py:69
 msgid "Misil de intercepción"
-msgstr ""
+msgstr "Misil de intercepción"
 
 #: Constants.py:70
 msgid "Misil interplanetario"
-msgstr ""
+msgstr "Misil interplanetario"
 
 #: Constants.py:72
 msgid "Tecnología de espionaje"
-msgstr ""
+msgstr "Tecnología de espionaje"
 
 #: Constants.py:73
 msgid "Tecnología de computación"
-msgstr ""
+msgstr "Tecnología de computación"
 
 #: Constants.py:74
 msgid "Tecnología militar"
-msgstr ""
+msgstr "Tecnología militar"
 
 #: Constants.py:75
 msgid "Tecnología de defensa"
-msgstr ""
+msgstr "Tecnología de defensa"
 
 #: Constants.py:76
 msgid "Tecnología de blindaje"
-msgstr ""
+msgstr "Tecnología de blindaje"
 
 #: Constants.py:77
 msgid "Tecnología de energía"
-msgstr ""
+msgstr "Tecnología de energía"
 
 #: Constants.py:78
 msgid "Tecnología de hiperespacio"
-msgstr ""
+msgstr "Tecnología de hiperespacio"
 
 #: Constants.py:79
 msgid "Motor de combustión"
-msgstr ""
+msgstr "Motor de combustión"
 
 #: Constants.py:80
 msgid "Motor de impulso"
-msgstr ""
+msgstr "Motor de impulso"
 
 #: Constants.py:81
 msgid "Propulsor hiperespacial"
-msgstr ""
+msgstr "Propulsor hiperespacial"
 
 #: Constants.py:82
 msgid "Tecnología láser"
-msgstr ""
+msgstr "Tecnología láser"
 
 #: Constants.py:83
 msgid "Tecnología iónica"
-msgstr ""
+msgstr "Tecnología iónica"
 
 #: Constants.py:84
 msgid "Tecnología de plasma"
-msgstr ""
+msgstr "Tecnología de plasma"
 
 #: Constants.py:85
 msgid "Red de investigación intergaláctica"
-msgstr ""
+msgstr "Red de investigación intergaláctica"
 
 #: Constants.py:86
 msgid "Tecnología de gravitón"
-msgstr ""
+msgstr "Tecnología de gravitón"
 
 #: WebAdapter.py:36
 msgid "Recursos en"
-msgstr "Resources on"
+msgstr "Recursos en"
 
 #: WebAdapter.py:54
 msgid "Flotas"
-msgstr "Fleets"
+msgstr "Flotas"
 
 #: WebAdapter.py:55
 msgid "Defensa"
-msgstr "Defense"
+msgstr "Defensa"
 
 #: WebAdapter.py:56
 msgid "Edificios"
-msgstr "Buildings"
+msgstr "Edificios"
 
 #: WebAdapter.py:57
 msgid "Investigación"
-msgstr "Research"
+msgstr "Investigación"
 
 #: WebAdapter.py:60
 msgid "Hora del servidor"
-msgstr "Server time"
+msgstr "Hora del servidor"
 
 #: WebAdapter.py:63
 msgid "Nivel"
-msgstr "Level"
+msgstr "Nivel"
 
 #: WebAdapter.py:111
 msgid "Universo"
-msgstr "Universe"
+msgstr "Universo"
 
 #: WebAdapter.py:154
 msgid "Página de errores OGame"
-msgstr "Ogame error page"
+msgstr "Página de errores OGame"
 
 #: WebAdapter.py:158
 msgid "Hasta la  próxima!"
-msgstr "Until next time!"
+msgstr "Hasta la  próxima!"
 
 #: WebAdapter.py:158
 msgid "Problema de base de datos"
-msgstr "DB problem"
+msgstr "Problema de base de datos"
 
 #: WebAdapter.py:301
 msgid "Se ha alcanzado el máximo de flotas"
@@ -306,15 +306,15 @@ msgstr "Hora de vuelta"
 
 #: WebAdapter.py:356
 msgid "Distancia"
-msgstr "Distance"
+msgstr "Distancia"
 
 #: WebAdapter.py:357
 msgid "Consumo"
-msgstr "Consumption"
+msgstr "Consumo"
 
 #: WebAdapter.py:361
 msgid "Velocidad"
-msgstr "Speed"
+msgstr "Velocidad"
 
 #: WebAdapter.py:365
 msgid "Comienzo"
