@@ -13,6 +13,7 @@
 #      *                                                                       *
 #      *************************************************************************
 #
+import codecs
 
 # python library:
 
@@ -20,15 +21,13 @@ import sys
 sys.path.append('lib')
 sys.path.append('src')
 
-import gc
-import bsddb, anydbm, dbhash, dumbdbm
 import logging, logging.handlers
 import threading
 import traceback
 from Queue import *
 import copy
 import time
-import gettext
+
 import pickle
 import urllib2
 import itertools
@@ -41,11 +40,6 @@ from datetime import datetime, timedelta
 from optparse import OptionParser
 # bot classes:
 
-ENGLISH = gettext.translation('ogbot', 'languages', languages=['en'])
-SPANISH = gettext.translation('ogbot', 'languages', languages=['es'])
-ENGLISH.install()    
-
-
 from GameEntities import *
 from CommonClasses import *
 from WebAdapter import WebAdapter
@@ -57,8 +51,7 @@ def _calculateServerTime(delta):
     return delta + datetime.now()
 
 class ResourceSimulation(object):
-    def __init__(self, inactiveCheckTime, baseResources, mines):
-        self.inactiveCheckTime = inactiveCheckTime
+    def __init__(self, baseResources, mines):
         self.simulatedResources = copy.copy(baseResources)
 
         if mines is not None:
@@ -177,12 +170,8 @@ class Bot(threading.Thread):
         self.myPlanets = []
         self.simulations = []
         self.config.load()
-        translations = {
-        'english': gettext.translation('ogbot', 'languages', languages=['en']),
-        'spanish': gettext.translation('ogbot', 'languages', languages=['es']),
-        #'italian': gettext.translation('ogbot', 'languages', languages=['it'])
-        }
-        translations[self.config.serverLanguage.lower()].install()
+        self.allTranslations = Translations()
+
     
             
     def run(self):
@@ -211,7 +200,7 @@ class Bot(threading.Thread):
             self._web.saveState()
         
     def _connect(self):
-        self._web = WebAdapter(self.config, self._checkThreadQueue, self.gui)
+        self._web = WebAdapter(self.config, self.allTranslations, self.gui)
         self.myPlanets, serverTime = self._web.getMyPlanetsAndServerTime()
         self.serverTimeDelta = datetime.now() - serverTime
 
@@ -222,7 +211,7 @@ class Bot(threading.Thread):
         self._checkThreadQueue()
         probesToSend, attackRadio = self.config.probesToSend, int(self.config.attackRadio)
 
-        self.sourcePlanet = self.myPlanets[0]
+        self.sourcePlanet = self.myPlanets[8]
         mySolarSystem = self.sourcePlanet.coords.solarSystem
         notArrivedEspionages = {}
         planetsToSpy = []
@@ -241,7 +230,7 @@ class Bot(threading.Thread):
         inactivePlanets = self._findInactivePlanets(range(mySolarSystem - attackRadio, mySolarSystem + attackRadio))
         
         # spy and create a new simulation object for new ones, and
-        # restore simulation and planet data and reset inactiveCheckTime for old ones
+        # restore simulation and planet data for old ones
 
         newPlanets = []
         for planet in inactivePlanets:
@@ -249,13 +238,12 @@ class Bot(threading.Thread):
             if len(loadedPlanets): 
                 planet.spyReportHistory = loadedPlanets[0].spyReportHistory
                 self.simulations[planet] = loadedSimulations[loadedPlanets[0]]
-                self.simulations[planet].inactiveCheckTime = datetime.now()
             else: newPlanets.append(planet)
 
         self._spyPlanets(newPlanets, probesToSend)
         for planet in newPlanets:
             lastReport = planet.spyReportHistory[-1]
-            self.simulations[planet] = ResourceSimulation(datetime.now(), lastReport.resources, lastReport.buildings)
+            self.simulations[planet] = ResourceSimulation(lastReport.resources, lastReport.buildings)
 
         del(newPlanets, inactivePlanets)
         
@@ -286,7 +274,17 @@ class Bot(threading.Thread):
                     
                 targetPlanet = (x[0] for x in planets if x[0] not in notArrivedEspionages and x[0].spyReportHistory[-1].isUndefended()).next()
 
-                try:                
+                try:
+#                    solarSystem = self._web.getSolarSystem(targetPlanet.coords.galaxy, targetPlanet.coords.solarSystem)                        
+#      
+#                    for planet in solarSystem.values():
+#                        # ha dejado de ser inactivo
+#                        if 'inactive' not in planet.ownerStatus and 
+#                        self.simulations[str(planet.coords)]
+#                        # ha pasado a estar inactivo
+#                        # se mantiene inactivo
+#                        # se mantiene activo
+                    
                     if targetPlanet.spyReportHistory[-1].getAge(self.serverTime()).seconds < 600:
                         # ATTACK
                         simulation =  self.simulations[targetPlanet]
@@ -352,7 +350,10 @@ class Bot(threading.Thread):
                     inactivePlanets.append(planet)
         
         return inactivePlanets
+    
 
+        solarSystem = self._web.getSolarSystem(galaxy, solarSystem)    
+        
     def _spyPlanets(self, planets, probesToSend):
         notArrivedEspionages = {}
         pendingPlanets = copy.copy(planets)
@@ -401,6 +402,7 @@ class Bot(threading.Thread):
         if waitingForSlot: 
             self._eventMgr.waitForSlotEnd()
         return freeSlots
+    
     
     def launchMission(self, mission, waitForFreeSlot=True, waitIfNoShips=True):
         waitingForShips = False
@@ -453,7 +455,6 @@ class Bot(threading.Thread):
 
 
 if __name__ == "__main__":
-    print _("Flotas")
     
     parser = OptionParser()
     parser.add_option("-c", "--console", action="store_true", help="Run in console mode'")

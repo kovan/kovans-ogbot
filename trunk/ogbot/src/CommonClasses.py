@@ -13,6 +13,7 @@
 #      *                                                                       *
 #      *************************************************************************
 #
+import codecs
 
 import re
 import shelve
@@ -104,8 +105,7 @@ class Configuration(dict):
         self['universe'] = 0
         self['username'] = ''
         self['password'] = ''
-        self['webpage'] = 'ogame.com.es'
-        self['serverLanguage'] = 'spanish'        
+        self['webpage'] = 'ogame.com.es'      
         self['attackRadio'] = 20
         self['probesToSend'] = 3
         self['attackingShip'] = 'smallCargo'
@@ -155,6 +155,23 @@ class Configuration(dict):
         self.configParser.write(open(self.file, 'w'))
 
     
+class Translations(dict):
+    def __init__(self):
+        for fileName in os.listdir('languages'):
+            fileName, extension = os.path.splitext(fileName)
+
+            if not fileName or fileName.startswith('.') or extension != '.ini':
+                continue
+            parser = ConfigParser.SafeConfigParser()
+            parser.optionxform = str # prevent ini parser from converting names to lowercase           
+            file = codecs.open('languages/'+fileName+extension, "r", "utf-8" ) # language files are codified in UTF-8
+            parser.readfp(file)
+            translation = {}
+            for section in parser.sections():
+                translation.update((key, value.encode('ISO-8859-1')) for key, value in parser.items(section))
+            self[translation['languageCode']] = translation 
+        # after all this access to a translated string is obtained thru p.e.: self['spanish']['smallCargo']
+        
 class Enum(object):
     @classmethod
     def toStr(self, type):

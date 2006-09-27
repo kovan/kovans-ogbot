@@ -57,7 +57,7 @@ class OptionsDialog(baseclass,formclass):
         QObject.connect(self.addPlanetButton,SIGNAL("clicked()"),self.addPlanetToList)        
         QObject.connect(self.removePlanetButton,SIGNAL("clicked()"),self.removePlanetFromList)                
         self.enableOrDisablePlanetList(False)
-        self.attackingShipComboBox.addItems([str(shiptype) for shiptype in INGAME_TYPES_BY_FULLNAME.values() if isinstance(shiptype,Ship)])
+        self.attackingShipComboBox.addItems([str(shiptype) for shiptype in INGAME_TYPES if isinstance(shiptype,Ship)])
         self.loadOptions()
         
     def loadOptions(self):
@@ -66,12 +66,10 @@ class OptionsDialog(baseclass,formclass):
         try: self.config.load()
         except BotError: pass
 
-        index = self.attackingShipComboBox.findText(INGAME_TYPES_BY_NAME[self.config.attackingShip].fullName)
+        index = self.attackingShipComboBox.findText(self.config.attackingShip)
         self.attackingShipComboBox.setCurrentIndex(index)
         
-        index = self.serverLanguageComboBox.findText(self.config.serverLanguage.title())
-        self.serverLanguageComboBox.setCurrentIndex(index)
-                
+               
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")
             control.setText(self.config[i])
@@ -91,11 +89,8 @@ class OptionsDialog(baseclass,formclass):
             QMessageBox.critical(self,"Error","Required data missing")
             return
         
-        selected = str(self.attackingShipComboBox.currentText().toAscii())
-        self.config['attackingShip'] = INGAME_TYPES_BY_FULLNAME[selected].name
 
-        selected = str(self.serverLanguageComboBox.currentText().toAscii()).lower()
-        self.config['serverLanguage'] = selected
+        self.config['attackingShip'] = str(self.attackingShipComboBox.currentText().toAscii())
         
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")

@@ -21,16 +21,15 @@ from CommonClasses import Enum
 
 
 class IngameType(object):
-    def __init__(self, name, fullName, code):
+    def __init__(self, name, code):
         self.name = name         
-        self.fullName = fullName
         self.code = code    
     def __repr__(self):
-        return self.fullName    
+        return self.name    
     
 class Ship(IngameType):
-    def __init__(self, name, fullName, code, capacity, consumption):
-        super(Ship, self).__init__(name, fullName, code)
+    def __init__(self, name, code, capacity, consumption):
+        super(Ship, self).__init__(name, code)
         self.capacity = capacity         
         self.consumption = consumption
 class Building(IngameType): pass

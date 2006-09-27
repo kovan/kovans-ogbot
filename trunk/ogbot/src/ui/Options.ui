@@ -9,7 +9,7 @@
     <x>0</x>
     <y>0</y>
     <width>386</width>
-    <height>463</height>
+    <height>421</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -30,7 +30,7 @@
    <property name="geometry" >
     <rect>
      <x>330</x>
-     <y>350</y>
+     <y>310</y>
      <width>51</width>
      <height>22</height>
     </rect>
@@ -40,7 +40,7 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>410</y>
+     <y>370</y>
      <width>46</width>
      <height>14</height>
     </rect>
@@ -53,29 +53,13 @@
    <property name="geometry" >
     <rect>
      <x>330</x>
-     <y>380</y>
+     <y>340</y>
      <width>51</width>
      <height>22</height>
     </rect>
    </property>
    <property name="minimum" >
     <number>1</number>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="cancelButton" >
-   <property name="geometry" >
-    <rect>
-     <x>290</x>
-     <y>430</y>
-     <width>91</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Cancel</string>
-   </property>
-   <property name="autoDefault" >
-    <bool>false</bool>
    </property>
   </widget>
   <widget class="QLineEdit" name="usernameLineEdit" >
@@ -166,7 +150,7 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>410</y>
+     <y>370</y>
      <width>371</width>
      <height>20</height>
     </rect>
@@ -179,7 +163,7 @@
    <property name="geometry" >
     <rect>
      <x>190</x>
-     <y>430</y>
+     <y>390</y>
      <width>92</width>
      <height>26</height>
     </rect>
@@ -195,7 +179,7 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>370</y>
+     <y>330</y>
      <width>221</width>
      <height>36</height>
     </rect>
@@ -211,7 +195,7 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>350</y>
+     <y>310</y>
      <width>291</width>
      <height>20</height>
     </rect>
@@ -223,21 +207,11 @@
     <cstring>attackRadioSpinBox</cstring>
    </property>
   </widget>
-  <widget class="QComboBox" name="attackingShipComboBox" >
-   <property name="geometry" >
-    <rect>
-     <x>200</x>
-     <y>320</y>
-     <width>181</width>
-     <height>23</height>
-    </rect>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_2" >
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>320</y>
+     <y>280</y>
      <width>181</width>
      <height>20</height>
     </rect>
@@ -265,22 +239,6 @@
     <cstring>passwordLineEdit</cstring>
    </property>
   </widget>
-  <widget class="QLabel" name="label_15" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>130</y>
-     <width>221</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Server language</string>
-   </property>
-   <property name="buddy" >
-    <cstring>passwordLineEdit</cstring>
-   </property>
-  </widget>
   <widget class="QLineEdit" name="passwordLineEdit" >
    <property name="geometry" >
     <rect>
@@ -298,7 +256,7 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>170</y>
+     <y>130</y>
      <width>371</width>
      <height>131</height>
     </rect>
@@ -422,25 +380,31 @@
     </property>
    </widget>
   </widget>
-  <widget class="QComboBox" name="serverLanguageComboBox" >
+  <widget class="QComboBox" name="attackingShipComboBox" >
    <property name="geometry" >
     <rect>
-     <x>260</x>
-     <y>130</y>
-     <width>121</width>
+     <x>200</x>
+     <y>280</y>
+     <width>181</width>
      <height>23</height>
     </rect>
    </property>
-   <item>
-    <property name="text" >
-     <string>Spanish</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>English</string>
-    </property>
-   </item>
+  </widget>
+  <widget class="QPushButton" name="cancelButton" >
+   <property name="geometry" >
+    <rect>
+     <x>290</x>
+     <y>390</y>
+     <width>91</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Cancel</string>
+   </property>
+   <property name="autoDefault" >
+    <bool>false</bool>
+   </property>
   </widget>
  </widget>
  <pixmapfunction></pixmapfunction>
