@@ -250,7 +250,7 @@ class Bot(threading.Thread):
         file = open(FILE_PATHS['planets'], 'w')
         pickle.dump(self.simulations, file)
         file.close()
-
+        self.planets = dict([ (str(planet.coords), planet) for planet in self.simulations.keys() ])
         
         while True:
             self._checkThreadQueue()
@@ -275,15 +275,26 @@ class Bot(threading.Thread):
                 targetPlanet = (x[0] for x in planets if x[0] not in notArrivedEspionages and x[0].spyReportHistory[-1].isUndefended()).next()
 
                 try:
-#                    solarSystem = self._web.getSolarSystem(targetPlanet.coords.galaxy, targetPlanet.coords.solarSystem)                        
-#      
-#                    for planet in solarSystem.values():
-#                        # ha dejado de ser inactivo
-#                        if 'inactive' not in planet.ownerStatus and 
-#                        self.simulations[str(planet.coords)]
-#                        # ha pasado a estar inactivo
-#                        # se mantiene inactivo
-#                        # se mantiene activo
+                    solarSystem = self._web.getSolarSystem(targetPlanet.coords.galaxy, targetPlanet.coords.solarSystem)                        
+      
+                    for planet in solarSystem.values():
+                        storedPlanet = self.simulations.get(str(planet.coords))
+                        if 'inactive' in planet.ownerStatus:
+                            if not storedPlanet:
+                                # ha pasado a estar inactivo
+                                self.simulations[planet]
+                                planetsToSpy.append()
+                            else:
+                                # se mantiene inactivo
+                                pass
+                        else:
+                            if storedPlanet:
+                                # ha dejado de estar inactivo:                                
+                                del self.simulations[storedPlanet]
+                            else: 
+                                # se mantiene activo                       
+                                pass
+                             
                     
                     if targetPlanet.spyReportHistory[-1].getAge(self.serverTime()).seconds < 600:
                         # ATTACK
@@ -351,8 +362,6 @@ class Bot(threading.Thread):
         
         return inactivePlanets
     
-
-        solarSystem = self._web.getSolarSystem(galaxy, solarSystem)    
         
     def _spyPlanets(self, planets, probesToSend):
         notArrivedEspionages = {}
