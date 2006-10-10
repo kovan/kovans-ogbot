@@ -299,8 +299,8 @@ class WebAdapter(object):
             
         return reports
         
-    def buildShips(self, ships, planet):
-        return 
+#    def buildShips(self, ships, planet):
+#        return 
         #
         # with python 2.4. sgmlib doesnt parse well indexed controls, all of them get the root name, no index. the bug that corrected it in python 2.5 introduced the bug below
         
