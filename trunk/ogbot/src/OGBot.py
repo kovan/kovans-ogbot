@@ -277,23 +277,23 @@ class Bot(threading.Thread):
                 try:
                     solarSystem = self._web.getSolarSystem(targetPlanet.coords.galaxy, targetPlanet.coords.solarSystem)                        
       
-                    for planet in solarSystem.values():
-                        storedPlanet = self.simulations.get(str(planet.coords))
-                        if 'inactive' in planet.ownerStatus:
-                            if not storedPlanet:
-                                # ha pasado a estar inactivo
-                                self.simulations[planet]
-                                planetsToSpy.append()
-                            else:
-                                # se mantiene inactivo
-                                pass
-                        else:
-                            if storedPlanet:
-                                # ha dejado de estar inactivo:                                
-                                del self.simulations[storedPlanet]
-                            else: 
-                                # se mantiene activo                       
-                                pass
+#                    for planet in solarSystem.values():
+#                        storedPlanet = self.simulations.get(str(planet.coords))
+#                        if 'inactive' in planet.ownerStatus:
+#                            if not storedPlanet:
+#                                # ha pasado a estar inactivo
+#                                self.simulations[planet]
+#                                planetsToSpy.append()
+#                            else:
+#                                # se mantiene inactivo
+#                                pass
+#                        else:
+#                            if storedPlanet:
+#                                # ha dejado de estar inactivo:                                
+#                                del self.simulations[storedPlanet]
+#                            else: 
+#                                # se mantiene activo                       
+#                                pass
                              
                     
                     if targetPlanet.spyReportHistory[-1].getAge(self.serverTime()).seconds < 600:
