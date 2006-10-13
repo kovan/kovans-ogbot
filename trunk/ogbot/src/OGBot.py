@@ -275,8 +275,7 @@ class Bot(threading.Thread):
                 targetPlanet = (x[0] for x in planets if x[0] not in notArrivedEspionages and x[0].spyReportHistory[-1].isUndefended()).next()
 
                 try:
-                    solarSystem = self._web.getSolarSystem(targetPlanet.coords.galaxy, targetPlanet.coords.solarSystem)                        
-      
+#                    solarSystem = self._web.getSolarSystem(targetPlanet.coords.galaxy, targetPlanet.coords.solarSystem)                        
 #                    for planet in solarSystem.values():
 #                        storedPlanet = self.simulations.get(str(planet.coords))
 #                        if 'inactive' in planet.ownerStatus:
