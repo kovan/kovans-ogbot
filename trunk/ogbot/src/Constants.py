@@ -20,7 +20,8 @@ FILE_PATHS = {
     'botstate' :  'botdata/bot.state.dat', 
     'webstate' : 'botdata/webadapter.state.dat', 
     'planetdb' :  'botdata/planets.db', 
-    'planets' : 'botdata/simulations.dat', 
+    'planets' : 'botdata/planets.dat', 
+    'simulations' : 'botdata/simulations.dat',     
     'log' : 'log/ogbot.log', 
 }
 
