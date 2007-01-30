@@ -19,6 +19,7 @@ import os
 import os.path
 import shelve
 import pickle
+import webbrowser
 from datetime import datetime,timedelta
 from Queue import *
 
@@ -89,7 +90,22 @@ class OptionsDialog(baseclass,formclass):
             QMessageBox.critical(self,"Error","Required data missing")
             return
         
+        if self.rotatePlanetsRadio.isChecked():
+            sourcePlanets = [ Coords(str(self.sourcePlanetsList.item(i).text())) for i in range(self.sourcePlanetsList.count()) ]
+            if not sourcePlanets:
+                QMessageBox.critical(self,"Error","No source of attacks planets selected")
+                return
+        else: sourcePlanets = []
+        
+#        this check sould not go in the gui because we can't rely on the use of gui to ensure integrity (.ini file could also be edited manually)
+        if self.config.webpage != self.webpageLineEdit.text() \
+        or self.config.universe != str(self.universeSpinBox.value()):
+            try:
+                os.remove(FILE_PATHS['gamedata'])              
+            except Exception : pass
 
+
+        self.config['sourcePlanets'] = sourcePlanets
         self.config['attackingShip'] = str(self.attackingShipComboBox.currentText().toAscii())
         
         for i in ['webpage','username','password']:
@@ -98,16 +114,7 @@ class OptionsDialog(baseclass,formclass):
         for i in ['universe','attackRadio','probesToSend']:            
             control = getattr(self,i + "SpinBox")
             self.config[i] = str(control.value())        
-        
-        if self.rotatePlanetsRadio.isChecked():
-            sourcePlanets = [ Coords(str(self.sourcePlanetsList.item(i).text())) for i in range(self.sourcePlanetsList.count()) ]
-            if not sourcePlanets:
-                QMessageBox.critical(self,"Error","No source of attacks planets selected")
-                return
                 
-        else: sourcePlanets = []
-        self.config['sourcePlanets'] = sourcePlanets
-        
         self.config.save()
         self.accept()
 
@@ -162,16 +169,18 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
         
         self.splitter.setSizes([230,111,0])
-        self.botActivityLabel.setBackgroundRole(QPalette.AlternateBase) # background of a ligh color
+        #self.botActivityLabel.setBackgroundRole(QPalette.AlternateBase) # background of a ligh color
         self.setStatusBar(None)
         self.spyReportsTree.header().setResizeMode(QHeaderView.Stretch)
         
         self.planetsTree.header().setResizeMode(QHeaderView.Stretch)                
         self.botActivityTree.header().setResizeMode(QHeaderView.Interactive)
         self.botActivityTree.header().setStretchLastSection(False)
-        self.botActivityTree.header().resizeSection(1,60)                
-        self.botActivityTree.header().resizeSection(4,65)        
-        self.progressBar.setVisible(False)
+        self.botActivityTree.header().resizeSection(0,40)                
+        self.botActivityTree.header().resizeSection(1,150)
+        self.botActivityTree.header().resizeSection(2,150)        
+        self.botActivityTree.header().resizeSection(5,350)        
+        #self.progressBar.setVisible(False)
                 
         for i in ["fleet","defense","buildings","research"]:
             tree = getattr(self,i + "Tree")
@@ -227,7 +236,7 @@ class MainWindow(baseclass,formclass):
                 self.bot.join()
             self.bot = Bot(self)
             self.bot.start()
-            self.botActivityLabel.setText("Starting bot...")
+            #self.botActivityLabel.setText("Starting bot...")
             self.setBotStatusRunning()
             self.startButton.setText("Pause")
             self.stopButton.setEnabled(True)
@@ -246,20 +255,23 @@ class MainWindow(baseclass,formclass):
             self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.stop))
         else: return
         self.stopButton.setEnabled(False)
+        self.launchBrowserButton.setEnabled(False)        
         self.startButton.setText("Start")
         self.botStatusLabel.setPalette(QPalette(MyColors.lightRed))
         self.botStatusLabel.setText("Stopped")        
-        self.botActivityLabel.setText("Stopped")
+        #self.botActivityLabel.setText("Stopped")
         self.connectionStatusLabel.setText("")    
         self.connectionStatusLabel.setPalette(self.palette())
         
     def launchBrowser(self):
-        command = "cmd /c start http://%s/game/index.php?session=%s" % (self.server,self.session)
-        QProcess(self).start(command)
+        webbrowser.open("http://%s/game/index.php?session=%s" % (self.server,self.session)) 
+#        command = "cmd /c start http://%s/game/index.php?session=%s" % (self.server,self.session)
+#        QProcess(self).start(command)
         
     def viewLog(self):
-        command = 'cmd /c start "%s"' % FILE_PATHS['log']
-        QProcess(self).start(command)
+#        command = 'cmd /c start "%s"' % FILE_PATHS['log']
+#        QProcess(self).start(command)
+        pass
 
     def showAbout(self):
         window = AboutDialog()
@@ -463,6 +475,33 @@ class MainWindow(baseclass,formclass):
     def fatalException(self,exception):
         self.stopClicked()
         QMessageBox.critical(self,"Fatal error","Critical error: %s" % exception)
+    # new GUI messages
+    
+    
+    def simulationsUpdate(self,simulations,rentabilities):
+
+
+        self.botActivityTree.clear() 
+        maxRentability = 0
+        for planet, rentability in rentabilities:
+            if rentability > maxRentability:
+                maxRentability = rentability
+                
+        for planet, rentability in rentabilities:
+            if rentability > 0:
+                value = int (rentability *  255 / maxRentability)
+                backColor = QColor(255-value,255,255-value)
+            try:
+                simulatedResources = simulations[repr(planet.coords)].simulatedResources
+            except KeyError: simulatedResources = '?'
+            
+            item = QTreeWidgetItem([str(rentability),str(planet),planet.owner,planet.alliance,str(simulatedResources)])
+            item.setBackgroundColor(0,backColor)
+            self.botActivityTree.addTopLevelItem(item)        
+            
+    def activityMsg(self,msg):            
+        self.botActivityList.addItem(str(msg))
+        
 
 def guiMain():
     app = QApplication(sys.argv)

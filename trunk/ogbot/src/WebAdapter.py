@@ -101,7 +101,7 @@ class WebAdapter(object):
         self.galaxyForm = form         
 
     def generateRegexps(self,translations):
-        spyReportTmp  = r'%s (?P<planetName>.*?) (?P<coords>\[[0-9:]+\]) \w+ (?P<date>.*?)</td></tr>\n' %  translations['resourcesOn']
+        spyReportTmp  = r'%s (?P<planetName>.*?) (?P<coords>\[[0-9:]+\]) .*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
         spyReportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9]+)</td>\n'
         spyReportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9]+)</td></tr>\n'
         spyReportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9]+)</td>\n'
@@ -219,6 +219,7 @@ class WebAdapter(object):
         page = self._fetchForm(form).read()
         self.session = re.findall(self.REGEXP_SESSION_STR, page)[0]
         self._eventMgr.loggedIn(self.config.username, self.session)
+        self.saveState()
 
     def getMyPlanetsAndServerTime(self):
         page = self._fetchPhp('overview.php').read()
