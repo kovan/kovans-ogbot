@@ -343,7 +343,7 @@ class Bot(threading.Thread):
                         while retry == True:                            
                             retry = False                            
                             finalPlanet, rentability = iterator.next()
-                            if rentability > 0 
+                            if rentability > 0:
                                 if finalPlanet.spyReportHistory[-1].getAge(self.serverTime()).seconds < 600:                            
                                     simulation =  self.simulations[repr(finalPlanet.coords)]
                                     resourcesToSteal = simulation.simulatedResources.half()
