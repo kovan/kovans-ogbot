@@ -1,15 +1,13 @@
 <ui version="4.0" >
  <author>Kovan</author>
- <comment></comment>
- <exportmacro></exportmacro>
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow" >
   <property name="geometry" >
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>702</width>
-    <height>519</height>
+    <width>712</width>
+    <height>668</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -19,13 +17,23 @@
    <iconset resource="resources/resources.qrc" >:/icons/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget" >
-   <layout class="QHBoxLayout" >
+   <layout class="QVBoxLayout" >
     <property name="margin" >
      <number>9</number>
     </property>
     <property name="spacing" >
      <number>6</number>
     </property>
+    <item>
+     <layout class="QHBoxLayout" >
+      <property name="margin" >
+       <number>0</number>
+      </property>
+      <property name="spacing" >
+       <number>6</number>
+      </property>
+     </layout>
+    </item>
     <item>
      <widget class="QToolBox" name="toolBox" >
       <property name="currentIndex" >
@@ -36,14 +44,14 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>546</width>
-         <height>426</height>
+         <width>694</width>
+         <height>493</height>
         </rect>
        </property>
        <attribute name="label" >
         <string>Bot activity</string>
        </attribute>
-       <layout class="QVBoxLayout" >
+       <layout class="QHBoxLayout" >
         <property name="margin" >
          <number>9</number>
         </property>
@@ -51,128 +59,61 @@
          <number>6</number>
         </property>
         <item>
-         <layout class="QHBoxLayout" >
+         <layout class="QVBoxLayout" >
           <property name="margin" >
            <number>0</number>
           </property>
           <property name="spacing" >
-           <number>1</number>
+           <number>6</number>
           </property>
           <item>
-           <widget class="QLabel" name="label_3" >
-            <property name="sizePolicy" >
-             <sizepolicy>
-              <hsizetype>1</hsizetype>
-              <vsizetype>5</vsizetype>
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="maximumSize" >
-             <size>
-              <width>90</width>
-              <height>16777215</height>
-             </size>
-            </property>
+           <widget class="QListWidget" name="botActivityList" />
+          </item>
+          <item>
+           <widget class="QLabel" name="label_4" >
             <property name="text" >
-             <string>Current activity:</string>
+             <string>Most rentable attacks:</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="botActivityLabel" >
-            <property name="minimumSize" >
-             <size>
-              <width>0</width>
-              <height>22</height>
-             </size>
-            </property>
-            <property name="autoFillBackground" >
-             <bool>true</bool>
-            </property>
-            <property name="frameShape" >
-             <enum>QFrame::StyledPanel</enum>
-            </property>
-            <property name="text" >
-             <string/>
-            </property>
-            <property name="indent" >
-             <number>5</number>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QProgressBar" name="progressBar" >
-            <property name="sizePolicy" >
-             <sizepolicy>
-              <hsizetype>0</hsizetype>
-              <vsizetype>0</vsizetype>
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize" >
-             <size>
-              <width>100</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="value" >
-             <number>0</number>
-            </property>
-            <property name="textVisible" >
+           <widget class="QTreeWidget" name="botActivityTree" >
+            <property name="rootIsDecorated" >
              <bool>false</bool>
             </property>
-            <property name="orientation" >
-             <enum>Qt::Horizontal</enum>
-            </property>
+            <column>
+             <property name="text" >
+              <string>Rentability</string>
+             </property>
+            </column>
+            <column>
+             <property name="text" >
+              <string>Target planet</string>
+             </property>
+            </column>
+            <column>
+             <property name="text" >
+              <string>Owner</string>
+             </property>
+            </column>
+            <column>
+             <property name="text" >
+              <string>Alliance</string>
+             </property>
+            </column>
+            <column>
+             <property name="text" >
+              <string>Source planet</string>
+             </property>
+            </column>
+            <column>
+             <property name="text" >
+              <string>Resources</string>
+             </property>
+            </column>
            </widget>
           </item>
          </layout>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_4" >
-          <property name="text" >
-           <string>Analized planets history:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QTreeWidget" name="botActivityTree" >
-          <property name="rootIsDecorated" >
-           <bool>false</bool>
-          </property>
-          <column>
-           <property name="text" >
-            <string>Time</string>
-           </property>
-          </column>
-          <column>
-           <property name="text" >
-            <string>Coords</string>
-           </property>
-          </column>
-          <column>
-           <property name="text" >
-            <string>Planet name</string>
-           </property>
-          </column>
-          <column>
-           <property name="text" >
-            <string>Owner</string>
-           </property>
-          </column>
-          <column>
-           <property name="text" >
-            <string>Alliance</string>
-           </property>
-          </column>
-          <column>
-           <property name="text" >
-            <string>Status</string>
-           </property>
-          </column>
-         </widget>
         </item>
        </layout>
       </widget>
@@ -181,8 +122,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>546</width>
-         <height>426</height>
+         <width>418</width>
+         <height>50</height>
         </rect>
        </property>
        <attribute name="label" >
@@ -196,90 +137,88 @@
          <number>6</number>
         </property>
         <item>
-         <widget class="QWidget" name="widget" >
-          <layout class="QHBoxLayout" >
-           <property name="margin" >
-            <number>0</number>
-           </property>
-           <property name="spacing" >
-            <number>6</number>
-           </property>
-           <item>
-            <widget class="QPushButton" name="reloadDbButton" >
+         <layout class="QHBoxLayout" >
+          <property name="margin" >
+           <number>0</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="reloadDbButton" >
+            <property name="text" >
+             <string>Reload database</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_7" >
+            <property name="text" >
+             <string>Filter:</string>
+            </property>
+            <property name="buddy" >
+             <cstring>planetFilterComboBox</cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="planetFilterComboBox" >
+            <property name="sizePolicy" >
+             <sizepolicy>
+              <hsizetype>5</hsizetype>
+              <vsizetype>0</vsizetype>
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <item>
              <property name="text" >
-              <string>Reload database</string>
+              <string>Coords</string>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_7" >
+            </item>
+            <item>
              <property name="text" >
-              <string>Filter:</string>
+              <string>Name</string>
              </property>
-             <property name="buddy" >
-              <cstring>planetFilterComboBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="planetFilterComboBox" >
-             <property name="sizePolicy" >
-              <sizepolicy>
-               <hsizetype>5</hsizetype>
-               <vsizetype>0</vsizetype>
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <item>
-              <property name="text" >
-               <string>Coords</string>
-              </property>
-             </item>
-             <item>
-              <property name="text" >
-               <string>Name</string>
-              </property>
-             </item>
-             <item>
-              <property name="text" >
-               <string>Owner</string>
-              </property>
-             </item>
-             <item>
-              <property name="text" >
-               <string>Alliance</string>
-              </property>
-             </item>
-             <item>
-              <property name="text" >
-               <string>Owner status</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label" >
+            </item>
+            <item>
              <property name="text" >
-              <string>contains</string>
+              <string>Owner</string>
              </property>
-             <property name="buddy" >
-              <cstring>planetFilterLineEdit</cstring>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="planetFilterLineEdit" />
-           </item>
-           <item>
-            <widget class="QPushButton" name="searchButton" >
+            </item>
+            <item>
              <property name="text" >
-              <string>Search</string>
+              <string>Alliance</string>
              </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
+            </item>
+            <item>
+             <property name="text" >
+              <string>Owner status</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label" >
+            <property name="text" >
+             <string>contains</string>
+            </property>
+            <property name="buddy" >
+             <cstring>planetFilterLineEdit</cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="planetFilterLineEdit" />
+          </item>
+          <item>
+           <widget class="QPushButton" name="searchButton" >
+            <property name="text" >
+             <string>Search</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <widget class="QSplitter" name="splitter" >
@@ -519,7 +458,7 @@
      </widget>
     </item>
     <item>
-     <layout class="QVBoxLayout" >
+     <layout class="QHBoxLayout" >
       <property name="margin" >
        <number>0</number>
       </property>
@@ -527,24 +466,37 @@
        <number>6</number>
       </property>
       <item>
-       <widget class="QPushButton" name="startButton" >
-        <property name="text" >
-         <string>Start</string>
+       <layout class="QVBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="stopButton" >
-        <property name="enabled" >
-         <bool>false</bool>
+        <property name="spacing" >
+         <number>6</number>
         </property>
-        <property name="text" >
-         <string>Stop</string>
-        </property>
-       </widget>
+        <item>
+         <widget class="QPushButton" name="startButton" >
+          <property name="text" >
+           <string>Start</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="stopButton" >
+          <property name="enabled" >
+           <bool>false</bool>
+          </property>
+          <property name="text" >
+           <string>Stop</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <widget class="QPushButton" name="launchBrowserButton" >
+        <property name="enabled" >
+         <bool>false</bool>
+        </property>
         <property name="text" >
          <string>Launch web browser</string>
         </property>
@@ -561,60 +513,58 @@
         <property name="title" >
          <string>Bot status</string>
         </property>
-        <layout class="QVBoxLayout" >
-         <property name="margin" >
-          <number>4</number>
+        <widget class="QLabel" name="botStatusLabel" >
+         <property name="geometry" >
+          <rect>
+           <x>6</x>
+           <y>28</y>
+           <width>121</width>
+           <height>19</height>
+          </rect>
          </property>
-         <property name="spacing" >
-          <number>6</number>
+         <property name="sizePolicy" >
+          <sizepolicy>
+           <hsizetype>5</hsizetype>
+           <vsizetype>0</vsizetype>
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <item>
-          <widget class="QLabel" name="botStatusLabel" >
-           <property name="sizePolicy" >
-            <sizepolicy>
-             <hsizetype>5</hsizetype>
-             <vsizetype>0</vsizetype>
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="font" >
-            <font>
-             <family>MS Shell Dlg 2</family>
-             <pointsize>8</pointsize>
-             <weight>75</weight>
-             <italic>false</italic>
-             <bold>true</bold>
-             <underline>false</underline>
-             <strikeout>false</strikeout>
-            </font>
-           </property>
-           <property name="autoFillBackground" >
-            <bool>true</bool>
-           </property>
-           <property name="frameShape" >
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="text" >
-            <string/>
-           </property>
-           <property name="alignment" >
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
+         <property name="font" >
+          <font>
+           <family>MS Shell Dlg 2</family>
+           <pointsize>8</pointsize>
+           <weight>75</weight>
+           <italic>false</italic>
+           <bold>true</bold>
+           <underline>false</underline>
+           <strikeout>false</strikeout>
+          </font>
+         </property>
+         <property name="autoFillBackground" >
+          <bool>true</bool>
+         </property>
+         <property name="frameShape" >
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="text" >
+          <string/>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
        </widget>
       </item>
       <item>
        <spacer>
         <property name="orientation" >
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Horizontal</enum>
         </property>
         <property name="sizeHint" >
          <size>
-          <width>106</width>
-          <height>121</height>
+          <width>40</width>
+          <height>20</height>
          </size>
         </property>
        </spacer>
@@ -670,18 +620,28 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="optionsButton" >
-        <property name="text" >
-         <string>Options</string>
+       <layout class="QVBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="aboutButton" >
-        <property name="text" >
-         <string>About</string>
+        <property name="spacing" >
+         <number>6</number>
         </property>
-       </widget>
+        <item>
+         <widget class="QPushButton" name="optionsButton" >
+          <property name="text" >
+           <string>Options</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="aboutButton" >
+          <property name="text" >
+           <string>About</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
@@ -693,7 +653,6 @@
    </property>
   </widget>
  </widget>
- <pixmapfunction></pixmapfunction>
  <resources>
   <include location="resources/resources.qrc" />
  </resources>
