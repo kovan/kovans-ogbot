@@ -45,6 +45,8 @@ class AboutDialog(baseclass,formclass):
     def __init__(self):
         baseclass.__init__(self)        
         self.setupUi(self)
+
+
         
 formclass, baseclass = uic.loadUiType("src/ui/Options.ui")
 class OptionsDialog(baseclass,formclass): 
@@ -176,10 +178,12 @@ class MainWindow(baseclass,formclass):
         self.planetsTree.header().setResizeMode(QHeaderView.Stretch)                
         self.botActivityTree.header().setResizeMode(QHeaderView.Interactive)
         self.botActivityTree.header().setStretchLastSection(False)
-        self.botActivityTree.header().resizeSection(0,40)                
-        self.botActivityTree.header().resizeSection(1,150)
-        self.botActivityTree.header().resizeSection(2,150)        
-        self.botActivityTree.header().resizeSection(5,350)        
+        self.botActivityTree.header().resizeSection(0,70)                
+        self.botActivityTree.header().resizeSection(1,80)                        
+        self.botActivityTree.header().resizeSection(2,111)
+        self.botActivityTree.header().resizeSection(3,111)        
+        self.botActivityTree.header().resizeSection(4,111)        
+        self.botActivityTree.header().resizeSection(5,350)         
         #self.progressBar.setVisible(False)
                 
         for i in ["fleet","defense","buildings","research"]:
@@ -197,15 +201,6 @@ class MainWindow(baseclass,formclass):
         self.timer.start(500)        
 
 
-        try:
-            file = open(FILE_PATHS['webstate'],'r')
-            self.server = pickle.load(file)        
-            self.session = pickle.load(file)
-            file.close()
-        except IOError:
-            self.server, self.session = '',''
-            self.launchBrowserButton.setEnabled(False)
-            
         config = Configuration(FILE_PATHS['config'])
         try: config.load()
         except BotError: self.showOptions()
@@ -264,7 +259,16 @@ class MainWindow(baseclass,formclass):
         self.connectionStatusLabel.setPalette(self.palette())
         
     def launchBrowser(self):
-        webbrowser.open("http://%s/game/index.php?session=%s" % (self.server,self.session)) 
+        try:
+            file = open(FILE_PATHS['webstate'],'r')
+            server = pickle.load(file)        
+            session = pickle.load(file)
+            file.close()
+        except IOError:
+            server, session = '',''
+            self.launchBrowserButton.setEnabled(False)
+        
+        webbrowser.open("http://%s/game/index.php?session=%s" % (server,session)) 
 #        command = "cmd /c start http://%s/game/index.php?session=%s" % (self.server,self.session)
 #        QProcess(self).start(command)
         
@@ -321,7 +325,7 @@ class MainWindow(baseclass,formclass):
     def _planetDb_fillReportsTree(self,spyReports):
         if len(spyReports) == 0:
             return
-        
+        self.spyReportsTree.clear()
         for spyReport in spyReports:
             res = spyReport.resources
             onlyHasMissiles = not spyReport.hasNonMissileDefense() and spyReport.hasDefense()
@@ -329,7 +333,7 @@ class MainWindow(baseclass,formclass):
             else: defense = spyReport.hasInfoAbout("defense")
             
             itemData = [spyReport.code,spyReport.date.strftime("%X %x"),str(spyReport.coords),str(res.metal),str(res.crystal),str(res.deuterium)]
-            itemData += [spyReport.hasInfoAbout("fleet"),defense,spyReport.actionTook]            
+            itemData += [spyReport.hasInfoAbout("fleet"),defense]            
             item = QTreeWidgetItem(itemData)
             self.spyReportsTree.addTopLevelItem(item)
             
@@ -357,33 +361,13 @@ class MainWindow(baseclass,formclass):
             tree.addTopLevelItems(items)
 
     def showAllReports(self):
+        self.spyReportsTree.clear()
         allPlanets = self._planetDb.readAll()
         allReports = [planet.spyReportHistory[-1] for planet in allPlanets if len(planet.spyReportHistory) > 0]
         self._planetDb_fillReportsTree(allReports)
         
-    def initProgressBar(self, range):
-        self.progressBar.setVisible(True)        
-        self.progressBar.setMaximum(range)
-        self.progressBar.reset()
-    def increaseProgressBar(self):
-        value = self.progressBar.value()
-        self.progressBar.setValue(value + 1)    
-        
-    def addActivityTreeItem(self,coordsStr,texts,backColor):
-        item = QTreeWidgetItem()
-        self.botActivityTree.addTopLevelItem(item)        
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,backColor)            
-        self.botActivityTree.scrollToItem(item)        
 
-            
-    def setActivityTreeItem(self,coordsStr,texts,backColor):    
-        item = self.botActivityTree.findItems(coordsStr,Qt.MatchContains,1)[-1]
-        for i in range(len(texts)):
-            item.setText(i,texts[i])
-            item.setBackgroundColor(i,backColor)            
-        self.botActivityTree.scrollToItem(item)        
+ 
         
     # bot events handler methods:
     # ------------------------------------------------------------------------
@@ -431,41 +415,17 @@ class MainWindow(baseclass,formclass):
         self.botActivityLabel.setText("")
     def reportsAnalysisBegin(self,howMany):
         self.botActivityLabel.setText("Analyzing all %s reports..." % howMany)        
-    def planetSkipped(self,planet,cause):
-        self.increaseProgressBar()                
-        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Skipped because it has %s" % cause]
-        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightGrey)                            
-        
-    def reportsAnalysisEnd(self): 
-        self.botActivityLabel.setText("")   
-        items = self.botActivityTree.findItems("probes sent",Qt.MatchContains,5)
-        if len(items) > 0:
-            items[0].setText(5,"Queued for attack")
-    def attacksBegin(self,howMany): 
-        self.botActivityLabel.setText("Attacking %s planets" % howMany)
-    def planetAttacked(self,planet,fleet,resources):
-        self.increaseProgressBar()                
-        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Attacked with %s for %s " % (fleet,resources)]
-        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightGreen)            
-                            
+
+
+
     def errorAttackingPlanet(self, planet, reason): 
         self.increaseProgressBar()                
         texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Errror while attacking: %s" % reason]
         self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightRed)
                 
-    def attacksEnd(self): 
-        self.progressBar.setVisible(False)        
-        self.botActivityLabel.setText("")
-    def waitForSlotBegin(self):
-        self.botStatusLabel.setText("Fleet limit reached.\nWaiting...")
-        self.botStatusLabel.setPalette(QPalette(MyColors.lightYellow))        
-    def waitForSlotEnd(self):
-        self.setBotStatusRunning()            
-    def waitForShipsBegin(self, shipType):
-        self.botStatusLabel.setText("No %ss \navailable. Waiting..." % shipType)        
-        self.botStatusLabel.setPalette(QPalette(MyColors.lightYellow))            
-    def waitForShipsEnd(self):
-        self.setBotStatusRunning()                    
+
+  
+            
     def connectionError(self,reason):
         self.connectionStatusLabel.setText("Connection error")        
         self.connectionStatusLabel.setPalette(QPalette(MyColors.lightRed))
@@ -476,31 +436,44 @@ class MainWindow(baseclass,formclass):
         self.stopClicked()
         QMessageBox.critical(self,"Fatal error","Critical error: %s" % exception)
     # new GUI messages
-    
-    
+    def statusMsg(self,msg):
+        self.setConnectionOK()        
+        self.botStatusLabel.setPalette(QPalette(MyColors.lightYellow))
+        self.botStatusLabel.setText(msg)       
+    def connected(self):
+        self.setConnectionOK()        
+        self.launchBrowserButton.setEnabled(True)
     def simulationsUpdate(self,simulations,rentabilities):
-
+        self.setConnectionOK()
 
         self.botActivityTree.clear() 
         maxRentability = 0
-        for planet, rentability in rentabilities:
-            if rentability > maxRentability:
-                maxRentability = rentability
+        for rentability in rentabilities:
+            if isinstance(rentability,tuple) and rentability[1] > maxRentability:
+                maxRentability = rentability[1] 
                 
-        for planet, rentability in rentabilities:
-            if rentability > 0:
-                value = int (rentability *  255 / maxRentability)
-                backColor = QColor(255-value,255,255-value)
+        for planet in rentabilities:
+            if isinstance(planet,tuple):
+                planet,rentability = planet
+            else: rentability = -1
             try:
                 simulatedResources = simulations[repr(planet.coords)].simulatedResources
-            except KeyError: simulatedResources = '?'
+            except KeyError: simulatedResources = 'Not spied'
             
-            item = QTreeWidgetItem([str(rentability),str(planet),planet.owner,planet.alliance,str(simulatedResources)])
-            item.setBackgroundColor(0,backColor)
+            item = QTreeWidgetItem([str(rentability),str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources)])
+            if rentability > 0:
+                value = int (rentability *  255 / maxRentability)
+                backColor = QColor(255-value,255,255-value)            
+                item.setBackgroundColor(0,backColor)
             self.botActivityTree.addTopLevelItem(item)        
             
+            
     def activityMsg(self,msg):            
-        self.botActivityList.addItem(str(msg))
+        self.setConnectionOK()   
+        self.setBotStatusRunning()     
+        item = QListWidgetItem(str(msg))
+        self.botActivityList.addItem(item)
+        self.botActivityList.scrollToItem(item)                
         
 
 def guiMain():

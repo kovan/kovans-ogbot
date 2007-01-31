@@ -66,10 +66,11 @@ class WebAdapter(object):
             
 
         
-    def __init__(self, config, allTranslations, gui = None):
+    def __init__(self, config, allTranslations,checkThreadMethod,gui = None):
         self.server = ''
         self.browser = Browser()
         self.config = config
+        self._checkThreadMethod = checkThreadMethod
         self._eventMgr = WebAdapter.EventManager(gui)
 
         self.browser.set_handle_refresh(True, 0, False) # HTTPRefreshProcessor(0,False)         
@@ -149,11 +150,11 @@ class WebAdapter(object):
     def _fetchPhp(self, php, **params):
         params['session'] = self.session
         url = "http://%s/game/%s?%s" % (self.server, php, urllib.urlencode(params))
-        print >>sys.stderr , "         Fetching %s" % url
+        #print >>sys.stderr , "         Fetching %s" % url
         return self._fetchValidResponse(url)
     
     def _fetchForm(self, form):
-        print >>sys.stderr, "         Fetching %s" % form
+        #print >>sys.stderr, "         Fetching %s" % form
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
@@ -165,7 +166,7 @@ class WebAdapter(object):
             try:
                 # MAIN PLACE TO CHECK CHECK FOR INTER-THREAD QUEUE MESSAGES:
                 #-----------------------------------------------------------
-                # self._onQueueCheckCallback()
+                self._checkThreadMethod()
                 #-----------------------------------------------------------
                                 
                 response = self.browser.open(request)
@@ -182,10 +183,11 @@ class WebAdapter(object):
                 response.seek(0)
                 if skipValidityCheck:
                     return response                
-                if self.translations['youAttemptedToLogIn'] in p:            
+                if self.translations['youAttemptedToLogIn'] in p:         
                     raise BotFatalError("Invalid username and/or password.")
+                elif self.translations['concurrentPetitionsError'] in p:
                     valid = False
-                if self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
+                elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
                     oldSession = self.session
                     self.doLogin()
                     if   isinstance(request, str):
@@ -201,7 +203,7 @@ class WebAdapter(object):
                                 setattr(request, attr, newValue)
                     else: raise BotError(request)
                     valid = False
-            except (urllib2.URLError, httplib.IncompleteRead), e:
+            except (urllib2.URLError, httplib.IncompleteRead, httplib.BadStatusLine), e:
                 self._eventMgr.connectionError(e)
                 valid = False
             if not valid: 
@@ -331,7 +333,10 @@ class WebAdapter(object):
         if self.translations['fleetLimitReached'] in page.read():
             raise NoFreeSlotsError()
         page.seek(0)
-        form = ParseResponse(page, backwards_compat=False)[-1]
+        try:
+            form = ParseResponse(page, backwards_compat=False)[-1]
+        except IndexError:
+            pass
         for shipType, cuantity in mission.fleet.items():
             shipCode = INGAME_TYPES_BY_NAME[shipType].code
             try:
@@ -403,7 +408,7 @@ class WebAdapter(object):
                 sentFleet[name] = int(value)
 
         if mission.fleet != sentFleet:
-            warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s"% ( mission.fleet, sentFleet))
+            warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % ( mission.fleet, sentFleet))
             mission.fleet = sentFleet
         
     
