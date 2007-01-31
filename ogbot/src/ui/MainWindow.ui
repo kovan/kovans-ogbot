@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>712</width>
-    <height>668</height>
+    <width>719</width>
+    <height>542</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -27,292 +27,15 @@
     <item>
      <widget class="QToolBox" name="toolBox" >
       <property name="currentIndex" >
-       <number>0</number>
+       <number>1</number>
       </property>
-      <widget class="QWidget" name="botActivityPage" >
-       <property name="geometry" >
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>694</width>
-         <height>569</height>
-        </rect>
-       </property>
-       <attribute name="label" >
-        <string>Bot activity</string>
-       </attribute>
-       <layout class="QHBoxLayout" >
-        <property name="margin" >
-         <number>9</number>
-        </property>
-        <property name="spacing" >
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QSplitter" name="splitter_2" >
-          <property name="orientation" >
-           <enum>Qt::Vertical</enum>
-          </property>
-          <widget class="QWidget" name="layoutWidget" >
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
-             <number>6</number>
-            </property>
-            <item>
-             <widget class="QListWidget" name="botActivityList" />
-            </item>
-            <item>
-             <layout class="QVBoxLayout" >
-              <property name="margin" >
-               <number>0</number>
-              </property>
-              <property name="spacing" >
-               <number>6</number>
-              </property>
-              <item>
-               <layout class="QHBoxLayout" >
-                <property name="margin" >
-                 <number>0</number>
-                </property>
-                <property name="spacing" >
-                 <number>6</number>
-                </property>
-                <item>
-                 <widget class="QPushButton" name="startButton" >
-                  <property name="text" >
-                   <string>Start</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="stopButton" >
-                  <property name="enabled" >
-                   <bool>false</bool>
-                  </property>
-                  <property name="text" >
-                   <string>Stop</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <widget class="QGroupBox" name="groupBox_2" >
-                <property name="minimumSize" >
-                 <size>
-                  <width>0</width>
-                  <height>45</height>
-                 </size>
-                </property>
-                <property name="title" >
-                 <string>Connection status</string>
-                </property>
-                <widget class="QLabel" name="connectionStatusLabel" >
-                 <property name="geometry" >
-                  <rect>
-                   <x>10</x>
-                   <y>20</y>
-                   <width>131</width>
-                   <height>19</height>
-                  </rect>
-                 </property>
-                 <property name="sizePolicy" >
-                  <sizepolicy>
-                   <hsizetype>5</hsizetype>
-                   <vsizetype>0</vsizetype>
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="font" >
-                  <font>
-                   <family>MS Shell Dlg 2</family>
-                   <pointsize>8</pointsize>
-                   <weight>75</weight>
-                   <italic>false</italic>
-                   <bold>true</bold>
-                   <underline>false</underline>
-                   <strikeout>false</strikeout>
-                  </font>
-                 </property>
-                 <property name="autoFillBackground" >
-                  <bool>true</bool>
-                 </property>
-                 <property name="frameShape" >
-                  <enum>QFrame::StyledPanel</enum>
-                 </property>
-                 <property name="text" >
-                  <string/>
-                 </property>
-                 <property name="alignment" >
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </widget>
-              </item>
-              <item>
-               <widget class="QGroupBox" name="groupBox_3" >
-                <property name="minimumSize" >
-                 <size>
-                  <width>0</width>
-                  <height>45</height>
-                 </size>
-                </property>
-                <property name="title" >
-                 <string>Bot status</string>
-                </property>
-                <widget class="QLabel" name="botStatusLabel" >
-                 <property name="geometry" >
-                  <rect>
-                   <x>10</x>
-                   <y>20</y>
-                   <width>131</width>
-                   <height>20</height>
-                  </rect>
-                 </property>
-                 <property name="sizePolicy" >
-                  <sizepolicy>
-                   <hsizetype>0</hsizetype>
-                   <vsizetype>0</vsizetype>
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="font" >
-                  <font>
-                   <family>MS Shell Dlg 2</family>
-                   <pointsize>8</pointsize>
-                   <weight>75</weight>
-                   <italic>false</italic>
-                   <bold>true</bold>
-                   <underline>false</underline>
-                   <strikeout>false</strikeout>
-                  </font>
-                 </property>
-                 <property name="autoFillBackground" >
-                  <bool>true</bool>
-                 </property>
-                 <property name="frameShape" >
-                  <enum>QFrame::StyledPanel</enum>
-                 </property>
-                 <property name="text" >
-                  <string/>
-                 </property>
-                 <property name="alignment" >
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </widget>
-              </item>
-              <item>
-               <spacer>
-                <property name="orientation" >
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" >
-                 <size>
-                  <width>20</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QPushButton" name="launchBrowserButton" >
-                <property name="enabled" >
-                 <bool>false</bool>
-                </property>
-                <property name="text" >
-                 <string>Launch web browser</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="optionsButton" >
-                <property name="text" >
-                 <string>Options</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="aboutButton" >
-                <property name="text" >
-                 <string>About</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="layoutWidget" >
-           <layout class="QVBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
-             <number>6</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="label_4" >
-              <property name="text" >
-               <string>Most rentable attacks:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QTreeWidget" name="botActivityTree" >
-              <property name="rootIsDecorated" >
-               <bool>false</bool>
-              </property>
-              <column>
-               <property name="text" >
-                <string>Rentability</string>
-               </property>
-              </column>
-              <column>
-               <property name="text" >
-                <string>Coords</string>
-               </property>
-              </column>
-              <column>
-               <property name="text" >
-                <string>Planet name</string>
-               </property>
-              </column>
-              <column>
-               <property name="text" >
-                <string>Owner</string>
-               </property>
-              </column>
-              <column>
-               <property name="text" >
-                <string>Alliance</string>
-               </property>
-              </column>
-              <column>
-               <property name="text" >
-                <string>Resources</string>
-               </property>
-              </column>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="planetDbPage" >
        <property name="geometry" >
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>694</width>
-         <height>569</height>
+         <width>418</width>
+         <height>50</height>
         </rect>
        </property>
        <attribute name="label" >
@@ -635,6 +358,288 @@
               <column>
                <property name="text" >
                 <string>Cuantity</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="botActivityPage" >
+       <property name="geometry" >
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>701</width>
+         <height>443</height>
+        </rect>
+       </property>
+       <attribute name="label" >
+        <string>Bot activity</string>
+       </attribute>
+       <layout class="QHBoxLayout" >
+        <property name="margin" >
+         <number>9</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QSplitter" name="splitter_2" >
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <widget class="QWidget" name="layoutWidget" >
+           <layout class="QHBoxLayout" >
+            <property name="margin" >
+             <number>0</number>
+            </property>
+            <property name="spacing" >
+             <number>6</number>
+            </property>
+            <item>
+             <widget class="QListWidget" name="botActivityList" />
+            </item>
+            <item>
+             <layout class="QVBoxLayout" >
+              <property name="margin" >
+               <number>0</number>
+              </property>
+              <property name="spacing" >
+               <number>6</number>
+              </property>
+              <item>
+               <layout class="QHBoxLayout" >
+                <property name="margin" >
+                 <number>0</number>
+                </property>
+                <property name="spacing" >
+                 <number>6</number>
+                </property>
+                <item>
+                 <widget class="QPushButton" name="startButton" >
+                  <property name="text" >
+                   <string>Start</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="stopButton" >
+                  <property name="enabled" >
+                   <bool>false</bool>
+                  </property>
+                  <property name="text" >
+                   <string>Stop</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_2" >
+                <property name="minimumSize" >
+                 <size>
+                  <width>0</width>
+                  <height>45</height>
+                 </size>
+                </property>
+                <property name="title" >
+                 <string>Connection status</string>
+                </property>
+                <widget class="QLabel" name="connectionStatusLabel" >
+                 <property name="geometry" >
+                  <rect>
+                   <x>10</x>
+                   <y>20</y>
+                   <width>131</width>
+                   <height>19</height>
+                  </rect>
+                 </property>
+                 <property name="sizePolicy" >
+                  <sizepolicy>
+                   <hsizetype>5</hsizetype>
+                   <vsizetype>0</vsizetype>
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="font" >
+                  <font>
+                   <family>MS Shell Dlg 2</family>
+                   <pointsize>8</pointsize>
+                   <weight>75</weight>
+                   <italic>false</italic>
+                   <bold>true</bold>
+                   <underline>false</underline>
+                   <strikeout>false</strikeout>
+                  </font>
+                 </property>
+                 <property name="autoFillBackground" >
+                  <bool>true</bool>
+                 </property>
+                 <property name="frameShape" >
+                  <enum>QFrame::StyledPanel</enum>
+                 </property>
+                 <property name="text" >
+                  <string/>
+                 </property>
+                 <property name="alignment" >
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_3" >
+                <property name="minimumSize" >
+                 <size>
+                  <width>0</width>
+                  <height>45</height>
+                 </size>
+                </property>
+                <property name="title" >
+                 <string>Bot status</string>
+                </property>
+                <widget class="QLabel" name="botStatusLabel" >
+                 <property name="geometry" >
+                  <rect>
+                   <x>10</x>
+                   <y>20</y>
+                   <width>131</width>
+                   <height>20</height>
+                  </rect>
+                 </property>
+                 <property name="sizePolicy" >
+                  <sizepolicy>
+                   <hsizetype>0</hsizetype>
+                   <vsizetype>0</vsizetype>
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="font" >
+                  <font>
+                   <family>MS Shell Dlg 2</family>
+                   <pointsize>8</pointsize>
+                   <weight>75</weight>
+                   <italic>false</italic>
+                   <bold>true</bold>
+                   <underline>false</underline>
+                   <strikeout>false</strikeout>
+                  </font>
+                 </property>
+                 <property name="autoFillBackground" >
+                  <bool>true</bool>
+                 </property>
+                 <property name="frameShape" >
+                  <enum>QFrame::StyledPanel</enum>
+                 </property>
+                 <property name="text" >
+                  <string/>
+                 </property>
+                 <property name="alignment" >
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </widget>
+              </item>
+              <item>
+               <spacer>
+                <property name="orientation" >
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" >
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="launchBrowserButton" >
+                <property name="enabled" >
+                 <bool>false</bool>
+                </property>
+                <property name="text" >
+                 <string>Launch web browser</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="optionsButton" >
+                <property name="text" >
+                 <string>Options</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="aboutButton" >
+                <property name="text" >
+                 <string>About</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="layoutWidget" >
+           <layout class="QVBoxLayout" >
+            <property name="margin" >
+             <number>0</number>
+            </property>
+            <property name="spacing" >
+             <number>6</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_4" >
+              <property name="text" >
+               <string>Most rentable attacks:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTreeWidget" name="botActivityTree" >
+              <property name="rootIsDecorated" >
+               <bool>false</bool>
+              </property>
+              <column>
+               <property name="text" >
+                <string>Rentability</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Coords</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Planet name</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Owner</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Alliance</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Resources</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Defended</string>
                </property>
               </column>
              </widget>

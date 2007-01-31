@@ -183,7 +183,8 @@ class MainWindow(baseclass,formclass):
         self.botActivityTree.header().resizeSection(2,111)
         self.botActivityTree.header().resizeSection(3,111)        
         self.botActivityTree.header().resizeSection(4,111)        
-        self.botActivityTree.header().resizeSection(5,350)         
+        self.botActivityTree.header().resizeSection(5,250)         
+        self.botActivityTree.header().resizeSection(6,60)                 
         #self.progressBar.setVisible(False)
                 
         for i in ["fleet","defense","buildings","research"]:
@@ -455,12 +456,19 @@ class MainWindow(baseclass,formclass):
         for planet in rentabilities:
             if isinstance(planet,tuple):
                 planet,rentability = planet
-            else: rentability = -1
-            try:
+            else: rentability = 0
+
+            if not planet.spyReportHistory: 
+                simulatedResources = 'Not spied'
+                defendedStr = 'Not spied'
+            else:
                 simulatedResources = simulations[repr(planet.coords)].simulatedResources
-            except KeyError: simulatedResources = 'Not spied'
-            
-            item = QTreeWidgetItem([str(rentability),str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources)])
+                if  planet.spyReportHistory[-1].isUndefended():
+                    defendedStr = 'No'
+                else:
+                    defendedStr = 'Yes'
+                     
+            item = QTreeWidgetItem([str(rentability),str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources),defendedStr])
             if rentability > 0:
                 value = int (rentability *  255 / maxRentability)
                 backColor = QColor(255-value,255,255-value)            
@@ -473,7 +481,8 @@ class MainWindow(baseclass,formclass):
         self.setBotStatusRunning()     
         item = QListWidgetItem(str(msg))
         self.botActivityList.addItem(item)
-        self.botActivityList.scrollToItem(item)                
+        self.botActivityList.scrollToItem(item)              
+
         
 
 def guiMain():
