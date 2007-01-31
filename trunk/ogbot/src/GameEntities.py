@@ -151,7 +151,7 @@ class Resources(object):
     def __mul__(self, toMul):
         return Resources(self.metal * toMul, self.crystal * toMul, self.deuterium * toMul) 
     def rentability(self, flightTime):
-        return self.metalEquivalent() / float(flightTime)
+        return self.metalEquivalent() / float(flightTime * 2)
 
 
         

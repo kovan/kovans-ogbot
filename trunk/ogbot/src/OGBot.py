@@ -164,7 +164,7 @@ class Bot(threading.Thread):
             sleep(5)
     
     def stop(self):
-        self._saveFiles()
+        
         if self._web:
             self._web.saveState()
             
@@ -292,7 +292,7 @@ class Bot(threading.Thread):
             
             
             if self.targetPlanets:  # just in case there are no planets
-                print "tick"
+
                 
                 # generate rentability table
                 rentabilities = [] # list of the form (planet,rentability)
@@ -303,7 +303,7 @@ class Bot(threading.Thread):
                         rentability = self.simulations[repr(planet.coords)].simulatedResources.rentability(flightTime.seconds)
                         if not planet.spyReportHistory[-1].isUndefended():
                             rentability = -1
-                    else: rentability = -1
+                    else: rentability = 0
                     rentabilities.append((planet,rentability))
                     
                 rentabilities.sort(key=lambda x:x[1], reverse=True) # sorty by rentability
@@ -324,7 +324,7 @@ class Bot(threading.Thread):
                     
                     
                              
-                    if allSpied: # attack if there are no unespied planets remaining
+                    if allSpied and not planetsToSpy: # attack if there are no unespied planets remaining
                        
                         
                         found = [x for x in rentabilities if x[1] > 0]
@@ -333,7 +333,7 @@ class Bot(threading.Thread):
                             raise BotFatalError("There are no undefended planets in range.")
 
 
-                        print "attacking"
+
                         # ATTACK
 
                         for finalPlanet, rentability in rentabilities:
@@ -362,11 +362,13 @@ class Bot(threading.Thread):
                                         self._eventMgr.activityMsg("Not ships in planet %s to attack %s. needed: %s" %(sourcePlanet,finalPlanet,fleet))
                                         sleep(7)
                                 else:
-                                    print "report old so re-spying"
-                                    planetsToSpy.append(finalPlanet)
+
+                                    if finalPlanet not in planetsToSpy and finalPlanet not in notArrivedEspionages:
+                                        planetsToSpy.append(finalPlanet)
+                                    break
                             
                     if planetsToSpy:
-                        print "spying"
+
                         # SPY
                         finalPlanet = planetsToSpy.pop(0)
                         sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet)
@@ -401,7 +403,7 @@ class Bot(threading.Thread):
                         if not planet.spyReportHistory:
                             self.simulations[repr(planet.coords)] = ResourceSimulation(spyReport.resources, spyReport.buildings)                            
                         planet.spyReportHistory.append(spyReport)
-                        self._planetDb.addEspionageToPlanet(str(planet.coords),spyReport)
+                        self._planetDb.write(planet)
                         self.simulations[repr(planet.coords)].simulatedResources = spyReport.resources
                         
             sleep(5)      
@@ -588,9 +590,10 @@ if __name__ == "__main__":
         except OSError, e: 
             if "File exists" in e: pass      
 
-    logging.basicConfig(level=logging.CRITICAL, format = '%(message)s') 
     handler = logging.handlers.RotatingFileHandler(os.path.abspath(FILE_PATHS['log']), 'a', 100000, 10)
     handler.setLevel(logging.INFO)
+    handler.setFormatter('%(message)s')
+    logging.getLogger().addHandler(handler)
             
     if options.console:
         bot = Bot()
