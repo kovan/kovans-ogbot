@@ -1,7 +1,4 @@
 <ui version="4.0" >
- <author></author>
- <comment></comment>
- <exportmacro></exportmacro>
  <class>AboutDialog</class>
  <widget class="QDialog" name="AboutDialog" >
   <property name="geometry" >
@@ -158,11 +155,10 @@
     </rect>
    </property>
    <property name="text" >
-    <string>v2.0, last tested with OGame v 0.74b</string>
+    <string>v2.0, last tested with OGame v 0.75</string>
    </property>
   </widget>
  </widget>
- <pixmapfunction></pixmapfunction>
  <resources>
   <include location="resources/resources.qrc" />
  </resources>

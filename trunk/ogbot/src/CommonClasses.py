@@ -63,13 +63,23 @@ class PlanetDb(object):
         self._open()
         self._db[str(planet.coords)] = planet
         self._db.close()
-        
-    def writeMany(self, planetList):    
+    
+    def writeMany(self, planetList):    # espionages are not stored!!
         self._open(True)
         for planet in planetList:
+            stored = self._db.get(str(planet.coords))
+            if stored:
+                planet.spyReportHistory = stored.spyReportHistory
             self._db[str(planet.coords)] = planet              
         self._db.close()
-                    
+    
+    def addEspionageToPlanet(self,coordsStr,espionage):                
+        self._open()
+        planet = self._db.get(coordsStr)
+        planet.spyReportHistory.append(espionage)
+        self._db[str(planet.coords)] = planet
+        self._db.close()
+                
     def read(self, coordsStr):
         self._open()         
         planet = self._db.get(coordsStr)
