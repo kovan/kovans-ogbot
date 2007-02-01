@@ -18,7 +18,7 @@ import sys
 import os
 import os.path
 import shelve
-import pickle
+import cPickle
 import webbrowser
 from datetime import datetime,timedelta
 from Queue import *
@@ -34,7 +34,6 @@ from OGBot import *
 from CommonClasses import *
 from GameEntities import *
 from Constants import *
-import BotResources
 
 class MyColors:
     lightGreen,lightRed,lightYellow,lightGrey,veryLightGrey = (QColor(191,255,191),QColor(255,191,191),QColor(255,255,191),QColor(191,191,191),QColor(223,223,223))
@@ -262,8 +261,8 @@ class MainWindow(baseclass,formclass):
     def launchBrowser(self):
         try:
             file = open(FILE_PATHS['webstate'],'r')
-            server = pickle.load(file)        
-            session = pickle.load(file)
+            server = cPickle.load(file)        
+            session = cPickle.load(file)
             file.close()
         except IOError:
             server, session = '',''
