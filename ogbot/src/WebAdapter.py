@@ -19,7 +19,7 @@ import re
 import os
 import urllib
 import types
-import pickle
+import cPickle
 
 import urllib2
 import copy
@@ -449,15 +449,15 @@ class WebAdapter(object):
 
     def saveState(self):
         file = open(FILE_PATHS['webstate'], 'w')
-        pickle.dump(self.server, file)         
-        pickle.dump(self.session, file)
+        cPickle.dump(self.server, file)         
+        cPickle.dump(self.session, file)
         file.close()
         
     def loadState(self):
         try:
             file = open(FILE_PATHS['webstate'], 'r')
-            self.server = pickle.load(file)            
-            self.session = pickle.load(file)
+            self.server = cPickle.load(file)            
+            self.session = cPickle.load(file)
             file.close()
         except (EOFError, IOError):
             try:

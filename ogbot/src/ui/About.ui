@@ -13,7 +13,7 @@
    <string>About Kovan's OGBot</string>
   </property>
   <property name="windowIcon" >
-   <iconset resource="resources/resources.qrc" >:/icons/icon.png</iconset>
+   <iconset/>
   </property>
   <widget class="QLabel" name="label_2" >
    <property name="geometry" >
@@ -97,36 +97,17 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_6" >
+  <widget class="QLabel" name="label_8" >
    <property name="geometry" >
     <rect>
-     <x>320</x>
-     <y>80</y>
-     <width>102</width>
-     <height>42</height>
+     <x>220</x>
+     <y>250</y>
+     <width>213</width>
+     <height>16</height>
     </rect>
    </property>
-   <property name="frameShape" >
-    <enum>QFrame::Box</enum>
-   </property>
-   <property name="pixmap" >
-    <pixmap resource="resources/resources.qrc" >:/images/pythonlogo.png</pixmap>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_5" >
-   <property name="geometry" >
-    <rect>
-     <x>320</x>
-     <y>130</y>
-     <width>102</width>
-     <height>102</height>
-    </rect>
-   </property>
-   <property name="frameShape" >
-    <enum>QFrame::Box</enum>
-   </property>
-   <property name="pixmap" >
-    <pixmap resource="resources/resources.qrc" >:/images/qtlogo.JPG</pixmap>
+   <property name="text" >
+    <string>v2.0, last tested with OGame v 0.75</string>
    </property>
   </widget>
   <widget class="QLabel" name="label" >
@@ -142,26 +123,43 @@
     <enum>QFrame::Box</enum>
    </property>
    <property name="pixmap" >
-    <pixmap resource="resources/resources.qrc" >:/images/about.jpeg</pixmap>
+    <pixmap>src/ui/resources/about.jpeg</pixmap>
    </property>
   </widget>
-  <widget class="QLabel" name="label_8" >
+  <widget class="QLabel" name="label_6" >
    <property name="geometry" >
     <rect>
-     <x>220</x>
-     <y>250</y>
-     <width>213</width>
-     <height>16</height>
+     <x>320</x>
+     <y>80</y>
+     <width>102</width>
+     <height>42</height>
     </rect>
    </property>
-   <property name="text" >
-    <string>v2.0, last tested with OGame v 0.75</string>
+   <property name="frameShape" >
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="pixmap" >
+    <pixmap>src/ui/resources/pythonlogo.png</pixmap>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5" >
+   <property name="geometry" >
+    <rect>
+     <x>320</x>
+     <y>130</y>
+     <width>102</width>
+     <height>102</height>
+    </rect>
+   </property>
+   <property name="frameShape" >
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="pixmap" >
+    <pixmap>src/ui/resources/qtlogo.JPG</pixmap>
    </property>
   </widget>
  </widget>
- <resources>
-  <include location="resources/resources.qrc" />
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>closeButton</sender>

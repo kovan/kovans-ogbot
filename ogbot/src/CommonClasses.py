@@ -18,7 +18,7 @@ import codecs
 import re
 import shelve
 import copy
-import pickle
+import cPickle
 import logging
 import time
 import ConfigParser
@@ -57,7 +57,7 @@ class PlanetDb(object):
         self._openMode = 'c'
         
     def _open(self, writeback=False):
-        self._db = shelve.open(self._fileName, self._openMode, pickle.HIGHEST_PROTOCOL, writeback)
+        self._db = shelve.open(self._fileName, self._openMode, cPickle.HIGHEST_PROTOCOL, writeback)
         
     def write(self, planet):
         self._open()

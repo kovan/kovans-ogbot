@@ -14,7 +14,7 @@
    <string>Kovan's OGBot</string>
   </property>
   <property name="windowIcon" >
-   <iconset resource="resources/resources.qrc" >:/icons/icon.png</iconset>
+   <iconset>src/ui/resources/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget" >
    <layout class="QHBoxLayout" >
@@ -34,8 +34,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>418</width>
-         <height>50</height>
+         <width>377</width>
+         <height>47</height>
         </rect>
        </property>
        <attribute name="label" >
@@ -374,7 +374,7 @@
          <x>0</x>
          <y>0</y>
          <width>701</width>
-         <height>443</height>
+         <height>449</height>
         </rect>
        </property>
        <attribute name="label" >
@@ -660,9 +660,7 @@
    </property>
   </widget>
  </widget>
- <resources>
-  <include location="resources/resources.qrc" />
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>planetFilterLineEdit</sender>
