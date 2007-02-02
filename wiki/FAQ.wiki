@@ -8,6 +8,7 @@ Currently to run the bot you need these three libraries:
  # !PyQt4 (python bindings for QT).
 
 ===What do I need to run the bot in Linux?===
+
 Under Linux, these libraries are usually provided by your distribution in form of packages. For example, under Ubuntu you have to ensure you have these packages installed:
  # *python-qt4* for !PyQt.
  # *libqt4-core* and *libqt4-gui* for QT.
@@ -15,20 +16,23 @@ Under Linux, these libraries are usually provided by your distribution in form o
 After that just execute runbot.sh
 
 ===What do I need to run the bot in Windows?===
+
 asdf
 After that execute runbot.bat
 
 ===Are you going to release a self-contained ZIP file like with v1?===
+
 I might do it in the future to ease the Windows installation. 
 
 ===How do I reset the bot?===
+
 Delete the files in the directory files/botdata.
 
 ===My language is not supported in the bot. Can I contribute a translation?===
 
 Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to me and I will include it in the next release. Non-occidental languages should work also.
 
-===Can I improve the bot?====
+===Can I help improving the bot?====
 
 All contributions are welcome. To contribute in the development basically only knowledge of Python is required, although to mess with some other parts comes handy to know other things. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
 If you want to use part or all of OGbot's code in your project, you can if you follow the GPL.
