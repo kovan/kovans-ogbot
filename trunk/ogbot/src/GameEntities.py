@@ -17,7 +17,7 @@
 import math
 import re
 from datetime import timedelta
-from CommonClasses import Enum
+from CommonClasses import Enum, addCommas
 
 
 class IngameType(object):
@@ -143,7 +143,7 @@ class Resources(object):
     def __ne__(self, otherResources):
         return not self.__eq__(otherResources)
     def __repr__(self):
-        return "M: %s C: %s D: %s (total: %s)" % (self.metal, self.crystal, self.deuterium, self.total())
+        return "M: %s C: %s D: %s (total: %s)" % (addCommas(self.metal), addCommas(self.crystal), addCommas(self.deuterium), addCommas(self.total()))
     def __add__(self, toAdd):
         return Resources(self.metal + toAdd.metal, self.crystal + toAdd.crystal, self.deuterium + toAdd.deuterium)
     def __sub__(self, toSub):

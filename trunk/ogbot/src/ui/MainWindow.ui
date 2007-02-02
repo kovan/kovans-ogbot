@@ -34,8 +34,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>377</width>
-         <height>47</height>
+         <width>701</width>
+         <height>443</height>
         </rect>
        </property>
        <attribute name="label" >
@@ -270,6 +270,11 @@
                 <string>Defenses</string>
                </property>
               </column>
+              <column>
+               <property name="text" >
+                <string>Probes</string>
+               </property>
+              </column>
              </widget>
             </item>
            </layout>
@@ -374,7 +379,7 @@
          <x>0</x>
          <y>0</y>
          <width>701</width>
-         <height>449</height>
+         <height>443</height>
         </rect>
        </property>
        <attribute name="label" >

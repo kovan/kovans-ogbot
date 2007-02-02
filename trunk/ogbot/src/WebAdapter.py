@@ -370,6 +370,7 @@ class WebAdapter(object):
             
         errors = self.REGEXPS['fleetSendError'].findall(page)
         if len(errors) > 0 or 'class="success"' not in page:
+            errors = str(errors)
             if   self.translations['fleetLimitReached2'] in errors:
                 raise NoFreeSlotsError()
             elif self.translations['noShipSelected'] in errors:
