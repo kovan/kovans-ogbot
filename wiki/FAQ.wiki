@@ -1,6 +1,25 @@
 #summary OGBot Frequently Asked Questions
 #labels Phase-Deploy,Featured
 
+* Q: ¿What libraries does the bot depend on?
+* A: Currently to run the bot you need these libraries
+   - Python 2.4 or newer
+   - QT 4.0 or newer
+   - PyQt4
 
 
-asdf
+linux packages
+
+
+
+windows
+
+
+self-contained
+
+
+reset bot
+
+
+create translation
+
