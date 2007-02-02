@@ -188,3 +188,6 @@ class Enum(object):
 def sleep(seconds):
     for dummy in range(0, random.randrange(seconds-5, seconds+5)):
         time.sleep(1)
+        
+def addCommas(number):
+    return re.sub(r"(\d{3}\B)", r"\1,", str(number)[::-1])[::-1]

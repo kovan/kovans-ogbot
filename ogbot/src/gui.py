@@ -182,7 +182,7 @@ class MainWindow(baseclass,formclass):
         self.botActivityTree.header().resizeSection(2,111)
         self.botActivityTree.header().resizeSection(3,111)        
         self.botActivityTree.header().resizeSection(4,111)        
-        self.botActivityTree.header().resizeSection(5,250)         
+        self.botActivityTree.header().resizeSection(5,300)         
         self.botActivityTree.header().resizeSection(6,60)                 
         #self.progressBar.setVisible(False)
                 
@@ -304,7 +304,8 @@ class MainWindow(baseclass,formclass):
         columnToFilter = str(self.planetFilterComboBox.currentText())
         self.planetsTree.clear()
         self._planetDb = PlanetDb(FILE_PATHS['planetdb'])
-                
+        self.spyReportsTree.clear()                
+        
         for planet in self._planetDb.readAll():
             attrName = re.sub(r" (\w)",lambda m: m.group(0).upper().strip(),columnToFilter.lower()) # convert names from style "Player status" to style "playerStatus"
             columnValue = str(getattr(planet,attrName))
@@ -333,7 +334,7 @@ class MainWindow(baseclass,formclass):
             else: defense = spyReport.hasInfoAbout("defense")
             
             itemData = [spyReport.code,spyReport.date.strftime("%X %x"),str(spyReport.coords),str(res.metal),str(res.crystal),str(res.deuterium)]
-            itemData += [spyReport.hasInfoAbout("fleet"),defense]            
+            itemData += [spyReport.hasInfoAbout("fleet"),defense,str(spyReport.probesSent)]            
             item = QTreeWidgetItem(itemData)
             self.spyReportsTree.addTopLevelItem(item)
             
@@ -372,51 +373,12 @@ class MainWindow(baseclass,formclass):
     # bot events handler methods:
     # ------------------------------------------------------------------------
     
-    def targetsSearchBegin(self,howMany): 
-        self.botActivityLabel.setText("Searching %s target planets to attack..." % howMany)
-        self.initProgressBar(howMany)
-        
-    def solarSystemAnalyzed(self,galaxy,solarSystem): pass            
-    
-    def targetPlanetFound(self,planet):
-        self.increaseProgressBar()                
-        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Queued for espionage"]
-        self.addActivityTreeItem(str(planet.coords), texts, MyColors.lightYellow)
-
-    def planetSkippedByPrecalculation(self,planet,reason):
-        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Skipped because %s" % reason]
-        self.addActivityTreeItem(str(planet.coords), texts, MyColors.veryLightGrey)
-        
-    def targetsSearchEnd(self):
-        self.progressBar.setVisible(False)   
-        self.botActivityLabel.setText("")
-        
-    def espionagesBegin(self,howMany):
-        self.botActivityLabel.setText("Sending %s espionages" % howMany)
-        self.initProgressBar(howMany)
-        
-    def probesSent(self,planet,howMany):
-        self.increaseProgressBar()                
-        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["%s probes sent" % howMany]
-        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightYellow)            
             
     def errorSendingProbes(self, planet, probesCount,reason): 
         self.increaseProgressBar()                
         texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Error while sending probes: %s" % reason]
         self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightRed)            
         
-    def espionagesEnd(self):
-        self.progressBar.setVisible(False)
-        self.botActivityLabel.setText("")
-    def waitForReportsBegin(self,howMany):
-        self.botActivityLabel.setText("Waiting for all %s reports to arrive..." % howMany)
-        self.progressBar.setVisible(False)        
-    def waitForReportsEnd(self):
-        self.botActivityLabel.setText("")
-    def reportsAnalysisBegin(self,howMany):
-        self.botActivityLabel.setText("Analyzing all %s reports..." % howMany)        
-
-
 
     def errorAttackingPlanet(self, planet, reason): 
         self.increaseProgressBar()                
@@ -462,12 +424,14 @@ class MainWindow(baseclass,formclass):
                 defendedStr = 'Not spied'
             else:
                 simulatedResources = simulations[repr(planet.coords)].simulatedResources
-                if  planet.spyReportHistory[-1].isUndefended():
+                if  planet.spyReportHistory[-1].defense == None:
+                    defendedStr = '?'
+                elif  planet.spyReportHistory[-1].isUndefended():
                     defendedStr = 'No'
                 else:
                     defendedStr = 'Yes'
                      
-            item = QTreeWidgetItem([str(rentability),str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources),defendedStr])
+            item = QTreeWidgetItem(["%.2f" % rentability,str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources),defendedStr])
             if rentability > 0:
                 value = int (rentability *  255 / maxRentability)
                 backColor = QColor(255-value,255,255-value)            
