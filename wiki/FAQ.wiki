@@ -1,4 +1,4 @@
-#summary OGBot Frequently Asked Questions
+#summary Frequently Asked Questions
 #labels Phase-Deploy,Featured
 
 ===What libraries does the bot depend on?===
@@ -27,7 +27,6 @@ Delete the files in the directory files/botdata.
 ===My language is not supported in the bot. Can I contribute a translation?===
 
 Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to me and I will include it in the next release. Non-occidental languages should work also.
-
 
 
 
