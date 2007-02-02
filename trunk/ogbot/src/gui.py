@@ -184,6 +184,7 @@ class MainWindow(baseclass,formclass):
         self.botActivityTree.header().resizeSection(4,111)        
         self.botActivityTree.header().resizeSection(5,300)         
         self.botActivityTree.header().resizeSection(6,60)                 
+        self.botActivityTree.header().resizeSection(7,120)        
         #self.progressBar.setVisible(False)
                 
         for i in ["fleet","defense","buildings","research"]:
@@ -218,8 +219,6 @@ class MainWindow(baseclass,formclass):
                 if msg.methodName not in dir(self):
                     raise BotFatalError("Inter-queue message not found.")
                 
-                if msg.methodName is not "connectionError":
-                    self.setConnectionOK()
                 method = getattr(self,msg.methodName)
                 method(*msg.args)
             except Empty:
@@ -254,7 +253,6 @@ class MainWindow(baseclass,formclass):
         self.startButton.setText("Start")
         self.botStatusLabel.setPalette(QPalette(MyColors.lightRed))
         self.botStatusLabel.setText("Stopped")        
-        #self.botActivityLabel.setText("Stopped")
         self.connectionStatusLabel.setText("")    
         self.connectionStatusLabel.setPalette(self.palette())
         
@@ -422,16 +420,23 @@ class MainWindow(baseclass,formclass):
             if not planet.spyReportHistory: 
                 simulatedResources = 'Not spied'
                 defendedStr = 'Not spied'
+                minesStr = 'Not spied'
             else:
                 simulatedResources = simulations[repr(planet.coords)].simulatedResources
-                if  planet.spyReportHistory[-1].defense == None:
+                report = planet.spyReportHistory[-1]
+                if  report.defense == None:
                     defendedStr = '?'
-                elif  planet.spyReportHistory[-1].isUndefended():
+                elif  report.isUndefended():
                     defendedStr = 'No'
                 else:
                     defendedStr = 'Yes'
+                
+                if report.buildings == None:
+                    minesStr = '?'
+                else:
+                    minesStr = "M: %s, C: %s D: %s" % (report.buildings.get('metalMine',0),report.buildings.get('crystalMine',0),report.buildings.get('deuteriumSynthesizer',0))
                      
-            item = QTreeWidgetItem(["%.2f" % rentability,str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources),defendedStr])
+            item = QTreeWidgetItem(["%.2f" % rentability,str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources),defendedStr,minesStr])
             if rentability > 0:
                 value = int (rentability *  255 / maxRentability)
                 backColor = QColor(255-value,255,255-value)            

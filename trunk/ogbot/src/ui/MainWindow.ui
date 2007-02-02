@@ -34,8 +34,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>701</width>
-         <height>443</height>
+         <width>418</width>
+         <height>50</height>
         </rect>
        </property>
        <attribute name="label" >
@@ -603,7 +603,7 @@
             <item>
              <widget class="QLabel" name="label_4" >
               <property name="text" >
-               <string>Most rentable attacks:</string>
+               <string>Most rentable attacks (resource values are simulated):</string>
               </property>
              </widget>
             </item>
@@ -645,6 +645,11 @@
               <column>
                <property name="text" >
                 <string>Defended</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Mine levels</string>
                </property>
               </column>
              </widget>

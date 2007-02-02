@@ -234,7 +234,11 @@ class SpyReport(GameMessage):
             if  'antiBallisticMissile' not in defense  and 'interplanetaryMissile' not in defense:
                 return True
         return False
-    
+    def hasAllNeededInfo(self):
+        if self.defense == None or (self.isUndefended() and self.buildings == None): 
+            return False
+        return True
+        
     def isUndefended(self):
         return not self.hasFleet() and not self.hasNonMissileDefense()
     
