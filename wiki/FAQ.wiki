@@ -28,5 +28,7 @@ Delete the files in the directory files/botdata.
 
 Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to me and I will include it in the next release. Non-occidental languages should work also.
 
+===Can I improve the bot?====
 
-
+All contributions are welcome. To contribute in the development basically only knowledge of Python is required, although to mess with some other parts comes handy to know other things. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
+If you want to use part or all of OGbot's code in your project, you can if you follow the GPL.
