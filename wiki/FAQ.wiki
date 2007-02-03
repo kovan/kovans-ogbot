@@ -2,28 +2,32 @@
 #labels Phase-Deploy,Featured
 
 ===What libraries does the bot depend on?===
-Currently to run the bot you need these three libraries:
+Currently to run the bot these three libraries are required:
  # Python 2.4 or newer.
  # QT 4.0 or newer, by Trolltech.
  # !PyQt4 (python bindings for QT).
 
 ===What do I need to run the bot in Linux?===
 
-Under Linux, these libraries are usually provided by your distribution in form of packages. For example, under Ubuntu you have to ensure you have these packages installed:
+Under Linux, these libraries are usually provided by the distributions in form of packages. For example, under Ubuntu the following packages have to be installed:
  # *python-qt4* for !PyQt.
  # *libqt4-core* and *libqt4-gui* for QT.
  # *python2.4* for Python.
 After that just execute runbot.sh
 
 
+===Is an easy-installation ZIP for Windows going to be released, like in version 1.0?===
+
+In a near future a ZIP file might be released containing the bot and all the required libraries to ease the installation.
+
 ===What do I need to run the bot in Windows?===
 
-asdf
-After that execute runbot.bat
-
-===Are you going to release a self-contained ZIP file, like i version 1?===
-
-I might do it in the future to ease the Windows installation. 
+The recommended way of getting the bot to work on Windows is using the self-contained ZIP. See above question. 
+In the meantime, these are the steps:
+ # Download & install Python 2.5 (http://www.activestate.com/products/activepython/)
+ # Download & install PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
+ # Download & install QT 4 GPL for Windows (http://www.trolltech.com/developer/downloads/qt/windows)
+After all that, execute runbot.bat and it _should_ work.
 
 ===How do I reset the bot?===
 
@@ -35,5 +39,5 @@ Sure. What you have to do is create a new translation file for your language and
 
 ===Can I help improve the bot?====
 
-All contributions are welcome. To contribute in the development basically only knowledge of Python is required, although to mess with some other parts comes handy to know other things. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
-If you want to use part or all of OGbot's code in your project, you can if you follow the GPL.
+All contributions are welcome. The basic requeriment to be able to contribute in the development is the knowledge of Python, although to mess with some other parts, knowing other things is required. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
+If you want to use part or all of OGbot's code in your project, you can if you follow the GPL license requisites.
