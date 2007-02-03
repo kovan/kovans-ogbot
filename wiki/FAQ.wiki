@@ -16,6 +16,7 @@ Under Linux, these libraries are usually provided by the distributions in form o
 After that just execute runbot.sh
 
 
+
 ===Is an easy-installation ZIP for Windows going to be released, like in version 1.0?===
 
 In a near future a ZIP file might be released containing the bot and all the required libraries to ease the installation.
@@ -25,9 +26,10 @@ In a near future a ZIP file might be released containing the bot and all the req
 The recommended way of getting the bot to work on Windows is using the self-contained ZIP. See above question. 
 In the meantime, these are the steps:
  # Download & install Python 2.5 (http://www.activestate.com/products/activepython/)
- # Download & install PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
+ # Download & install !PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
  # Download & install QT 4 GPL for Windows (http://www.trolltech.com/developer/downloads/qt/windows)
 After all that, execute runbot.bat and it _should_ work.
+
 
 ===How do I reset the bot?===
 
