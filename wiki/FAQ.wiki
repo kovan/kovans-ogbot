@@ -19,7 +19,7 @@ After that just execute runbot.sh
 
 ===Q: Is an easy-installation ZIP for Windows going to be released, like in version 1.0?===
 
-A: In a near future a ZIP file might be released containing the bot and all the required libraries to ease the installation.
+A: In a near future a ZIP file might be released containing the bot and all the required libraries to make the installation be just download & execute.
 
 ===Q: What do I need to run the bot in Windows?===
 
@@ -44,5 +44,4 @@ A: Sure. What you have to do is create a new translation file for your language 
 
 A: All contributions are welcome. The basic requeriment to be able to contribute in the development is the knowledge of Python, although to mess with some other parts, knowing other things is required. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
 If you want to use part or all of OGbot's code in your project, you can if you follow the GPL license requisites.
-
 
