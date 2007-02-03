@@ -1,42 +1,44 @@
 #summary Frequently Asked Questions
 #labels Phase-Deploy,Featured
 
-===What libraries does the bot depend on?===
-Currently to run the bot these three libraries are required:
+===Q: What libraries does the bot depend on?===
+A: Currently to run the bot these three libraries are required:
  # Python 2.4 or newer.
  # QT 4.0 or newer, by Trolltech.
  # !PyQt4 (python bindings for QT).
 
-===What do I need to run the bot in Linux?===
+===Q: What do I need to run the bot in Linux?===
 
-Under Linux, these libraries are usually provided by the distributions in form of packages. For example, under Ubuntu the following packages have to be installed:
+A: Under Linux, these libraries are usually provided by the distributions in form of packages. For example, under Ubuntu the following packages have to be installed:
  # *python-qt4* for !PyQt.
  # *libqt4-core* and *libqt4-gui* for QT.
  # *python2.4* for Python.
 After that just execute runbot.sh
 
-===Is an easy-installation ZIP for Windows going to be released, like in version 1.0?===
 
-In a near future a ZIP file might be released containing the bot and all the required libraries to ease the installation.
+===Q: Is an easy-installation ZIP for Windows going to be released, like in version 1.0?===
 
-===What do I need to run the bot in Windows?===
+A: In a near future a ZIP file might be released containing the bot and all the required libraries to ease the installation.
 
-The recommended way of getting the bot to work on Windows is using the self-contained ZIP. See above question. 
+===Q: What do I need to run the bot in Windows?===
+
+A: The recommended way of getting the bot to work on Windows is using the self-contained ZIP. See above question. 
 In the meantime, these are the steps:
  # Download & install Python 2.5 (http://www.activestate.com/products/activepython/)
  # Download & install QT 4 GPL for Windows (http://www.trolltech.com/developer/downloads/qt/windows)
  # Download & install !PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
 After all that, execute runbot.bat and it _should_ work.
 
-===How do I reset the bot?===
 
-Delete the files in the directory files/botdata.
+===Q: How do I reset the bot?===
 
-===My language is not supported. Can I contribute a translation?===
+A: Delete the files in the directory files/botdata.
 
-Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to me and I will include it in the next release. Non-occidental languages should work also.
+===Q: My language is not supported. Can I contribute a translation?===
 
-===Can I help improve the bot?====
+A: Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to me and I will include it in the next release. Non-occidental languages should work also.
 
-All contributions are welcome. The basic requeriment to be able to contribute in the development is the knowledge of Python, although to mess with some other parts, knowing other things is required. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
+===Q: Can I help improve the bot?====
+
+A: All contributions are welcome. The basic requeriment to be able to contribute in the development is the knowledge of Python, although to mess with some other parts, knowing other things is required. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
 If you want to use part or all of OGbot's code in your project, you can if you follow the GPL license requisites.
