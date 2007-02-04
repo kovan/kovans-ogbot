@@ -28,7 +28,7 @@ Then:
  #. Right-click on "My Computer" and select "Properties"
  #. Click the "Advanced" tab
  #. Click "Environment Variables"
- #. In the system variable PATH - include "C:\Qt\4.2.2\bin;C:\Python25"
+ #. In the system variable PATH include "C:\Qt\4.2.2\bin;C:\Python25" (assuming you installed QT and Python in their default locations).
 
 After all that, execute runbot.bat and it _should_ work.
 
@@ -49,5 +49,5 @@ A: Sure. What you have to do is create a new translation file for your language 
 
 ===Q: Can I help improve the bot?====
 
-A: All contributions are welcome. The basic requeriment to be able to contribute in the development is the knowledge of Python, although to mess with some other parts, knowing other things is required. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
+A: All contributions are welcome. The basic requirement to be able to contribute in the development is the knowledge of Python, although to mess with some other parts, knowing other things is required. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably Regexps, and to mess with interface you need to know QT.
 If you want to use part or all of OGbot's code in your project, you can if you follow the GPL license requisites.
