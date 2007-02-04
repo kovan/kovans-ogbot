@@ -24,6 +24,7 @@ In the meantime, these are the steps:
  #. Download & install QT 4 GPL for Windows (http://www.trolltech.com/developer/downloads/qt/windows)
  #. Download & install !PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
 
+Then:
  #. Right-click on "My Computer" and select "Properties"
  #. Click the "Advanced" tab
  #. Click "Environment Variables"
