@@ -4,11 +4,12 @@
 
 ===Q: What do I need to run the bot in Linux?===
 
-A: Under Linux, these libraries are usually provided by the distributions in form of packages. For example, under Ubuntu the following packages have to be installed:
+A: Under Linux, these libraries are usually provided by the distributions in form of packages, so getting the work to work is pretty straightforward. For example, under Ubuntu the following packages are required:
  # *python-qt4* for !PyQt.
  # *libqt4-core* and *libqt4-gui* for QT.
  # *python2.4* for Python.
-After that just execute runbot.sh
+In other distros their names might differ but not much. After installing them just execute runbot.sh
+
 
 
 
