@@ -20,9 +20,15 @@ A: In a near future a ZIP file might be released containing the bot and all the 
 
 A: The recommended way of getting the bot to work on Windows is using the self-contained ZIP. See above question. 
 In the meantime, these are the steps:
- # Download & install Python 2.5 (http://www.python.org/download/releases/2.5/)
- # Download & install QT 4 GPL for Windows (http://www.trolltech.com/developer/downloads/qt/windows)
- # Download & install !PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
+ #. Download & install Python 2.5 (http://www.python.org/download/releases/2.5/)
+ #. Download & install QT 4 GPL for Windows (http://www.trolltech.com/developer/downloads/qt/windows)
+ #. Download & install !PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
+
+ #. Right-click on "My Computer" and select "Properties"
+ #. Click the "Advanced" tab
+ #. Click "Environment Variables"
+ #. In the system variable PATH - include "C:\Qt\4.2.2\bin;C:\Python25"
+
 After all that, execute runbot.bat and it _should_ work.
 
 ===Q: What libraries does the bot depend on?===
