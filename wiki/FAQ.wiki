@@ -3,11 +3,11 @@
 
 ===Q: How do I run the bot in Windows?===
 
-A: Decompress the file and execute OGBot.exe
+A: Download the Windows version, decompress it and run OGBot.exe
 
 ===Q: How do I run the bot in Linux?===
 
-A: Under Linux, the libraries required by the bot are usually provided by the distributions in form of packages, so getting the work to work is pretty straightforward. For example, under Ubuntu the following packages are required:
+A: Download the generic version. Under Linux, the libraries required by the bot are usually provided by the distributions in form of packages, so getting the work to work is pretty straightforward. For example, under Ubuntu the following packages are required:
  # *python-qt4* for !PyQt.
  # *libqt4-core* and *libqt4-gui* for QT.
  # *python2.4* for Python.
