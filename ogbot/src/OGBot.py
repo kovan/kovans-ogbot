@@ -18,8 +18,10 @@ import codecs
 # python library:
 
 import sys
-sys.path.append('lib')
-sys.path.append('src')
+
+sys.path.insert(0,'src')
+sys.path.insert(0,'lib')
+
 
 import logging, logging.handlers
 import threading
@@ -378,8 +380,12 @@ class Bot(threading.Thread):
         if tuple == None: # proceed with next solar system
 
             now = datetime.now()            
-            if now - self.lastInactiveScanTime >= timedelta(days = 1):
-            #if (now.hour == 0 or now.hour == 8 or now.hour == 16) and minute                
+            serverTime = self.serverTime()
+            if (serverTime.hour == 8 and serverTime.minute >= 10 and serverTime.minute <= 15 and self.scanning is False) \
+            or now - self.lastInactiveScanTime >= timedelta(days = 1):
+                self.scanning = True
+
+            if self.scanning:
                 try:
                     galaxy, solarSystem = self._targetSolarSystemsIter.next()
                 except StopIteration:
@@ -388,6 +394,7 @@ class Bot(threading.Thread):
                     self.scanning = False
                     return
             else: return
+                
         else: galaxy,solarSystem = tuple
 
         solarSystem = self._web.getSolarSystem(galaxy, solarSystem)                        
@@ -516,12 +523,13 @@ if __name__ == "__main__":
         try: os.makedirs ('debug')
         except OSError, e: 
             if "File exists" in e: pass      
-
+            
+    logging.getLogger().setLevel(logging.INFO)
     handler = logging.handlers.RotatingFileHandler(os.path.abspath(FILE_PATHS['log']), 'a', 100000, 10)
     handler.setLevel(logging.INFO)
-    handler.setFormatter('%(message)s')
+    handler.setFormatter(logging.Formatter('%(message)s'))
     logging.getLogger().addHandler(handler)
-            
+
     if options.console:
         bot = Bot()
         bot.start()

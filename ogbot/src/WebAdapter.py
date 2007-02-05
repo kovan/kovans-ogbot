@@ -84,7 +84,7 @@ class WebAdapter(object):
 
         page = self._fetchValidResponse(self.webpage,True)
         # check configured language equals wb language
-        regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"') # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
+        regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"',re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
         self.serverLanguage =  regexpLanguage.findall(page.read())[0]
         try: self.translations = allTranslations[self.serverLanguage]
         except KeyError:
@@ -114,23 +114,23 @@ class WebAdapter(object):
 
         self.REGEXPS = \
         {
-            'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL), 
-            'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>'), 
-            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?) +\['+self.REGEXP_COORDS_STR+']</option>'), 
+            'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
+            'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>',re.I), 
+            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?) +\['+self.REGEXP_COORDS_STR+']</option>',re.I), 
             'spyReport': 
             {
-                'all'  :    re.compile(spyReportTmp, re.LOCALE), 
-                'fleet':    re.compile(spyReportTmp2 % translations['fleets'], re.DOTALL), 
-                'defense':  re.compile(spyReportTmp2 % translations['defense'], re.DOTALL), 
-                'buildings':re.compile(spyReportTmp2 % translations['buildings'], re.DOTALL), 
-                'research': re.compile(spyReportTmp2 % translations['research'], re.DOTALL), 
-                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9]+)</td>")
+                'all'  :    re.compile(spyReportTmp, re.LOCALE|re.I), 
+                'fleet':    re.compile(spyReportTmp2 % translations['fleets'], re.DOTALL|re.I), 
+                'defense':  re.compile(spyReportTmp2 % translations['defense'], re.DOTALL|re.I), 
+                'buildings':re.compile(spyReportTmp2 % translations['buildings'], re.DOTALL|re.I), 
+                'research': re.compile(spyReportTmp2 % translations['research'], re.DOTALL|re.I), 
+                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9]+)</td>",re.I)
             }, 
-            'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL), 
-            'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9]+)"'), 
-            'maxSlots':re.compile(r"max\. ([0-9]+)"), 
-            'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE), 
-            'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>"), 
+            'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
+            'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9]+)"',re.I), 
+            'maxSlots':re.compile(r"max\. ([0-9]+)",re.I), 
+            'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE|re.I), 
+            'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
             
         }
         
