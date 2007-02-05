@@ -38,6 +38,7 @@ INGAME_TYPES = [
     Ship('solarSatellite', 'ship212', 0, 0), 
     Ship('destroyer', 'ship213', 2000, 1000), 
     Ship('deathStar', 'ship214', 1000000, 1), 
+    Ship('battlecruiser', 'ship215',750,10000),
     
     Building('metalMine', 1), 
     Building('crystalMine', 2), 

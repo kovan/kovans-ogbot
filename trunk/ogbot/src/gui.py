@@ -389,6 +389,9 @@ class MainWindow(baseclass,formclass):
     def connectionError(self,reason):
         self.connectionStatusLabel.setText("Connection error")        
         self.connectionStatusLabel.setPalette(QPalette(MyColors.lightRed))
+        self.botStatusLabel.setPalette(QPalette(MyColors.lightRed))
+        self.botStatusLabel.setText("Stopped")        
+        
     def loggedIn(self,username,session):
         self.launchBrowserButton.setEnabled(True)
         self.session = session

@@ -1,4 +1,16 @@
 
+v2.0
+-----------------------
+ February, 3. 2007     
+-----------------------
+- Now which planet will be attacked next is determined by a resource simulator that sorts target planets by quantity of potentially produced resources since last attack, and also taking distance into account.
+- Possibility to choose which planet or planets are source of attacks. Moons are also allowed.
+- Multi-language support. By now Spanish, English and Italian are included with the bot. To add one language just put the .ini file in the languages directory. Non-occidental languages should work also.
+- Command line switch to have different configuration sets at once (example: --workdir uni18).
+- Increases number of sent espionage probes until defense or buildings information is achieved.
+- Redesigned user interface.
+
+
 v1.0
 -----------------------
  August, 23. 2006     
@@ -15,3 +27,5 @@ v1.0
 -----------------------
 
 jsceballos@gmail.com
+
+http://code.google.com/p/kovans-ogbot
