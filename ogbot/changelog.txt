@@ -1,3 +1,9 @@
+v2.05
+-----------------------
+ February, 5. 2007     
+-----------------------
+- Espionage data is reset if username, universe or webpage are changed.
+
 v2.04
 -----------------------
  February, 5. 2007     
@@ -5,7 +11,7 @@ v2.04
 - Fixed bot never attacking because local date was different than server date.
 - Translations do not have to match case.
 - Logging works (log stored in files/log)
-- Daily inactive scan is made right after 8:00h update.
+- Daily inactive scan is made at 8:10h, right after server update.
 - All planets don't have to be spied again after changing attack radio or source planets.
 
 v2.0

@@ -169,6 +169,10 @@ class Bot(threading.Thread):
         cPickle.dump(self.simulations, file)
         cPickle.dump(self.reachableSolarSystems, file)
         cPickle.dump(self.lastInactiveScanTime,file)
+        cPickle.dump(self.config.webpage,file)
+        cPickle.dump(self.config.universe,file)
+        cPickle.dump(self.config.username,file)
+
         file.close()
                 
     def _connect(self):
@@ -208,9 +212,16 @@ class Bot(threading.Thread):
             self.simulations = cPickle.load(file)
             self.reachableSolarSystems = cPickle.load(file)
             self.lastInactiveScanTime = cPickle.load(file)
+            storedWebpage = cPickle.load(file)
+            storedUniverse = cPickle.load(file)
+            storedUsername = cPickle.load(file)
+            if storedWebpage != self.config.webpage \
+            or storedUniverse != self.config.universe \
+            or storedUsername != self.config.username:
+                raise BotError() # if any of those have changed, invalidate stored espionages
             file.close()    
             self._eventMgr.activityMsg("Loading previous espionage data...") 
-        except (EOFError, IOError):
+        except (EOFError, IOError,BotError):
             self.simulations = {}
             self.targetPlanets = []
             self.reachableSolarSystems = []
