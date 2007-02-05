@@ -98,13 +98,6 @@ class OptionsDialog(baseclass,formclass):
                 return
         else: sourcePlanets = []
         
-#        this check sould not go in the gui because we can't rely on the use of gui to ensure integrity (.ini file could also be edited manually)
-        if self.config.webpage != self.webpageLineEdit.text() \
-        or self.config.universe != str(self.universeSpinBox.value()):
-            try:
-                os.remove(FILE_PATHS['gamedata'])              
-            except Exception : pass
-
 
         self.config['sourcePlanets'] = sourcePlanets
         self.config['attackingShip'] = str(self.attackingShipComboBox.currentText().toAscii())
