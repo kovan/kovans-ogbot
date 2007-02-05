@@ -165,10 +165,9 @@ class Planet(object):
         return self.name + " " + str(self.coords)
     
 class OwnPlanet(Planet):
-    def __init__(self, coords, name="", code=0, isMainPlanet=False):
+    def __init__(self, coords, name="", code=0):
         super(OwnPlanet, self).__init__(coords, name)
         self.code = code
-        self.isMainPlanet=isMainPlanet
 
 
 class EnemyPlanet (Planet):

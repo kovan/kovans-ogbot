@@ -228,9 +228,12 @@ class WebAdapter(object):
         
         myPlanets = []
         for code, name, galaxy, ss, pos in self.REGEXPS['myPlanets'].findall(page):
-            planet = OwnPlanet(Coords(galaxy, ss, pos), name, code)
+            coords = Coords(galaxy, ss, pos)
+            for planet in myPlanets:
+                if planet.coords == coords: # we found a moon for this planet
+                    coords.coordsType = Coords.Types.moon
+            planet = OwnPlanet(coords, name, code)
             myPlanets.append(planet)
-        myPlanets[0].isMainPlanet = True
         
         strTime = self.REGEXPS['serverTime'].findall(page)[0]
         serverTime = parseTime(strTime)
@@ -265,7 +268,7 @@ class WebAdapter(object):
                     continue 
             return planets
         except IndexError:
-            raise BotFatalError("Probably there is not enough deuterium to navigate through galaxies")
+            raise BotFatalError("Probably there is not enough deuterium.")
         
     def getSpyReports(self):
         page = self._fetchPhp('messages.php').read()
@@ -333,10 +336,7 @@ class WebAdapter(object):
         if self.translations['fleetLimitReached'] in page.read():
             raise NoFreeSlotsError()
         page.seek(0)
-        try:
-            form = ParseResponse(page, backwards_compat=False)[-1]
-        except IndexError:
-            pass
+        form = ParseResponse(page, backwards_compat=False)[-1]
         for shipType, cuantity in mission.fleet.items():
             shipCode = INGAME_TYPES_BY_NAME[shipType].code
             try:

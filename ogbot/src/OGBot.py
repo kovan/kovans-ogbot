@@ -137,6 +137,7 @@ class Bot(threading.Thread):
         self.simulations = {}   
         self.targetPlanets = []
         self.reachableSolarSystems = []
+        self.scanning = False
             
     def run(self):
         while True:
@@ -171,7 +172,7 @@ class Bot(threading.Thread):
     def _connect(self):
         self._web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue,self.gui)
         self.myPlanets, serverTime = self._web.getMyPlanetsAndServerTime()
-        self.serverTimeDelta = datetime.now() - serverTime
+        self.serverTimeDelta = serverTime - datetime.now() 
         ownedCoords = [repr(planet.coords) for planet in self.myPlanets]
         for coords in self.config.sourcePlanets:
             if str(coords) not in ownedCoords:
@@ -219,18 +220,26 @@ class Bot(threading.Thread):
         newReachableSolarSystems = [] # contains tuples of (galaxy,solarsystem)
         for sourcePlanet in self.sourcePlanets:
             galaxy = sourcePlanet.coords.galaxy
-            for solarSystem in range(sourcePlanet.coords.solarSystem - attackRadio, sourcePlanet.coords.solarSystem + attackRadio):
+            first = max(1,sourcePlanet.coords.solarSystem - attackRadio)
+            last = min(Coords.SOLAR_SYSTEMS,sourcePlanet.coords.solarSystem + attackRadio)
+            for solarSystem in range(first,last +1):
                 tuple = (galaxy, solarSystem)
                 if tuple not in newReachableSolarSystems:
                     newReachableSolarSystems.append(tuple)
         
-        if newReachableSolarSystems != self.reachableSolarSystems: # something changed in configuration (attack radio or attack sources), reinitialize everything
-            self.simulations = {}
-            self.targetPlanets = []
+        if newReachableSolarSystems != self.reachableSolarSystems: # something changed in configuration (attack radio or attack sources)
             self.reachableSolarSystems = newReachableSolarSystems
             del(newReachableSolarSystems)            
+            # remove planets that are not in range anymore            
+            for planet in self.targetPlanets[:]:
+                if (planet.coords.galaxy,planet.coords.solarSystem) not in self.reachableSolarSystems:
+                    self.targetPlanets.remove(planet)
+                    try:
+                        del self.simulations[str(planet.coords)]
+                    except KeyError: pass
             self._eventMgr.activityMsg("Searching inactive planets in range... This might take a while, but will only be done once.")            
-      
+            
+            # re-scan for inactive planets
             for tuple in self.reachableSolarSystems: 
                 self._scanNextSolarSystem(tuple)      
                 self._eventMgr.simulationsUpdate(self.simulations,self.targetPlanets)
@@ -337,8 +346,7 @@ class Bot(threading.Thread):
                         notArrivedEspionages[finalPlanet] = espionage
                     except NotEnoughShipsError, e:
                         planetsToSpy.append(finalPlanet) # re-locate planet at the end of the list for later
-                        self._eventMgr.activityMsg("Not enough ships in planet %s. %s" %(ships,sourcePlanet))        
-                        sleep(1)                        
+                        self._eventMgr.activityMsg("Not enough ships in planet %s. %s" %(ships,sourcePlanet))             
                     
             except NoFreeSlotsError: 
                 self._scanNextSolarSystem();
@@ -359,8 +367,7 @@ class Bot(threading.Thread):
                     if  spyReport:
                         spyReport.probesSent = espionage.fleet['espionageProbe']
                         del notArrivedEspionages[planet]
-                        if not planet.spyReportHistory:
-                            self.simulations[repr(planet.coords)] = ResourceSimulation(spyReport.resources, spyReport.buildings)                            
+                        self.simulations[repr(planet.coords)] = ResourceSimulation(spyReport.resources, spyReport.buildings)                            
                         planet.spyReportHistory.append(spyReport)
                         self._planetDb.write(planet)
                         self.simulations[repr(planet.coords)].simulatedResources = spyReport.resources
@@ -369,12 +376,16 @@ class Bot(threading.Thread):
 
     def _scanNextSolarSystem(self,tuple = None): # inactive planets background search
         if tuple == None: # proceed with next solar system
-            if datetime.now() - self.lastInactiveScanTime >= timedelta(days = 1):
+
+            now = datetime.now()            
+            if now - self.lastInactiveScanTime >= timedelta(days = 1):
+            #if (now.hour == 0 or now.hour == 8 or now.hour == 16) and minute                
                 try:
                     galaxy, solarSystem = self._targetSolarSystemsIter.next()
                 except StopIteration:
                     self.lastInactiveScanTime = datetime.now()
                     self._targetSolarSystemsIter = iter(self.reachableSolarSystems)
+                    self.scanning = False
                     return
             else: return
         else: galaxy,solarSystem = tuple

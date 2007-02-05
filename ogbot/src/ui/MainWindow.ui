@@ -603,7 +603,7 @@
             <item>
              <widget class="QLabel" name="label_4" >
               <property name="text" >
-               <string>Most rentable attacks (resource values are simulated):</string>
+               <string>Most rentable attacks (resource values are simulated). Double click to see details:</string>
               </property>
              </widget>
             </item>
