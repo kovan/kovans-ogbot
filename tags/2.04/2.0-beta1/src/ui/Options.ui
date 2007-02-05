@@ -1,0 +1,421 @@
+<ui version="4.0" >
+ <author></author>
+ <comment></comment>
+ <exportmacro></exportmacro>
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>281</width>
+    <height>403</height>
+   </rect>
+  </property>
+  <property name="sizePolicy" >
+   <sizepolicy>
+    <hsizetype>0</hsizetype>
+    <vsizetype>0</vsizetype>
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle" >
+   <string>Options</string>
+  </property>
+  <property name="windowIcon" >
+   <iconset resource="resources/resources.qrc" >:/icons/icon.png</iconset>
+  </property>
+  <widget class="QLabel" name="label_14" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>310</y>
+     <width>141</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Espionage probes to send</string>
+   </property>
+   <property name="buddy" >
+    <cstring>probesToSendSpinBox</cstring>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>70</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Username</string>
+   </property>
+   <property name="buddy" >
+    <cstring>usernameLineEdit</cstring>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_12" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>46</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Webpage</string>
+   </property>
+   <property name="buddy" >
+    <cstring>webpageLineEdit</cstring>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_13" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>40</y>
+     <width>46</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Universe</string>
+   </property>
+   <property name="buddy" >
+    <cstring>universeSpinBox</cstring>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_11" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>100</y>
+     <width>46</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Password</string>
+   </property>
+   <property name="buddy" >
+    <cstring>passwordLineEdit</cstring>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>290</y>
+     <width>81</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Attack radio</string>
+   </property>
+   <property name="buddy" >
+    <cstring>attackRadioSpinBox</cstring>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="passwordLineEdit" >
+   <property name="geometry" >
+    <rect>
+     <x>130</x>
+     <y>100</y>
+     <width>141</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="echoMode" >
+    <enum>QLineEdit::Password</enum>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="probesToSendSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>220</x>
+     <y>320</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="attackRadioSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>220</x>
+     <y>290</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="universeSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>220</x>
+     <y>40</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="usernameLineEdit" >
+   <property name="geometry" >
+    <rect>
+     <x>130</x>
+     <y>70</y>
+     <width>141</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="webpageLineEdit" >
+   <property name="geometry" >
+    <rect>
+     <x>130</x>
+     <y>10</y>
+     <width>141</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="cancelButton" >
+   <property name="geometry" >
+    <rect>
+     <x>180</x>
+     <y>370</y>
+     <width>91</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Cancel</string>
+   </property>
+   <property name="autoDefault" >
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="attackingShipComboBox" >
+   <property name="geometry" >
+    <rect>
+     <x>130</x>
+     <y>260</y>
+     <width>141</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>380</y>
+     <width>46</width>
+     <height>14</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string/>
+   </property>
+  </widget>
+  <widget class="Line" name="line_2" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>350</y>
+     <width>261</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="orientation" >
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="okButton" >
+   <property name="geometry" >
+    <rect>
+     <x>80</x>
+     <y>370</y>
+     <width>92</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>OK</string>
+   </property>
+   <property name="autoDefault" >
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>120</y>
+     <width>261</width>
+     <height>131</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string>Source of attacks planet selection</string>
+   </property>
+   <widget class="QRadioButton" name="radioButton" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>81</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Main planet</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_2" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>40</y>
+      <width>141</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Planets with coords in list:</string>
+    </property>
+   </widget>
+   <widget class="QListView" name="listView" >
+    <property name="geometry" >
+     <rect>
+      <x>170</x>
+      <y>50</y>
+      <width>61</width>
+      <height>71</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QToolButton" name="toolButton_2" >
+    <property name="geometry" >
+     <rect>
+      <x>140</x>
+      <y>60</y>
+      <width>23</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string/>
+    </property>
+    <property name="autoRaise" >
+     <bool>true</bool>
+    </property>
+    <property name="arrowType" >
+     <enum>Qt::RightArrow</enum>
+    </property>
+   </widget>
+   <widget class="QToolButton" name="toolButton" >
+    <property name="geometry" >
+     <rect>
+      <x>140</x>
+      <y>80</y>
+      <width>23</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string/>
+    </property>
+    <property name="autoRaise" >
+     <bool>true</bool>
+    </property>
+    <property name="arrowType" >
+     <enum>Qt::LeftArrow</enum>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit" >
+    <property name="geometry" >
+     <rect>
+      <x>70</x>
+      <y>70</y>
+      <width>61</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="inputMask" >
+     <string>\[9:999:99\]; </string>
+    </property>
+    <property name="text" >
+     <string>[1:1:1]</string>
+    </property>
+    <property name="alignment" >
+     <set>Qt::AlignHCenter</set>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="label_2" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>260</y>
+     <width>95</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Attacking spaceship</string>
+   </property>
+   <property name="buddy" >
+    <cstring>attackingShipComboBox</cstring>
+   </property>
+  </widget>
+ </widget>
+ <pixmapfunction></pixmapfunction>
+ <tabstops>
+  <tabstop>webpageLineEdit</tabstop>
+  <tabstop>universeSpinBox</tabstop>
+  <tabstop>usernameLineEdit</tabstop>
+  <tabstop>passwordLineEdit</tabstop>
+  <tabstop>attackingShipComboBox</tabstop>
+  <tabstop>attackRadioSpinBox</tabstop>
+  <tabstop>probesToSendSpinBox</tabstop>
+  <tabstop>okButton</tabstop>
+  <tabstop>cancelButton</tabstop>
+ </tabstops>
+ <resources>
+  <include location="resources/resources.qrc" />
+ </resources>
+ <connections>
+  <connection>
+   <sender>cancelButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>269</x>
+     <y>283</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>179</x>
+     <y>282</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
