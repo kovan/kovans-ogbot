@@ -1,40 +1,22 @@
 #summary Frequently Asked Questions
 #labels Phase-Deploy,Featured
 
+===Q: How do I run the bot in Windows?===
 
-===Q: What do I need to run the bot in Linux?===
+A: Decompress the file and execute OGBot.exe
 
-A: Under Linux, these libraries are usually provided by the distributions in form of packages, so getting the work to work is pretty straightforward. For example, under Ubuntu the following packages are required:
+===Q: How do I run the bot in Linux?===
+
+A: Under Linux, the libraries required by the bot are usually provided by the distributions in form of packages, so getting the work to work is pretty straightforward. For example, under Ubuntu the following packages are required:
  # *python-qt4* for !PyQt.
  # *libqt4-core* and *libqt4-gui* for QT.
  # *python2.4* for Python.
-In other distros their names might differ but not much. After installing them just execute runbot.sh
+In other distros their names might differ but not much. 
+After installing them just run runbot.sh
 
-
-
-
-===Q: Is an easy-installation ZIP for Windows going to be released, like in version 1.0?===
-
-A: In a near future a ZIP file might be released containing the bot and all the required libraries to make the installation be just download & execute.
-
-===Q: What do I need to run the bot in Windows?===
-
-A: The recommended way of getting the bot to work on Windows is using the self-contained ZIP. See above question. 
-In the meantime, these are the steps:
- #. Download & install Python 2.5 (http://www.python.org/download/releases/2.5/)
- #. Download & install QT 4 GPL for Windows (http://www.trolltech.com/developer/downloads/qt/windows)
- #. Download & install !PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
-
-Then:
- #. Right-click on "My Computer" and select "Properties"
- #. Click the "Advanced" tab
- #. Click "Environment Variables"
- #. In the system variable PATH include "C:\Qt\4.2.2\bin;C:\Python25" (assuming you installed QT and Python in their default locations).
-
-After all that, execute runbot.bat and it _should_ work.
 
 ===Q: What libraries does the bot depend on?===
-A: Currently to run the bot the following libraries are required. See your OS instructions on how to get them (if necessary).
+A: These:
   # Python 2.4 or newer.
   # QT 4.0 or newer, by Trolltech.
   # !PyQt4 (python bindings for QT).
