@@ -16,7 +16,7 @@
 import codecs
 
 import re
-import shelve
+import shelve, bsddb,anydbm,dbhash,dumbdbm
 import copy
 import cPickle
 import logging
