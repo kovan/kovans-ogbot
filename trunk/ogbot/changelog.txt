@@ -1,8 +1,16 @@
+v2.05b
+-----------------------
+ February, 6. 2007     
+-----------------------
+- Espionages are not sent if there are not enough probes available.
+
 v2.05
 -----------------------
  February, 5. 2007     
 -----------------------
 - Espionage data is reset if username, universe or webpage are changed.
+- Daily inactives update happens at midnight not 8am, so changed that.
+
 
 v2.04
 -----------------------
