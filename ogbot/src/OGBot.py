@@ -165,17 +165,18 @@ class Bot(threading.Thread):
             
     def _saveFiles(self):
         file = open(FILE_PATHS['gamedata'], 'w')
-        cPickle.dump(self.targetPlanets, file)
-        cPickle.dump(self.simulations, file)
-        cPickle.dump(self.reachableSolarSystems, file)
-        cPickle.dump(self.lastInactiveScanTime,file)
-        cPickle.dump(self.config.webpage,file)
-        cPickle.dump(self.config.universe,file)
-        cPickle.dump(self.config.username,file)
+        cPickle.dump(self.targetPlanets, file,0)
+        cPickle.dump(self.simulations, file,0)
+        cPickle.dump(self.reachableSolarSystems, file,0)
+        cPickle.dump(self.lastInactiveScanTime,file,0)
+        cPickle.dump(self.config.webpage,file,0)
+        cPickle.dump(self.config.universe,file,0)
+        cPickle.dump(self.config.username,file,0)
 
         file.close()
                 
     def _connect(self):
+        self._eventMgr.activityMsg("Connecting...")        
         self._web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue,self.gui)
         self.myPlanets, serverTime = self._web.getMyPlanetsAndServerTime()
         self.serverTimeDelta = serverTime - datetime.now() 
@@ -317,7 +318,7 @@ class Bot(threading.Thread):
                             fleet = { self.attackingShip.name : ships }
                             mission = Mission(Mission.Types.attack, sourcePlanet, finalPlanet, fleet)
                             try:
-                                self.launchMission(mission)        
+                                self._web.launchMission(mission,False)        
                                 self._eventMgr.activityMsg( "Attacking  %s from %s with %s" % (finalPlanet, sourcePlanet,fleet))
                                 shipsSent = mission.fleet[self.attackingShip.name]                                        
                                 if shipsSent < ships:
@@ -326,6 +327,7 @@ class Bot(threading.Thread):
                                     self._eventMgr.activityMsg("There were not enough ships for the previous attack. Needed %s but sent only %s" % (fleet,mission.fleet))
                                 else:
                                     simulation.simulatedResources -= resourcesToSteal                                        
+                                sleep(30)
                                 self._eventMgr.simulationsUpdate(self.simulations,rentabilities)
 
                                 break
@@ -353,13 +355,14 @@ class Bot(threading.Thread):
                     ships = {'espionageProbe':probesToSend}
                     espionage = Mission(Mission.Types.spy, sourcePlanet, finalPlanet, ships)
                     try:
-                        self.launchMission(espionage)
-                        
+                        self._web.launchMission(espionage)
                         self._eventMgr.activityMsg("%s  %s from %s" % (action,finalPlanet, sourcePlanet))
+                        if espionage.fleet['espionageProbe'] < int(probesToSend):
+                            self._eventMgr.activityMsg("There were not enough probes for the espionage. Needed %s but sent only %s" % (probesToSend,espionage.fleet))
                         notArrivedEspionages[finalPlanet] = espionage
                     except NotEnoughShipsError, e:
                         planetsToSpy.append(finalPlanet) # re-locate planet at the end of the list for later
-                        self._eventMgr.activityMsg("Not enough ships in planet %s. %s" %(ships,sourcePlanet))             
+                        self._eventMgr.activityMsg("Not enough ships in planet %s. %s" %(sourcePlanet,ships))             
                     
             except NoFreeSlotsError: 
                 self._scanNextSolarSystem();
@@ -392,8 +395,12 @@ class Bot(threading.Thread):
 
             now = datetime.now()            
             serverTime = self.serverTime()
-            if (serverTime.hour == 8 and serverTime.minute >= 10 and serverTime.minute <= 15 and self.scanning is False) \
-            or now - self.lastInactiveScanTime >= timedelta(days = 1):
+            if (serverTime.hour == 0 and serverTime.minute >= 6 and serverTime.minute <= 7):
+                self._targetSolarSystemsIter = iter(self.reachableSolarSystems)                
+                self.scanning = True
+                return
+                
+            if now - self.lastInactiveScanTime >= timedelta(days = 1):
                 self.scanning = True
 
             if self.scanning:
@@ -460,35 +467,6 @@ class Bot(threading.Thread):
         return freeSlots
     
     
-    def launchMission(self, mission, waitForFreeSlot=False, waitIfNoShips=False):
-        waitingForShips = False
-        waitingForSlot  = False
-        result = None
-        while True:
-            try:
-                result = self._web.launchMission(mission)
-            except NoFreeSlotsError:
-                if not waitForFreeSlot:
-                    raise
-                else:
-                    if not waitingForSlot:
-                        self._eventMgr.waitForSlotBegin()
-                        waitingForSlot = True
-                    sleep(10)
-            except NotEnoughShipsError, e:
-                if not waitIfNoShips:
-                    raise
-                else:
-                    if not waitingForShips:
-                        self._eventMgr.waitForShipsBegin(e)
-                        waitingForShips = True
-                    sleep(10)
-            else:
-                break    
-        if waitingForShips: self._eventMgr.waitForShipsEnd()
-        if waitingForSlot: self._eventMgr.waitForSlotEnd()
-        return result
-        
     def _checkThreadQueue(self):
         try:
             msg = self.msgQueue.get(False)

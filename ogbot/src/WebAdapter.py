@@ -325,7 +325,7 @@ class WebAdapter(object):
     def buildBuildings(self, building, planet):
         self._fetchPhp('b_building.php', bau=building.code, cp=planet.code)
         
-    def launchMission(self, mission):
+    def launchMission(self, mission,abortIfNotEnough = True):
         
         # assure cuantities are integers
         for shipType, cuantity in mission.fleet.items(): 
@@ -333,16 +333,29 @@ class WebAdapter(object):
                     
         # 1st step: select fleet
         page = self._fetchPhp('flotten1.php', mode='Flotte', cp=mission.sourcePlanet.code)
-        if self.translations['fleetLimitReached'] in page.read():
+        pageText = page.read()
+        page.seek(0)        
+        if self.translations['fleetLimitReached'] in pageText:
             raise NoFreeSlotsError()
-        page.seek(0)
+
+        fleet = {}
+        for code, cuantity in self.REGEXPS['availableFleet'].findall(pageText):
+            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity)
+        
+        for shipType, required in mission.fleet.items():
+            availableShips = fleet.get(shipType,0)
+            if availableShips == 0:
+                raise NotEnoughShipsError(fleet)
+            if abortIfNotEnough and availableShips  < required:
+                raise NotEnoughShipsError(fleet)
+            
         form = ParseResponse(page, backwards_compat=False)[-1]
         for shipType, cuantity in mission.fleet.items():
             shipCode = INGAME_TYPES_BY_NAME[shipType].code
             try:
                 form[shipCode] = str(cuantity)
             except ControlNotFoundError:
-                raise NotEnoughShipsError(shipType)
+                raise NotEnoughShipsError(fleet)
 
         # 2nd step: select destination and speed
         page = self._fetchForm(form)

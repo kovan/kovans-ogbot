@@ -180,7 +180,6 @@ class EnemyPlanet (Planet):
         self.attackTime = None
         self.activeMissions = []
         
-
     def toStringList(self):
         return [str(self.coords), self.name, self.owner, self.alliance]
     
