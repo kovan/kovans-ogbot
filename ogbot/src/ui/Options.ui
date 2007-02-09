@@ -6,7 +6,7 @@
     <x>0</x>
     <y>0</y>
     <width>386</width>
-    <height>421</height>
+    <height>452</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -44,19 +44,6 @@
    </property>
    <property name="text" >
     <string/>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="probesToSendSpinBox" >
-   <property name="geometry" >
-    <rect>
-     <x>330</x>
-     <y>340</y>
-     <width>51</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="minimum" >
-    <number>1</number>
    </property>
   </widget>
   <widget class="QLineEdit" name="usernameLineEdit" >
@@ -143,24 +130,11 @@
     <cstring>webpageLineEdit</cstring>
    </property>
   </widget>
-  <widget class="Line" name="line_2" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>370</y>
-     <width>371</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="orientation" >
-    <enum>Qt::Horizontal</enum>
-   </property>
-  </widget>
   <widget class="QPushButton" name="okButton" >
    <property name="geometry" >
     <rect>
      <x>190</x>
-     <y>390</y>
+     <y>420</y>
      <width>92</width>
      <height>26</height>
     </rect>
@@ -170,38 +144,6 @@
    </property>
    <property name="autoDefault" >
     <bool>false</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_14" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>330</y>
-     <width>221</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Espionage probes to send</string>
-   </property>
-   <property name="buddy" >
-    <cstring>probesToSendSpinBox</cstring>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>310</y>
-     <width>291</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Attack radio</string>
-   </property>
-   <property name="buddy" >
-    <cstring>attackRadioSpinBox</cstring>
    </property>
   </widget>
   <widget class="QLabel" name="label_2" >
@@ -387,11 +329,98 @@
     </rect>
    </property>
   </widget>
+  <widget class="QSpinBox" name="probesToSendSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>330</x>
+     <y>340</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>310</y>
+     <width>291</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Attack radius</string>
+   </property>
+   <property name="buddy" >
+    <cstring>attackRadioSpinBox</cstring>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_14" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>330</y>
+     <width>221</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Espionage probes to send</string>
+   </property>
+   <property name="buddy" >
+    <cstring>probesToSendSpinBox</cstring>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="probesToSendSpinBox_2" >
+   <property name="geometry" >
+    <rect>
+     <x>330</x>
+     <y>370</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_15" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>360</y>
+     <width>221</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Reserve slots for fleet</string>
+   </property>
+   <property name="buddy" >
+    <cstring>probesToSendSpinBox</cstring>
+   </property>
+  </widget>
+  <widget class="Line" name="line_2" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>400</y>
+     <width>371</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="orientation" >
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
   <widget class="QPushButton" name="cancelButton" >
    <property name="geometry" >
     <rect>
      <x>290</x>
-     <y>390</y>
+     <y>420</y>
      <width>91</width>
      <height>26</height>
     </rect>
@@ -415,6 +444,7 @@
   <tabstop>okButton</tabstop>
   <tabstop>cancelButton</tabstop>
  </tabstops>
+ <resources/>
  <connections>
   <connection>
    <sender>cancelButton</sender>

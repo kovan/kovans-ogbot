@@ -61,9 +61,10 @@ class WebAdapter(object):
             self.logAndPrint("** CONNECTION ERROR: %s" % reason)
             self.dispatch("connectionError", reason)              
         def loggedIn(self, username, session):
-            self.logAndPrint('Logged in with user %s. Session identifier: %s' % (username, session))
-            self.dispatch("loggedIn", username, session)
-            
+            msg = 'Logged in with user %s. Session identifier: %s' % (username, session)
+            self.logAndPrint(msg)
+            msg = datetime.now().strftime("%X %x ") + msg
+            self.dispatch("activityMsg",msg)            
 
         
     def __init__(self, config, allTranslations,checkThreadMethod,gui = None):
@@ -124,7 +125,7 @@ class WebAdapter(object):
                 'defense':  re.compile(spyReportTmp2 % translations['defense'], re.DOTALL|re.I), 
                 'buildings':re.compile(spyReportTmp2 % translations['buildings'], re.DOTALL|re.I), 
                 'research': re.compile(spyReportTmp2 % translations['research'], re.DOTALL|re.I), 
-                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9]+)</td>",re.I)
+                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9]+)</td>",re.DOTALL|re.I)
             }, 
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
             'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9]+)"',re.I), 
@@ -150,11 +151,11 @@ class WebAdapter(object):
     def _fetchPhp(self, php, **params):
         params['session'] = self.session
         url = "http://%s/game/%s?%s" % (self.server, php, urllib.urlencode(params))
-        #print >>sys.stderr , "         Fetching %s" % url
+        if __debug__: print >>sys.stderr , "         Fetching %s" % url
         return self._fetchValidResponse(url)
     
     def _fetchForm(self, form):
-        #print >>sys.stderr, "         Fetching %s" % form
+        if __debug__: print >>sys.stderr, "         Fetching %s" % form
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
@@ -462,14 +463,14 @@ class WebAdapter(object):
         return levels
 
     def saveState(self):
-        file = open(FILE_PATHS['webstate'], 'w')
-        cPickle.dump(self.server, file)         
-        cPickle.dump(self.session, file)
+        file = open(FILE_PATHS['webstate'], 'wb')
+        cPickle.dump(self.server, file,2)         
+        cPickle.dump(self.session, file,2)
         file.close()
         
     def loadState(self):
         try:
-            file = open(FILE_PATHS['webstate'], 'r')
+            file = open(FILE_PATHS['webstate'], 'rb')
             self.server = cPickle.load(file)            
             self.session = cPickle.load(file)
             file.close()
