@@ -1,3 +1,11 @@
+v2.06
+-----------------------
+ February, 8. 2007     
+-----------------------
+- Added fleet slots reservation.
+- 23h sleep
+- Bugfix
+
 v2.05b
 -----------------------
  February, 6. 2007     
