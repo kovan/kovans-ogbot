@@ -54,7 +54,7 @@ class GuiToBotMsg(ThreadMsg):
 class PlanetDb(object): 
     def __init__(self, fileName):
         self._fileName = fileName
-        self._openMode = 'cb'
+        self._openMode = 'c'
         
     def _open(self, writeback=False):
         self._db = shelve.open(self._fileName, self._openMode, 2, writeback)
