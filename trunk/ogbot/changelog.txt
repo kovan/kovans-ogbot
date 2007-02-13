@@ -1,10 +1,8 @@
-v2.06
------------------------
- February, 8. 2007     
------------------------
-- Added fleet slots reservation.
-- 23h sleep
-- Bugfix
+v2.07
+- Improved hints for translations
+- Some bugs fixes.
+- Added fleet slots reservation for manual playing.
+- Corrected spanish, english and italian translations.
 
 v2.05b
 -----------------------

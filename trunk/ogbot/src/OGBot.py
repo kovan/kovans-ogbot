@@ -304,8 +304,7 @@ class Bot(threading.Thread):
                             if planet.spyReportHistory and not planet.spyReportHistory[-1].hasAllNeededInfo():
                                 planetsToSpy.insert(0,planet)
                             else: planetsToSpy.append(planet)
-                if serverTime.hour == 23 or (serverTime.hour == 0 and serverTime.minute <= 5) or (serverTime.hour == 22 and serverTime.minute >= 30):
-                    self._eventMgr.statusMsg("Waiting for midnight")                   
+ 
 
                 if allSpied and not planetsToSpy: # attack if there are no unespied planets remaining
                     found = [x for x in rentabilities if x[1] > 0]
@@ -326,7 +325,7 @@ class Bot(threading.Thread):
                             fleet = { self.attackingShip.name : ships }
                             mission = Mission(Mission.Types.attack, sourcePlanet, finalPlanet, fleet)
                             try:
-                                self._web.launchMission(mission,False)        
+                                self._web.launchMission(mission,False,self.config.slotsToReserve)        
                                 self._eventMgr.activityMsg( "Attacking  %s from %s with %s" % (finalPlanet, sourcePlanet,fleet))
                                 shipsSent = mission.fleet[self.attackingShip.name]                                        
                                 if shipsSent < ships:

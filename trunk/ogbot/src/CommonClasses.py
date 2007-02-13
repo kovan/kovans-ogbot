@@ -115,6 +115,7 @@ class Configuration(dict):
         self['webpage'] = 'ogame.com.es'      
         self['attackRadio'] = 10
         self['probesToSend'] = 3
+        self['slotsToReserve'] = 0
         self['attackingShip'] = 'smallCargo'
         self['sourcePlanets'] = []
 
