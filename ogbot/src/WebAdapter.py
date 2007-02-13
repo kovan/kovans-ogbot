@@ -326,7 +326,7 @@ class WebAdapter(object):
     def buildBuildings(self, building, planet):
         self._fetchPhp('b_building.php', bau=building.code, cp=planet.code)
         
-    def launchMission(self, mission,abortIfNotEnough = True):
+    def launchMission(self, mission,abortIfNotEnough = True,slotsToReserve = 0):
         
         # assure cuantities are integers
         for shipType, cuantity in mission.fleet.items(): 
@@ -339,6 +339,16 @@ class WebAdapter(object):
         if self.translations['fleetLimitReached'] in pageText:
             raise NoFreeSlotsError()
 
+        usedSlotsNums = re.findall(r"<th>([0-9]+)</th>", pageText)
+
+        if len(usedSlotsNums) == 0:
+            usedSlots = 0
+        else: usedSlots = int(usedSlotsNums[-1])
+        maxFleets = int(self.REGEXPS['maxSlots'].search(pageText).group(1))
+        freeSlots = maxFleets - usedSlots
+        if freeSlots <= slotsToReserve:
+            raise NoFreeSlotsError()
+    
         fleet = {}
         for code, cuantity in self.REGEXPS['availableFleet'].findall(pageText):
             fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity)

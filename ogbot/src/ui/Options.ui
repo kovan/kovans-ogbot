@@ -374,19 +374,6 @@
     <cstring>probesToSendSpinBox</cstring>
    </property>
   </widget>
-  <widget class="QSpinBox" name="probesToSendSpinBox_2" >
-   <property name="geometry" >
-    <rect>
-     <x>330</x>
-     <y>370</y>
-     <width>51</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="minimum" >
-    <number>0</number>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_15" >
    <property name="geometry" >
     <rect>
@@ -430,6 +417,19 @@
    </property>
    <property name="autoDefault" >
     <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="slotsToReserveSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>330</x>
+     <y>370</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>0</number>
    </property>
   </widget>
  </widget>
