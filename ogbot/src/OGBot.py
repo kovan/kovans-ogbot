@@ -133,7 +133,6 @@ class Bot(threading.Thread):
         self._planetDb = PlanetDb(FILE_PATHS['planetdb'])
         self.config = Configuration(FILE_PATHS['config'])                   
         self._web = None
-        self.attackingShip = INGAME_TYPES_BY_NAME[self.config.attackingShip]                        
         self.myPlanets = []
         self.config.load()
         self.allTranslations = Translations()
@@ -202,6 +201,7 @@ class Bot(threading.Thread):
         #self._checkThreadQueue()
         #initializations
         probesToSendDefault, attackRadio = self.config.probesToSend, int(self.config.attackRadio)
+        self.attackingShip = INGAME_TYPES_BY_NAME[self.config.attackingShip]           
         notArrivedEspionages = {}
         planetsToSpy = []
 
