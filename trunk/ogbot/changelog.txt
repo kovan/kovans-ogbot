@@ -1,8 +1,12 @@
 v2.07
-- Improved hints for translations
-- Some bugs fixes.
+-----------------------
+ February, 14. 2007     
+-----------------------
+- Fixed bot only attacking with small cargos.
 - Added fleet slots reservation for manual playing.
 - Corrected spanish, english and italian translations.
+- Improved hints for translations in the file english.ini
+- Some minor changes.
 
 v2.05b
 -----------------------

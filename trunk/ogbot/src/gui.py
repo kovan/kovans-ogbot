@@ -105,7 +105,7 @@ class OptionsDialog(baseclass,formclass):
         for i in ['webpage','username','password']:
             control = getattr(self,i + "LineEdit")
             self.config[i] = control.text()
-        for i in ['universe','attackRadio','probesToSend']:            
+        for i in ['universe','attackRadio','probesToSend','slotsToReserve']:            
             control = getattr(self,i + "SpinBox")
             self.config[i] = str(control.value())        
                 
@@ -255,11 +255,11 @@ class MainWindow(baseclass,formclass):
             server = cPickle.load(file)        
             session = cPickle.load(file)
             file.close()
+            webbrowser.open("http://%s/game/index.php?session=%s" % (server,session))             
         except IOError:
-            server, session = '',''
             self.launchBrowserButton.setEnabled(False)
         
-        webbrowser.open("http://%s/game/index.php?session=%s" % (server,session)) 
+
 #        command = "cmd /c start http://%s/game/index.php?session=%s" % (self.server,self.session)
 #        QProcess(self).start(command)
         

@@ -103,11 +103,11 @@ class WebAdapter(object):
         self.galaxyForm = form         
 
     def generateRegexps(self,translations):
-        spyReportTmp  = r'%s (?P<planetName>.*?) (?P<coords>\[[0-9:]+\]) .*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
-        spyReportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9]+)</td>\n'
-        spyReportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9]+)</td></tr>\n'
-        spyReportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9]+)</td>\n'
-        spyReportTmp += r'<td>.*?</td><td>(?P<energy>[-0-9]+)</td></tr>'  
+        spyReportTmp  = r'%s (?P<planetName>.*?) <a href=".*?">(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
+        spyReportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
+        spyReportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
+        spyReportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9.]+)</td>\n'
+        spyReportTmp += r'<td>.*?</td><td>(?P<energy>[-0-9.]+)</td></tr>'  
         spyReportTmp2 = r'<table .*?>%s(.*?)</table>'
         
         self.REGEXP_COORDS_STR  = r"([1-9]):([0-9]{1,3}):([0-9]{1,2})"
@@ -117,7 +117,7 @@ class WebAdapter(object):
         {
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>',re.I), 
-            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?) +\['+self.REGEXP_COORDS_STR+']</option>',re.I), 
+            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?) +.*?\['+self.REGEXP_COORDS_STR+'].*?</option>',re.I), 
             'spyReport': 
             {
                 'all'  :    re.compile(spyReportTmp, re.LOCALE|re.I), 
@@ -125,10 +125,10 @@ class WebAdapter(object):
                 'defense':  re.compile(spyReportTmp2 % translations['defense'], re.DOTALL|re.I), 
                 'buildings':re.compile(spyReportTmp2 % translations['buildings'], re.DOTALL|re.I), 
                 'research': re.compile(spyReportTmp2 % translations['research'], re.DOTALL|re.I), 
-                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9]+)</td>",re.DOTALL|re.I)
+                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9.]+)</td>",re.DOTALL|re.I)
             }, 
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
-            'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9]+)"',re.I), 
+            'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"',re.I), 
             'maxSlots':re.compile(r"max\. ([0-9]+)",re.I), 
             'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE|re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
@@ -179,7 +179,7 @@ class WebAdapter(object):
                         os.remove('debug/'+files[0])
                     file = open('debug/'+str(datetime.now())+".html", 'w')
                     
-                    file.write(p.replace('<script','<noscript').replace('</script>','</noscript>'))
+                    file.write(p.replace('<script','<noscript').replace('</script>','</noscript>').replace('http-equiv="refresh"','http-equiv="kovan-rulez"'))
                     file.close()
                 response.seek(0)
                 if skipValidityCheck:
@@ -284,11 +284,12 @@ class WebAdapter(object):
             
             m = self.REGEXPS['spyReport']['all'].search(rawMessage)
             if m == None: #theorically should never happen
+                warnings.warn("Error parsing spy report.")
                 continue
             planetName = m.group('planetName')
             coords = Coords(m.group('coords'))
             date = parseTime(m.group('date'), "%m-%d %H:%M:%S")
-            resources = Resources(m.group('metal'), m.group('crystal'), m.group('deuterium'))
+            resources = Resources(m.group('metal').replace('.',''), m.group('crystal').replace('.',''), m.group('deuterium').replace('.',''))
 
             spyReport = SpyReport(coords, planetName, date, resources, code)
             
@@ -298,7 +299,7 @@ class WebAdapter(object):
                 if match:
                     dict = {}
                     for fullName, cuantity in self.REGEXPS['spyReport']['details'].findall(match.group(1)):
-                        dict[self.translationsByLocalText[fullName]] = int(cuantity)
+                        dict[self.translationsByLocalText[fullName.strip()]] = int(cuantity.replace('.',''))
                         
                 setattr(spyReport, i, dict)
                 
@@ -346,18 +347,18 @@ class WebAdapter(object):
         else: usedSlots = int(usedSlotsNums[-1])
         maxFleets = int(self.REGEXPS['maxSlots'].search(pageText).group(1))
         freeSlots = maxFleets - usedSlots
-        if freeSlots <= slotsToReserve:
+        if freeSlots <= int(slotsToReserve):
             raise NoFreeSlotsError()
     
         fleet = {}
         for code, cuantity in self.REGEXPS['availableFleet'].findall(pageText):
-            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity)
+            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity.replace('.',''))
         
         for shipType, required in mission.fleet.items():
             availableShips = fleet.get(shipType,0)
             if availableShips == 0:
                 raise NotEnoughShipsError(fleet)
-            if abortIfNotEnough and availableShips  < required:
+            if abortIfNotEnough and availableShips  < int(required):
                 raise NotEnoughShipsError(fleet)
             
         form = ParseResponse(page, backwards_compat=False)[-1]
@@ -411,17 +412,17 @@ class WebAdapter(object):
         returnTime = parseTime(resultPage[self.translations['returnTime']])
         mission.flightTime = returnTime - arrivalTime
         mission.launchTime = arrivalTime - mission.flightTime
-        mission.distance =  int(resultPage[self.translations['distance']])
-        mission.consumption = int(resultPage[self.translations['consumption']])
+        mission.distance =  int(resultPage[self.translations['distance']].replace('.',''))
+        mission.consumption = int(resultPage[self.translations['consumption']].replace('.',''))
             
         # check simulation formulas are working correctly:
         assert mission.distance == mission.sourcePlanet.coords.distanceTo(mission.targetPlanet.coords)
-        flightTime = mission.sourcePlanet.coords.flightTimeTo(mission.targetPlanet.coords, int(resultPage[self.translations['speed']]))
+        flightTime = mission.sourcePlanet.coords.flightTimeTo(mission.targetPlanet.coords, int(resultPage[self.translations['speed']].replace('.','')))
         margin = timedelta(seconds = 3)
         assert mission.flightTime > flightTime - margin and mission.flightTime < flightTime + margin
         # check mission was sent as expected:
-        assert resultPage[self.translations['start']] == str(mission.sourcePlanet.coords)
-        assert resultPage[self.translations['target']] == str(mission.targetPlanet.coords)            
+        assert str(mission.sourcePlanet.coords) in resultPage[self.translations['start']]
+        assert str(mission.targetPlanet.coords) in resultPage[self.translations['target']] 
         
         # check the requested fleet was sent intact:
         sentFleet = {}
@@ -430,7 +431,7 @@ class WebAdapter(object):
             if name is None:
                 continue
             if name in INGAME_TYPES_BY_NAME.keys():
-                sentFleet[name] = int(value)
+                sentFleet[name] = int(value.replace('.',''))
 
         if mission.fleet != sentFleet:
             warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % ( mission.fleet, sentFleet))
@@ -451,7 +452,7 @@ class WebAdapter(object):
         page = self._fetchPhp('flotten1.php', mode='Flotte', cp=planet.code).read()
         fleet = {}
         for code, cuantity in self.REGEXPS['availableFleet'].findall(page):
-            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity)
+            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity.replace('.',''))
         return fleet
     
     def deleteMessage(self, message):
