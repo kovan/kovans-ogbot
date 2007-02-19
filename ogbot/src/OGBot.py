@@ -217,16 +217,19 @@ class Bot(threading.Thread):
             storedWebpage = cPickle.load(file)
             storedUniverse = cPickle.load(file)
             storedUsername = cPickle.load(file)
+            file.close()    
+                        
             if storedWebpage != self.config.webpage \
             or storedUniverse != self.config.universe \
             or storedUsername != self.config.username:
                 raise BotError() # if any of those have changed, invalidate stored espionages
-            file.close()    
+
             self._eventMgr.activityMsg("Loading previous espionage data...") 
-        except (EOFError, IOError,BotError):
+        except (EOFError, IOError,BotError,ImportError):
             self.simulations = {}
             self.targetPlanets = []
             self.reachableSolarSystems = []
+            self._eventMgr.activityMsg("Invalid gamedata, respying planets.")
             try:
                 os.remove(FILE_PATHS['gamedata'])              
             except Exception : pass
@@ -291,7 +294,7 @@ class Bot(threading.Thread):
             rentabilities.sort(key=lambda x:x[1], reverse=True) # sorty by rentability
              
             self._eventMgr.simulationsUpdate(self.simulations,rentabilities)
-            serverTime = self.serverTime()
+
             try:
                 # check for missing and expired reports and add them to spy queue
                 allSpied = True
@@ -367,6 +370,7 @@ class Bot(threading.Thread):
                         self._eventMgr.activityMsg("%s  %s from %s with %s" % (action,finalPlanet, sourcePlanet, ships))
                         if espionage.fleet['espionageProbe'] < int(probesToSend):
                             self._eventMgr.activityMsg("There were not enough probes for the espionage. Needed %s but sent only %s" % (probesToSend,espionage.fleet))
+                        sleep(5)
                         notArrivedEspionages[finalPlanet] = espionage
                     except NotEnoughShipsError, e:
                         planetsToSpy.append(finalPlanet) # re-locate planet at the end of the list for later

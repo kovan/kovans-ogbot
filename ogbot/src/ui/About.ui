@@ -6,7 +6,7 @@
     <x>0</x>
     <y>0</y>
     <width>432</width>
-    <height>363</height>
+    <height>397</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -52,19 +52,6 @@
     <string>Close</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_4" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>330</y>
-     <width>381</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Copyright (c) 2006 Kovan. Images are copyrighted by their respective owners.</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_3" >
    <property name="geometry" >
     <rect>
@@ -81,35 +68,6 @@
     <enum>Qt::RichText</enum>
    </property>
   </widget>
-  <widget class="QLabel" name="label_7" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>280</y>
-     <width>401</width>
-     <height>51</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>This program is free software; you can redistribute it and/or modify it under the terms of the &lt;a href="http://www.gnu.org/copyleft/gpl.html">GNU GENERAL PUBLIC LICENSE&lt;/a> as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version</string>
-   </property>
-   <property name="wordWrap" >
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_8" >
-   <property name="geometry" >
-    <rect>
-     <x>220</x>
-     <y>250</y>
-     <width>213</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>v2.0, last tested with OGame v 0.75</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="label" >
    <property name="geometry" >
     <rect>
@@ -123,7 +81,7 @@
     <enum>QFrame::Box</enum>
    </property>
    <property name="pixmap" >
-    <pixmap>src/ui/resources/about.jpeg</pixmap>
+    <pixmap/>
    </property>
   </widget>
   <widget class="QLabel" name="label_6" >
@@ -139,7 +97,7 @@
     <enum>QFrame::Box</enum>
    </property>
    <property name="pixmap" >
-    <pixmap>src/ui/resources/pythonlogo.png</pixmap>
+    <pixmap/>
    </property>
   </widget>
   <widget class="QLabel" name="label_5" >
@@ -155,7 +113,49 @@
     <enum>QFrame::Box</enum>
    </property>
    <property name="pixmap" >
-    <pixmap>src/ui/resources/qtlogo.JPG</pixmap>
+    <pixmap/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8" >
+   <property name="geometry" >
+    <rect>
+     <x>220</x>
+     <y>250</y>
+     <width>213</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>v2, last tested with OGame v 0.76</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>280</y>
+     <width>401</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>This program is free software; you can redistribute it and/or modify it under the terms of the &lt;a href="http://www.gnu.org/copyleft/gpl.html">GNU GENERAL PUBLIC LICENSE&lt;/a> as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version</string>
+   </property>
+   <property name="wordWrap" >
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>350</y>
+     <width>446</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Copyright (c) 2006 Kovan. &lt;br>Images are copyrighted by their respective owners.</string>
    </property>
   </widget>
  </widget>
