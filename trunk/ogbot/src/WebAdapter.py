@@ -108,7 +108,8 @@ class WebAdapter(object):
         spyReportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
         spyReportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9.]+)</td>\n'
         spyReportTmp += r'<td>.*?</td><td>(?P<energy>[-0-9.]+)</td></tr>'  
-        spyReportTmp2 = r'<table .*?>%s(.*?)</table>'
+        spyReportTmp2 = r'<table width=[0-9]+><tr><td class=c colspan=4>%s(.*?)</table>'
+
         
         self.REGEXP_COORDS_STR  = r"([1-9]):([0-9]{1,3}):([0-9]{1,2})"
         self.REGEXP_SESSION_STR = r"[0-9A-Fa-f]{12}"
@@ -184,8 +185,10 @@ class WebAdapter(object):
                 response.seek(0)
                 if skipValidityCheck:
                     return response                
-                if self.translations['youAttemptedToLogIn'] in p:         
+                elif self.translations['youAttemptedToLogIn'] in p:         
                     raise BotFatalError("Invalid username and/or password.")
+                elif "<a href=../pranger.php>" in p:
+                    raise BotFatalError("Account banned.")
                 elif self.translations['concurrentPetitionsError'] in p:
                     valid = False
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
@@ -284,7 +287,7 @@ class WebAdapter(object):
             
             m = self.REGEXPS['spyReport']['all'].search(rawMessage)
             if m == None: #theorically should never happen
-                warnings.warn("Error parsing spy report.")
+                warnings.warn("Error parsing espionage report.")
                 continue
             planetName = m.group('planetName')
             coords = Coords(m.group('coords'))
@@ -297,8 +300,8 @@ class WebAdapter(object):
                 dict = None
                 match = self.REGEXPS['spyReport'][i].search(rawMessage)
                 if match:
-                    dict = {}
-                    for fullName, cuantity in self.REGEXPS['spyReport']['details'].findall(match.group(1)):
+                    dict, text = {}, match.group(1)
+                    for fullName, cuantity in self.REGEXPS['spyReport']['details'].findall(text):
                         dict[self.translationsByLocalText[fullName.strip()]] = int(cuantity.replace('.',''))
                         
                 setattr(spyReport, i, dict)

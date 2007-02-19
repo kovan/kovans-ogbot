@@ -1,3 +1,11 @@
+v2.08b
+-----------------------
+ February, 19. 2007     
+-----------------------
+- Now works with OGame last version, v0.76
+- Added small delay after each espionage to simulate human behaviour.
+- Fixed rare ImportError: No module named copy_reg
+
 v2.07
 -----------------------
  February, 14. 2007     

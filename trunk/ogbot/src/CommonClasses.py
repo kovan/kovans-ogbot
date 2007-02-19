@@ -179,7 +179,8 @@ class Translations(dict):
                 for section in parser.sections():
                     translation.update((key, value.encode('ISO-8859-1')) for key, value in parser.items(section))
                 self[translation['languageCode']] = translation 
-            except Exception, e: raise BotError("Malformed languaje file (%s.%s): %s"%(fileName,extension,e))
+            except Exception, e: 
+                raise BotError("Malformed languaje file (%s.%s): %s"%(fileName,extension,e))
         # after all this access to a translated string is obtained thru p.e.: self['spanish']['smallCargo']
         
 class Enum(object):
