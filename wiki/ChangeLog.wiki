@@ -1,0 +1,74 @@
+#labels Featured
+{{{
+v2.09
+-----------------------
+ February, 19. 2007     
+-----------------------
+- Added support for ogame.de
+- Bot should work for both OGame 0.76 and 0.75
+
+v2.08b
+-----------------------
+ February, 19. 2007     
+-----------------------
+- Now works with OGame last version, v0.76
+- Added small delay after each espionage to simulate human behaviour.
+- Fixed rare ImportError: No module named copy_reg
+
+v2.07
+-----------------------
+ February, 14. 2007     
+-----------------------
+- Fixed bot only attacking with small cargos.
+- Added fleet slots reservation for manual playing.
+- Corrected spanish, english and italian translations.
+- Improved hints for translations in the file english.ini
+- Some minor changes.
+
+v2.05b
+-----------------------
+ February, 6. 2007     
+-----------------------
+- Espionages are not sent if there are not enough probes available.
+
+v2.05
+-----------------------
+ February, 5. 2007     
+-----------------------
+- Espionage data is reset if username, universe or webpage are changed.
+- Daily inactives update happens at midnight not 8am, so changed that.
+
+
+v2.04
+-----------------------
+ February, 5. 2007     
+-----------------------
+- Fixed bot never attacking because local date was different than server date.
+- Translations do not have to match case.
+- Logging works (log stored in files/log)
+- Daily inactive scan is made at 8:10h, right after server update.
+- All planets don't have to be spied again after changing attack radio or source planets.
+
+v2.0
+-----------------------
+ February, 3. 2007     
+-----------------------
+- Now which planet will be attacked next is determined by a resource simulator that sorts target planets by quantity of potentially produced resources since last attack, and also taking distance into account.
+- Possibility to choose which planet or planets are source of attacks. Moons are also allowed.
+- Multi-language support. By now Spanish, English and Italian are included with the bot. To add one language just put the .ini file in the languages directory. Non-occidental languages should work also.
+- Command line switch to have different configuration sets at once (example: --workdir uni18).
+- Increases number of sent espionage probes until defense or buildings information is achieved.
+- Redesigned user interface.
+
+
+v1.0
+-----------------------
+ August, 23. 2006     
+-----------------------
+- First release
+- Features: automated spy-and-attack to neighbour inactive planets 
+  with no defenses nor fleet
+- Planet database
+
+
+}}}
