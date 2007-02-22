@@ -65,7 +65,10 @@ class WebAdapter(object):
             self.logAndPrint(msg)
             msg = datetime.now().strftime("%X %x ") + msg
             self.dispatch("activityMsg",msg)            
-
+        def activityMsg(self,msg):
+            self.logAndPrint(msg)
+            msg = datetime.now().strftime("%X %x ") + msg
+            self.dispatch("activityMsg",msg)
         
     def __init__(self, config, allTranslations,checkThreadMethod,gui = None):
         self.server = ''
@@ -99,11 +102,16 @@ class WebAdapter(object):
         self.server = select.get(label = self.config.universe +'. '+  self.translations['universe'], nr=0).name
         # retrieve and store galaxy fetching form
         page = self._fetchPhp('galaxy.php')
-        form = ParseResponse(page, backwards_compat=False)[0]
+        try:
+            form = ParseResponse(page, backwards_compat=False)[0]
+        except IndexError:
+            page.seek(0)
+            raise BotFatalError(page.read())
+            
         self.galaxyForm = form         
 
     def generateRegexps(self,translations):
-        spyReportTmp  = r'%s (?P<planetName>.*?) <a href=".*?">(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
+        spyReportTmp  = r'%s (?P<planetName>.*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
         spyReportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
         spyReportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
         spyReportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9.]+)</td>\n'
@@ -187,8 +195,8 @@ class WebAdapter(object):
                     return response                
                 elif self.translations['youAttemptedToLogIn'] in p:         
                     raise BotFatalError("Invalid username and/or password.")
-                elif "<a href=../pranger.php>" in p:
-                    raise BotFatalError("Account banned.")
+#                elif "<a href=../pranger.php>" in p:
+#                    raise BotFatalError("Account banned.")
                 elif self.translations['concurrentPetitionsError'] in p:
                     valid = False
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
@@ -223,7 +231,10 @@ class WebAdapter(object):
         form["pass"]  = self.config.password
         form.action = "http://"+self.server+"/game/reg/login2.php"
         page = self._fetchForm(form).read()
-        self.session = re.findall(self.REGEXP_SESSION_STR, page)[0]
+        try:
+            self.session = re.findall(self.REGEXP_SESSION_STR, page)[0]
+        except IndexError:
+            raise BotFatalError(page)
         self._eventMgr.loggedIn(self.config.username, self.session)
         self.saveState()
 
