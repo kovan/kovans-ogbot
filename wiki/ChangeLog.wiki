@@ -1,4 +1,5 @@
 #labels Featured
+# What's new on each version.
 {{{
 v2.09
 -----------------------
@@ -6,6 +7,7 @@ v2.09
 -----------------------
 - Added support for ogame.de
 - Bot should work for both OGame 0.76 and 0.75
+
 
 v2.08b
 -----------------------
