@@ -1,5 +1,5 @@
+#summary What's new on each version.
 #labels Featured
-# What's new on each version.
 {{{
 v2.09
 -----------------------
