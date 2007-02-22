@@ -14,6 +14,9 @@ A: Download the generic version. Under Linux, the libraries required by the bot 
 In other distros their names might differ but not much. 
 After installing them just run runbot.sh
 
+===Q: I found some error in the bot, how do I report it?===
+
+A: Go to the issues tab and open a new issue, then follow the instructions. 
 
 ===Q: What libraries does the bot depend on?===
 A: These:
