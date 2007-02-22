@@ -399,7 +399,13 @@ class Bot(threading.Thread):
                         planet.spyReportHistory.append(spyReport)
                         self._planetDb.write(planet)
                         self.simulations[repr(planet.coords)].simulatedResources = spyReport.resources
-        
+#                    elif self._serverTime() > espionage.arrivalTime:
+#                        del notArrivedEspionages[planet]
+#                        try: del self.simulations[repr(finalPlanet.coords)]
+#                        except KeyError: pass
+#                        self.targetPlanets.remove(finalPlanet)
+#                        self._eventMgr.activityMsg("Espionage from %s to %s timed out." %(mission.sourcePlanet,mission.targetPlanet))
+#        
             sleep(1)            
 
     def _scanNextSolarSystem(self,tuple = None): # inactive planets background search

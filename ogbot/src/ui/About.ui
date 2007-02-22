@@ -116,24 +116,11 @@
     <pixmap/>
    </property>
   </widget>
-  <widget class="QLabel" name="label_8" >
-   <property name="geometry" >
-    <rect>
-     <x>220</x>
-     <y>250</y>
-     <width>213</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>v2, last tested with OGame v 0.76</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_7" >
    <property name="geometry" >
     <rect>
-     <x>10</x>
-     <y>280</y>
+     <x>20</x>
+     <y>330</y>
      <width>401</width>
      <height>61</height>
     </rect>
@@ -145,17 +132,30 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_4" >
+  <widget class="QLabel" name="label_8" >
    <property name="geometry" >
     <rect>
-     <x>10</x>
-     <y>350</y>
-     <width>446</width>
-     <height>41</height>
+     <x>220</x>
+     <y>240</y>
+     <width>222</width>
+     <height>32</height>
     </rect>
    </property>
    <property name="text" >
-    <string>Copyright (c) 2006 Kovan. &lt;br>Images are copyrighted by their respective owners.</string>
+    <string>v2, last tested with OGame v 0.76</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>280</y>
+     <width>446</width>
+     <height>48</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Copyright (c) 2006 Kovan. &lt;br>Images are copyrighted by their respective owners.&lt;br>&lt;a href="http://code.google.com/p/kovans-ogbot">http://code.google.com/p/kovans-ogbot&lt;/a></string>
    </property>
   </widget>
  </widget>
