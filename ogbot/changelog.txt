@@ -1,8 +1,12 @@
-v2.09b
+v2.1
 -----------------------
  February, 22. 2007     
 -----------------------
 - Added tolerance to buggy (N;) espionage reports.
+- Added a configurable list of planets to avoid.
+- Changed user agent to that of a fresh WinXP install: 
+	Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)
+- Removed range limit.
 
 v2.09
 -----------------------

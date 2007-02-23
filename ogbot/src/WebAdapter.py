@@ -79,7 +79,7 @@ class WebAdapter(object):
 
         self.browser.set_handle_refresh(True, 0, False) # HTTPRefreshProcessor(0,False)         
         self.browser.set_handle_robots(False) # do not obey website's anti-bot indications
-        self.browser.addheaders = [('User-agent', 'Mozilla/5.0')] # self-identify as Mozilla
+        self.browser.addheaders = [('User-agent', 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)')]
         self.webpage = "http://"+ config.webpage +"/portal/?frameset=1"
         
         if not self.loadState():
