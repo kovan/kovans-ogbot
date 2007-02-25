@@ -118,6 +118,7 @@ class Configuration(dict):
         self['slotsToReserve'] = 0
         self['attackingShip'] = 'smallCargo'
         self['sourcePlanets'] = []
+        self['planetsToAvoid'] = []        
 
         
     def __getattr__(self, attrName):
@@ -141,14 +142,23 @@ class Configuration(dict):
             
         self['webpage'] = self['webpage'].replace("http://", "")
         
+        from GameEntities import Coords
         sourcePlanets = []
         if self.configParser.has_option('options', 'sourcePlanets'):
-            from GameEntities import Coords
             if '[]' not in self['sourcePlanets']:
                 for coordsStr in self['sourcePlanets'].split(','):
                     coords = Coords(coordsStr)
                     sourcePlanets.append(coords)
         self['sourcePlanets'] = sourcePlanets
+
+        planetsToAvoid = []
+        if self.configParser.has_option('options', 'planetsToAvoid'):
+            if '[]' not in self['planetsToAvoid']:
+                for coordsStr in self['planetsToAvoid'].split(','):
+                    coords = Coords(coordsStr)
+                    planetsToAvoid.append(coords)
+        self['planetsToAvoid'] = planetsToAvoid
+
         
         from Constants import INGAME_TYPES_BY_NAME
         if self['attackingShip'] not in INGAME_TYPES_BY_NAME.keys():

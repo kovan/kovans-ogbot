@@ -253,7 +253,7 @@ class Bot(threading.Thread):
                 if (planet.coords.galaxy,planet.coords.solarSystem) not in self.reachableSolarSystems:
                     self.targetPlanets.remove(planet)
                     try:
-                        del self.simulations[str(planet.coords)]
+                        del self.simulations[repr(planet.coords)]
                     except KeyError: pass
             self._eventMgr.activityMsg("Searching inactive planets in range... This might take a while, but will only be done once.")            
             
@@ -286,7 +286,9 @@ class Bot(threading.Thread):
                 flightTime = sourcePlanet.coords.flightTimeTo(planet.coords)
                 if  self.simulations.has_key(repr(planet.coords)):
                     rentability = self.simulations[repr(planet.coords)].simulatedResources.rentability(flightTime.seconds)
-                    if not planet.spyReportHistory[-1].isUndefended():
+                    if not planet.spyReportHistory:
+                        rentability = 0
+                    elif not planet.spyReportHistory[-1].isUndefended():
                         rentability = -1
                 else: rentability = 0
                 rentabilities.append((planet,rentability))
@@ -319,6 +321,8 @@ class Bot(threading.Thread):
                         if rentability <= 0: # ensure undefended
                             continue
                         if finalPlanet in notArrivedEspionages:
+                            continue
+                        if finalPlanet.coords in self.config.planetsToAvoid:
                             continue
                         if finalPlanet.spyReportHistory[-1].getAge(self.serverTime()).seconds < 600:                            
                             simulation =  self.simulations[repr(finalPlanet.coords)]
