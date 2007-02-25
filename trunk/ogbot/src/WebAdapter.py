@@ -195,8 +195,6 @@ class WebAdapter(object):
                     return response                
                 elif self.translations['youAttemptedToLogIn'] in p:         
                     raise BotFatalError("Invalid username and/or password.")
-#                elif "<a href=../pranger.php>" in p:
-#                    raise BotFatalError("Account banned.")
                 elif self.translations['concurrentPetitionsError'] in p:
                     valid = False
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:

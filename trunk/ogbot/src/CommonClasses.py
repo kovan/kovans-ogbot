@@ -173,11 +173,11 @@ class Translations(dict):
             parser = ConfigParser.SafeConfigParser()
             parser.optionxform = str # prevent ini parser from converting names to lowercase           
             try:
-                file = codecs.open('languages/'+fileName+extension, "r", "utf-8" ) # language files are codified in UTF-8
-                parser.readfp(file)
+                #file = codecs.open('languages/'+fileName+extension, "r", "utf-8" ) # language files are codified in UTF-8
+                parser.read('languages/'+fileName+extension)
                 translation = {}
                 for section in parser.sections():
-                    translation.update((key, value.encode('ISO-8859-1')) for key, value in parser.items(section))
+                    translation.update((key, value) for key, value in parser.items(section))
                 self[translation['languageCode']] = translation 
             except Exception, e: 
                 raise BotError("Malformed languaje file (%s%s): %s"%(fileName,extension,e))
