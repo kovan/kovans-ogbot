@@ -11,7 +11,7 @@ v2.1
 - Changed user agent to that of a fresh WinXP install: 
 	Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)
 - Removed range limit.
-- Language files are no longer need codified in UTF-8
+- Language files are no longer codified in UTF-8
 - More descriptive messages when using translation files with errors.
 - Other fixes.
 
