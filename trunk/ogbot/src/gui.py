@@ -58,6 +58,9 @@ class OptionsDialog(baseclass,formclass):
         QObject.connect(self.rotatePlanetsRadio,SIGNAL("clicked()"),self.enablePlanetList)
         QObject.connect(self.addPlanetButton,SIGNAL("clicked()"),self.addPlanetToList)        
         QObject.connect(self.removePlanetButton,SIGNAL("clicked()"),self.removePlanetFromList)                
+        QObject.connect(self.addPlanetButton2,SIGNAL("clicked()"),self.addPlanetToList2)        
+        QObject.connect(self.removePlanetButton2,SIGNAL("clicked()"),self.removePlanetFromList2)                
+        
         self.enableOrDisablePlanetList(False)
         self.attackingShipComboBox.addItems([str(shiptype) for shiptype in INGAME_TYPES if isinstance(shiptype,Ship)])
         self.loadOptions()
@@ -83,6 +86,9 @@ class OptionsDialog(baseclass,formclass):
             self.rotatePlanetsRadio.setChecked(True)
             self.enablePlanetList()
             self.sourcePlanetsList.addItems( [repr(p) for p in self.config['sourcePlanets']] )
+
+        if self.config.get('planetsToAvoid'):
+            self.planetsToAvoidList.addItems( [repr(p) for p in self.config['planetsToAvoid']] )
         
         
     def saveOptions(self):
@@ -97,8 +103,8 @@ class OptionsDialog(baseclass,formclass):
                 QMessageBox.critical(self,"Error","No source of attacks planets selected")
                 return
         else: sourcePlanets = []
-        
 
+        self.config['planetsToAvoid'] = [ Coords(str(self.planetsToAvoidList.item(i).text())) for i in range(self.planetsToAvoidList.count()) ]
         self.config['sourcePlanets'] = sourcePlanets
         self.config['attackingShip'] = str(self.attackingShipComboBox.currentText().toAscii())
         
@@ -137,7 +143,20 @@ class OptionsDialog(baseclass,formclass):
             return
         index = self.sourcePlanetsList.row(selectedPlanet)
         self.sourcePlanetsList.takeItem(index)
-
+        
+    def addPlanetToList2(self):
+        if self.isMoonCheckBox2.isChecked():
+            coordsType = Coords.Types.moon
+        else : coordsType = Coords.Types.planet
+        coords = Coords(str(self.addPlanetLineEdit2.text()),coordsType = coordsType)
+        self.planetsToAvoidList.addItem(repr(coords))
+        
+    def removePlanetFromList2(self):
+        selectedPlanet = self.planetsToAvoidList.currentItem()
+        if not selectedPlanet:
+            return
+        index = self.planetsToAvoidList.row(selectedPlanet)
+        self.planetsToAvoidList.takeItem(index)
 
 formclass, baseclass = uic.loadUiType("src/ui/MainWindow.ui")
 class MainWindow(baseclass,formclass): 
