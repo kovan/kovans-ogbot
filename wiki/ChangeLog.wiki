@@ -1,6 +1,7 @@
 #summary What's new on each version.
 #labels Featured
-{{{v2.1
+{{{
+v2.1
 -----------------------
  February, 25. 2007     
 -----------------------
@@ -83,7 +84,5 @@ v1.0
 - Features: automated spy-and-attack to neighbour inactive planets 
   with no defenses nor fleet
 - Planet database
-
-
 
 }}}
