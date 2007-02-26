@@ -92,7 +92,7 @@ class WebAdapter(object):
         self.serverLanguage =  regexpLanguage.findall(page.read())[0]
         try: self.translations = allTranslations[self.serverLanguage]
         except KeyError:
-            raise BotFatalError("Server language (%s) not supported by bot",self.serverLanguage )
+            raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage )
         self.translationsByLocalText = dict([ (value,key) for key,value in self.translations.items() ])
         self.generateRegexps(self.translations)        
         # retrieve server based on universe number        
