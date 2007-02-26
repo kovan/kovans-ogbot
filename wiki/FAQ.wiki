@@ -53,3 +53,34 @@ Then:
  #. In the system variable PATH include "C:\Qt\4.2.2\bin;C:\Python25" (assuming you installed QT and Python in their default locations).
 
 After all that, execute runbot.bat and it _should_ work.
+
+===Q: How does the bot choose which planet to attack?===
+
+A: Here is an extract from one issue's comments that explains the differences in the algorithms between OGBot versions 1 and 2.
+
+_The_ _v2_ _algorithm_ _is_ _indeed_ _completly_
+_different_ _from_ _that_ _of_ _v1._ _v1's_ _algorithm_ _consisted_ _simply_ _in:_ 
+ # _-_ _Scan_ _a_ _solar_ _system_ _for_ _inactives_
+ # _-_ _Spy_ _them_
+ # _-_ _Attack_ _those_ _that_ _had_ _more_ _resources_ _than_ _the_ _limit_ _the_ _user_ _configured._ 
+ # _-_ _Go_ _to_ _the_ _next_ _solar_ _system._
+
+_V2's_ _algorithm,_ _on_ _the_ _other_ _hand,_ _is_ _completly_ _different._ _It_ _is_ _designed_ _to_ _collect_
+_the_ _maximum_ _possible_ _resources_ _per_ _hour_ _by_ _both_ _minimizing_ _the_ _amount_ _of_ _neccesary_
+_espionages_ _and_ _by_ _always_ _attacking_ _at_ _the_ _most_ _rentable_ _planet,_ _understanding_ _that_ _as_
+_the_ _attack_ _that_ _most_ _resources_ _is_ _going_ _to_ _provide_ _the_ _player_ _by_ _unit_ _of_ _travel_ _time._
+_The_ _algorithm_ _is_ _based_ _on_ _two_ _ideas:_
+
+_-_ _The_ _mines_ _of_ _an_ _inactive_ _planet_ _are_ _never_ _going_ _to_ _change_ _troughout_ _the_ _time_ _it_
+_remains_ _inactive._ _This_ _way,_ _the_ _planet_ _can_ _be_ _spied_ _only_ _once_ _to_ _determine_ _it's_ _mine_
+_levels,_ _and_ _simulate_ _the_ _produced_ _resources_ _from_ _that_ _without_ _the_ _need_ _of_ _additional_
+_espionages._ _In_ _case_ _it_ _gets_ _to_ _be_ _the_ _most_ _rentable_ _planet_ _to_ _attack,_ _it_ _will_ _be_
+_spied_ _again_ _to_ _assure_ _it_ _has_ _not_ _been_ _attacked_ _by_ _other_ _player_ _in_ _the_ _meantime._
+
+_-_ _Second_ _and_ _most_ _important:_ _you_ _get_ _the_ _same_ _amount_ _of_ _resources_ _by_ _attacking_ _a_ _far_
+_planet_ _with_ _flight_ _time_ _of_ _2_ _hours_ _and_ _lots_ _of_ _resources,_ _than_ _by_ _attacking_ _two_ _near_
+_planets_ _with_ _half_ _of_ _the_ _resources_ _each,_ _but_ _at_ _a_ _flight_ _time_ _of_ _1_ _hour._
+
+_Additionally,_ _those_ _planets_ _with_ _fleet_ _or_ _defenses_ _are_ _re-spied_ _every_ _two_ _days,_ _just_
+_in_ _case_ _they_ _have_ _been_ _destroyed,_ _and_ _every_ _night_ _the_ _list_ _of_ _inactive_ _planets_ _is_
+_updated,_ _and_ _the_ _new_ _ones_ _are_ _spied._
