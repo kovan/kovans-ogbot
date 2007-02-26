@@ -229,7 +229,7 @@ class Bot(threading.Thread):
             self.simulations = {}
             self.targetPlanets = []
             self.reachableSolarSystems = []
-            self._eventMgr.activityMsg("Invalid gamedata, respying planets.")
+            self._eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
             try:
                 os.remove(FILE_PATHS['gamedata'])              
             except Exception : pass
@@ -265,6 +265,11 @@ class Bot(threading.Thread):
 
         if not self.targetPlanets:
             raise BotFatalError("No inactive planets found in range. Increase range.")    
+        
+        for planet in self.targetPlanets[:]:
+            if planet.coords in self.config.planetsToAvoid:
+                self.targetPlanets.remove(planet)
+
         
         self._targetSolarSystemsIter = iter(self.reachableSolarSystems)
         self._eventMgr.activityMsg("Bot started.")
@@ -321,8 +326,6 @@ class Bot(threading.Thread):
                         if rentability <= 0: # ensure undefended
                             continue
                         if finalPlanet in notArrivedEspionages:
-                            continue
-                        if finalPlanet.coords in self.config.planetsToAvoid:
                             continue
                         if finalPlanet.spyReportHistory[-1].getAge(self.serverTime()).seconds < 600:                            
                             simulation =  self.simulations[repr(finalPlanet.coords)]
@@ -444,7 +447,7 @@ class Bot(threading.Thread):
 
             found = [p for p in self.targetPlanets if p.coords == planet.coords]
             if 'inactive' in planet.ownerStatus:
-                if not found:
+                if not found and not planet.coords in self.config.planetsToAvoid:
                     # we found a new inactive planet
                     self.targetPlanets.append(planet)    #insert planet into main planet list
                     random.shuffle(self.targetPlanets)
