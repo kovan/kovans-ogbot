@@ -1,8 +1,14 @@
+v2.1c
+-----------------------
+ February, 26. 2007     
+-----------------------
+- Fixed french translation
+
 v2.1b
 -----------------------
  February, 25. 2007     
 -----------------------
-- Fixed planets to avoid list not working properly
+- Fixed list of planets to avoid not working properly
 
 v2.1
 -----------------------
