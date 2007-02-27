@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #      Kovan's OGBot
-#      Copyright (c) 2006 by kovan 
+#      Copyright (c) 2007 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
@@ -118,7 +118,10 @@ class Configuration(dict):
         self['slotsToReserve'] = 0
         self['attackingShip'] = 'smallCargo'
         self['sourcePlanets'] = []
-        self['planetsToAvoid'] = []        
+        self['planetsToAvoid'] = []       
+        self['systemsPerGalaxy'] = 499
+        self['proxy']= ''
+        self['userAgent'] = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)'
 
         
     def __getattr__(self, attrName):
@@ -141,6 +144,7 @@ class Configuration(dict):
             self.update(self.configParser.items(section))
             
         self['webpage'] = self['webpage'].replace("http://", "")
+        self['proxy'] = self['proxy'].replace("http://", "")        
         
         from GameEntities import Coords
         sourcePlanets = []

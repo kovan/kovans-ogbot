@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #      Kovan's OGBot
-#      Copyright (c) 2006 by kovan 
+#      Copyright (c) 2007 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *

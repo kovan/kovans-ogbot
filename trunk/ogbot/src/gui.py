@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #      Kovan's OGBot
-#      Copyright (c) 2006 by kovan 
+#      Copyright (c) 2007 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
@@ -75,7 +75,7 @@ class OptionsDialog(baseclass,formclass):
         self.attackingShipComboBox.setCurrentIndex(index)
         
                
-        for i in ['webpage','username','password']:
+        for i in ['webpage','username','password','proxy']:
             control = getattr(self,i + "LineEdit")
             control.setText(self.config[i])
         for i in ['universe','attackRadio','probesToSend','slotsToReserve']:            
@@ -108,7 +108,7 @@ class OptionsDialog(baseclass,formclass):
         self.config['sourcePlanets'] = sourcePlanets
         self.config['attackingShip'] = str(self.attackingShipComboBox.currentText().toAscii())
         
-        for i in ['webpage','username','password']:
+        for i in ['webpage','username','password','proxy']:
             control = getattr(self,i + "LineEdit")
             self.config[i] = control.text()
         for i in ['universe','attackRadio','probesToSend','slotsToReserve']:            
