@@ -14,6 +14,8 @@ A: Download the generic version. Under Linux, the libraries required by the bot 
 In other distros their names might differ but not much. 
 After installing them just run runbot.sh
 
+Note for Gentoo Linux: there is not a pyqt-4 package, so PyQt must be compiled manually. Instructions here: http://www.riverbankcomputing.com/Docs/PyQt4/pyqt4ref.html#installing-pyqt
+
 ===Q: I found some error in the bot, how do I report it?===
 
 A: Go to the issues tab and open a new issue, then follow the instructions. 
@@ -53,6 +55,14 @@ Then:
  #. In the system variable PATH include "C:\Qt\4.2.2\bin;C:\Python25" (assuming you installed QT and Python in their default locations).
 
 After all that, execute runbot.bat and it _should_ work.
+
+===Q: Does the bot obbey the bashing rules?===
+
+A: Yes, as they don't apply for attacks to inactive planets.
+
+===Q: What user-agent does the bot send?===
+
+A: The bot identifies itself as Internet Explorer 6 running in a fresh WinXP installation. This is: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)
 
 ===Q: How does the bot choose which planet to attack?===
 
