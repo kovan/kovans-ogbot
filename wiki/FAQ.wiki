@@ -16,6 +16,10 @@ After installing them just run runbot.sh
 
 Note for Gentoo Linux: there is not a pyqt-4 package, so PyQt must be compiled manually. Instructions here: http://www.riverbankcomputing.com/Docs/PyQt4/pyqt4ref.html#installing-pyqt
 
+===Q: My server has less than 500 solar systems per galaxy!===
+
+A: You can change the number of solar systems per galaxy in the configuration file (located in files/config/config.ini)
+
 ===Q: I found some error in the bot, how do I report it?===
 
 A: Go to the issues tab and open a new issue, then follow the instructions. 
