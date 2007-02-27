@@ -1,3 +1,14 @@
+v2.1d
+-----------------------
+ February, 28. 2007     
+-----------------------
+- Added some changes to emulate human behavior.
+- Made possible translation to yugoslavian and portuguese.
+- Added support for universes with more than 9 galaxies.
+- Configurable number of solar systems per galaxy (see FAQ).
+- Configurable user agent (see FAQ).
+- Added support for proxy.
+
 v2.1c
 -----------------------
  February, 26. 2007     

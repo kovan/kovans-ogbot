@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #      Kovan's OGBot
-#      Copyright (c) 2006 by kovan 
+#      Copyright (c) 2007 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
@@ -50,8 +50,7 @@ from Constants import *
 
 
             
-def _calculateServerTime(delta):
-    return delta + datetime.now()
+
 
 class ResourceSimulation(object):
     def __init__(self, baseResources, mines):
@@ -178,8 +177,8 @@ class Bot(threading.Thread):
     def _connect(self):
         self._eventMgr.activityMsg("Connecting...")        
         self._web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue,self.gui)
-        self.myPlanets, serverTime = self._web.getMyPlanetsAndServerTime()
-        self.serverTimeDelta = serverTime - datetime.now() 
+        self.myPlanets = self._web.getMyPlanets()
+
         ownedCoords = [repr(planet.coords) for planet in self.myPlanets]
         for coords in self.config.sourcePlanets:
             if str(coords) not in ownedCoords:
@@ -194,8 +193,6 @@ class Bot(threading.Thread):
             self.sourcePlanets.append(self.myPlanets[0]) # the user did not select any source planet, so use the main planet as source
         self._eventMgr.connected()            
 
-    def serverTime(self):
-        return _calculateServerTime(self.serverTimeDelta)
     
     def _start(self): 
         #self._checkThreadQueue()
@@ -239,7 +236,7 @@ class Bot(threading.Thread):
         for sourcePlanet in self.sourcePlanets:
             galaxy = sourcePlanet.coords.galaxy
             first = max(1,sourcePlanet.coords.solarSystem - attackRadio)
-            last = min(Coords.SOLAR_SYSTEMS,sourcePlanet.coords.solarSystem + attackRadio)
+            last = min(int(self.config.systemsPerGalaxy),sourcePlanet.coords.solarSystem + attackRadio)
             for solarSystem in range(first,last +1):
                 tuple = (galaxy, solarSystem)
                 if tuple not in newReachableSolarSystems:
@@ -307,7 +304,7 @@ class Bot(threading.Thread):
                 allSpied = True
                 for planet in self.targetPlanets:
                     if not planet.spyReportHistory  \
-                    or planet.spyReportHistory[-1].hasExpired(self.serverTime())  \
+                    or planet.spyReportHistory[-1].hasExpired(self._web.serverTime())  \
                     or not planet.spyReportHistory[-1].hasAllNeededInfo():
                         allSpied = False
                         if planet not in planetsToSpy and planet not in notArrivedEspionages.keys():
@@ -327,7 +324,7 @@ class Bot(threading.Thread):
                             continue
                         if finalPlanet in notArrivedEspionages:
                             continue
-                        if finalPlanet.spyReportHistory[-1].getAge(self.serverTime()).seconds < 600:                            
+                        if finalPlanet.spyReportHistory[-1].getAge(self._web.serverTime()).seconds < 600:                            
                             simulation =  self.simulations[repr(finalPlanet.coords)]
                             resourcesToSteal = simulation.simulatedResources.half()
                             ships = int((resourcesToSteal.total() + 5000) / self.attackingShip.capacity)
@@ -350,7 +347,7 @@ class Bot(threading.Thread):
                                 break
                             except NotEnoughShipsError, e:
                                 self._eventMgr.activityMsg("No ships in planet %s to attack %s. needed: %s" %(sourcePlanet,finalPlanet,fleet))
-                                sleep(1)
+                                sleep(10)
                         else:
                             if finalPlanet not in planetsToSpy and finalPlanet not in notArrivedEspionages:
                                 planetsToSpy.append(finalPlanet)
@@ -406,7 +403,7 @@ class Bot(threading.Thread):
                         planet.spyReportHistory.append(spyReport)
                         self._planetDb.write(planet)
                         self.simulations[repr(planet.coords)].simulatedResources = spyReport.resources
-                    elif self.serverTime() > espionage.arrivalTime + timedelta(seconds=10):
+                    elif self._web.serverTime() > espionage.arrivalTime + timedelta(seconds=10):
                         del notArrivedEspionages[planet]
                         try: del self.simulations[repr(finalPlanet.coords)]
                         except KeyError: pass
@@ -419,7 +416,7 @@ class Bot(threading.Thread):
         if tuple == None: # proceed with next solar system
 
             now = datetime.now()            
-            serverTime = self.serverTime()
+            serverTime = self._web.serverTime()
             if (serverTime.hour == 0 and serverTime.minute >= 6 and serverTime.minute <= 7):
                 self._targetSolarSystemsIter = iter(self.reachableSolarSystems)             
                 self.scanning = True

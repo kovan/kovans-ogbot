@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #      Kovan's OGBot
-#      Copyright (c) 2006 by kovan 
+#      Copyright (c) 2007 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
@@ -43,10 +43,8 @@ class Coords(object):
         debris  = 2
         moon = 3
     
-    GALAXIES = 9
-    SOLAR_SYSTEMS = 499
     PLANETS_PER_SYSTEM = 15
-    REGEXP_COORDS    = re.compile(r"([1-9]):([0-9]{1,3}):([0-9]{1,2})")
+    REGEXP_COORDS    = re.compile(r"([1-9]{1,2}):([0-9]{1,3}):([0-9]{1,2})")
     
     def __init__(self, galaxyOrStr, solarSystem=0, planet=0, coordsType=Types.planet):
         ''' 
@@ -109,20 +107,7 @@ class Coords(object):
     def flightTimeTo(self, coords, speed=26000, speedPercentage=100):
         seconds = 350000.0/speedPercentage * math.sqrt(self.distanceTo(coords) * 10.0 / float(speed)) + 10.0
         return timedelta(seconds=int(seconds))
-    def increment(self):
-        self.planet += 1
-        if self.planet > self.PLANETS_PER_SYSTEM:
-            self.planet = 1
-            self.incrementSolarSystem()
-    def incrementSolarSystem(self):
-        self.solarSystem += 1
-        if self.solarSystem > self.SOLAR_SYSTEMS:
-            self.solarSystem = 1
-            self.incrementGalaxy()
-    def incrementGalaxy(self):
-        self.galaxy += 1
-        if self.galaxy > self.GALAXIES:
-            self.galaxy = 1
+
 
 class Resources(object):
     def __init__(self, metal=0, crystal=0, deuterium=0):

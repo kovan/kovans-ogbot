@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #      Kovan's OGBot
-#      Copyright (c) 2006 by kovan 
+#      Copyright (c) 2007 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
@@ -61,7 +61,7 @@ class WebAdapter(object):
             self.logAndPrint("** CONNECTION ERROR: %s" % reason)
             self.dispatch("connectionError", reason)              
         def loggedIn(self, username, session):
-            msg = 'Logged in with user %s. Session identifier: %s' % (username, session)
+            msg = 'Logged in with user %s.' % username
             self.logAndPrint(msg)
             msg = datetime.now().strftime("%X %x ") + msg
             self.dispatch("activityMsg",msg)            
@@ -76,11 +76,17 @@ class WebAdapter(object):
         self.config = config
         self._checkThreadMethod = checkThreadMethod
         self._eventMgr = WebAdapter.EventManager(gui)
-
+        self.serverTimeDelta = None
+        
         self.browser.set_handle_refresh(True, 0, False) # HTTPRefreshProcessor(0,False)         
         self.browser.set_handle_robots(False) # do not obey website's anti-bot indications
-        self.browser.addheaders = [('User-agent', 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)')]
-        self.webpage = "http://"+ config.webpage +"/portal/?frameset=1"
+        self.browser.addheaders = [('User-agent', self.config.userAgent)]
+        if self.config.proxy:
+            self.browser.set_proxies({"http":"http://"+self.config.proxy})
+        if config.webpage.endswith('.ba') or config.webpage.endswith('.com.hr'):
+            self.webpage = "http://"+ config.webpage +"/portal/?lang=yu&frameset=1"
+        else:
+            self.webpage = "http://"+ config.webpage +"/portal/?frameset=1"
         
         if not self.loadState():
             self.session = '000000000000'
@@ -119,7 +125,7 @@ class WebAdapter(object):
         spyReportTmp2 = r'<table width=[0-9]+><tr><td class=c colspan=4>%s(.*?)</table>'
 
         
-        self.REGEXP_COORDS_STR  = r"([1-9]):([0-9]{1,3}):([0-9]{1,2})"
+        self.REGEXP_COORDS_STR  = r"([1-9]{1,3}):([0-9]{1,3}):([0-9]{1,2})"
         self.REGEXP_SESSION_STR = r"[0-9A-Fa-f]{12}"
 
         self.REGEXPS = \
@@ -138,7 +144,7 @@ class WebAdapter(object):
             }, 
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
             'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"',re.I), 
-            'maxSlots':re.compile(r"max\. ([0-9]+)",re.I), 
+            'maxSlots':re.compile(r"ma|áx\. ([0-9]+)",re.I), 
             'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE|re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
             
@@ -155,7 +161,9 @@ class WebAdapter(object):
     
     def getControlUrl(self):
         return "http://%s/game/index.php?session=%s" % (self.server, self.session)
-
+    
+    def serverTime(self):
+        return self.serverTimeDelta + datetime.now()
             
     def _fetchPhp(self, php, **params):
         params['session'] = self.session
@@ -178,7 +186,6 @@ class WebAdapter(object):
                 #-----------------------------------------------------------
                 self._checkThreadMethod()
                 #-----------------------------------------------------------
-                                
                 response = self.browser.open(request)
                 p = response.read()
                 if __debug__:
@@ -198,6 +205,7 @@ class WebAdapter(object):
                 elif self.translations['concurrentPetitionsError'] in p:
                     valid = False
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
+
                     oldSession = self.session
                     self.doLogin()
                     if   isinstance(request, str):
@@ -221,6 +229,8 @@ class WebAdapter(object):
         return response
     
     def doLogin(self):
+        if self.serverTime().hour == 3 and self.serverTime.minute == 0: # don't connect immediately after 3am server reset
+            sleep(40)                
         
         page = self._fetchValidResponse(self.webpage)
         form = ParseResponse(page, backwards_compat=False)[0]
@@ -236,7 +246,7 @@ class WebAdapter(object):
         self._eventMgr.loggedIn(self.config.username, self.session)
         self.saveState()
 
-    def getMyPlanetsAndServerTime(self):
+    def getMyPlanets(self):
         page = self._fetchPhp('overview.php').read()
         
         myPlanets = []
@@ -250,7 +260,8 @@ class WebAdapter(object):
         
         strTime = self.REGEXPS['serverTime'].findall(page)[0]
         serverTime = parseTime(strTime)
-        return myPlanets, serverTime
+        self.serverTimeDelta = serverTime - datetime.now()
+        return myPlanets
 
     def getSolarSystem(self, galaxy, solarSystem, deuteriumSourcePlanet = None):
         try:
