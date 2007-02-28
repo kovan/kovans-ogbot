@@ -23,7 +23,7 @@ http://groups.google.com/group/kovans-ogbot/browse_frm/thread/674a21ebcc4fe7d4
 
 ===Q: My server has less than 500 solar systems per galaxy!===
 
-A: You can change the number of solar systems per galaxy in the configuration file (located in files/config/config.ini)
+A: The number of solar systems per galaxy can be changed in the configuration file (located in files/config/config.ini)
 
 ===Q: I found some error in the bot, how do I report it?===
 
