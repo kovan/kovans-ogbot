@@ -1,6 +1,29 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+v2.1d
+-----------------------
+ February, 28. 2007     
+-----------------------
+- Added some changes to emulate human behavior.
+- Made possible translation to yugoslavian and portuguese.
+- Added support for universes with more than 9 galaxies.
+- Configurable number of solar systems per galaxy (see FAQ).
+- Configurable user agent (see FAQ).
+- Added support for proxy.
+
+v2.1c
+-----------------------
+ February, 26. 2007     
+-----------------------
+- Fixed french translation
+
+v2.1b
+-----------------------
+ February, 25. 2007     
+-----------------------
+- Fixed list of planets to avoid not working properly
+
 v2.1
 -----------------------
  February, 25. 2007     
@@ -85,4 +108,13 @@ v1.0
   with no defenses nor fleet
 - Planet database
 
+
+
+-----------------------
+ Contact     
+-----------------------
+
+jsceballos@gmail.com
+
+http://code.google.com/p/kovans-ogbot
 }}}
