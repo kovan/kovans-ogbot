@@ -144,7 +144,7 @@ class WebAdapter(object):
             }, 
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
             'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"',re.I), 
-            'maxSlots':re.compile(r"ma|áx\. ([0-9]+)",re.I), 
+            'maxSlots':re.compile(r"m(?:a|á)x\. ([0-9]+)",re.I), 
             'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE|re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
             
@@ -368,7 +368,8 @@ class WebAdapter(object):
         if len(usedSlotsNums) == 0:
             usedSlots = 0
         else: usedSlots = int(usedSlotsNums[-1])
-        maxFleets = int(self.REGEXPS['maxSlots'].search(pageText).group(1))
+        match = self.REGEXPS['maxSlots'].search(pageText)
+        maxFleets = int(match.group(1))
         freeSlots = maxFleets - usedSlots
         if freeSlots <= int(slotsToReserve):
             raise NoFreeSlotsError()
