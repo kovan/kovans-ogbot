@@ -229,7 +229,7 @@ class WebAdapter(object):
         return response
     
     def doLogin(self):
-        if self.serverTime().hour == 3 and self.serverTime.minute == 0: # don't connect immediately after 3am server reset
+        if self.serverTimeDelta and self.serverTime().hour == 3 and self.serverTime.minute == 0: # don't connect immediately after 3am server reset
             sleep(40)                
         
         page = self._fetchValidResponse(self.webpage)

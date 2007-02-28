@@ -404,11 +404,12 @@ class Bot(threading.Thread):
                         self._planetDb.write(planet)
                         self.simulations[repr(planet.coords)].simulatedResources = spyReport.resources
                     elif self._web.serverTime() > espionage.arrivalTime + timedelta(seconds=10):
+                        # probably due to buggy espionage report (containing only N;)
                         del notArrivedEspionages[planet]
                         try: del self.simulations[repr(finalPlanet.coords)]
                         except KeyError: pass
                         self.targetPlanets.remove(finalPlanet)
-                        self._eventMgr.activityMsg("Espionage from %s to %s timed out." %(espionage.sourcePlanet,espionage.targetPlanet))
+                        #self._eventMgr.activityMsg("Espionage from %s to %s timed out." %(espionage.sourcePlanet,espionage.targetPlanet))
         
             sleep(1)            
 
