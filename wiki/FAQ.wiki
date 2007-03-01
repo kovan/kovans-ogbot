@@ -38,6 +38,10 @@ But it can be changed in the configuration file (files/config/config.ini)
 
 A: Delete the files in the directory files/botdata.
 
+===Q: When my IP changes I get "Fatal error found, terminating. (...) Your session is not valid.===
+
+A: Deactivate IP check in OGame options.
+
 ===Q: Can I choose which browser does the "Launch web browser" button use?===
 
 A: You have to set the BROWSER environment variable to the command of the browser you want to use. A list of possible values and further instructions can be found here: http://docs.python.org/lib/module-webbrowser.html
