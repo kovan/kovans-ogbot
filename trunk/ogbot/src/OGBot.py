@@ -82,32 +82,11 @@ class ResourceSimulation(object):
 class Bot(threading.Thread):
     """Contains the bot logic, independent from the communications with the server.
     Theorically speaking if ogame switches from being web-based to being p.e. telnet-based
-    this class should not be touched, only Controller """
+    this class should not be touched, only WebAdapter """
     class EventManager(BaseEventManager):
         ''' Displays events in console, logs them to a file or tells the gui about them'''
         def __init__(self, gui = None):
             self.gui = gui
-        
-        def solarSystemAnalyzed(self, galaxy, solarSystem):
-            self.logAndPrint('Analyzed solar system [%s:%s:]' % (galaxy, solarSystem))
-            self.dispatch("solarSystemAnalyzed", galaxy, solarSystem)              
-        def planetAttacked(self, planet, fleet, resources):
-            self.logAndPrint('Planet %s attacked by %s for %s' % (planet, fleet, resources))
-            self.dispatch("planetAttacked", planet, fleet, resources)              
-        def errorAttackingPlanet(self, planet, reason):
-            self.logAndPrint('Error attacking planet %s ( %s )' % (planet, reason))
-            self.dispatch("errorAttackingPlanet", planet, reason)              
-        def waitForSlotBegin(self):
-            self.logAndPrint('Simultaneous fleet limit reached. Waiting...')
-            self.dispatch("waitForSlotBegin")              
-        def waitForSlotEnd(self):
-            self.logAndPrint('')
-            self.dispatch("waitForSlotEnd")              
-        def waitForShipsBegin(self, shipType):
-            self.logAndPrint('There are no available ships of type %s. Waiting...' % shipType)
-            self.dispatch("waitForShipsBegin", shipType)              
-        def waitForShipsEnd(self): 
-            self.dispatch("waitForShipsEnd")         
         def fatalException(self, exception):
             self.logAndPrint("Fatal error found, terminating. %s" % exception)
             self.dispatch("fatalException", exception)
@@ -197,7 +176,7 @@ class Bot(threading.Thread):
     def _start(self): 
         #self._checkThreadQueue()
         #initializations
-        probesToSendDefault, attackRadio = self.config.probesToSend, int(self.config.attackRadio)
+        probesToSendDefault, attackRadius = self.config.probesToSend, int(self.config.attackRadius)
         self.attackingShip = INGAME_TYPES_BY_NAME[self.config.attackingShip]           
         notArrivedEspionages = {}
         planetsToSpy = []
@@ -235,8 +214,8 @@ class Bot(threading.Thread):
         newReachableSolarSystems = [] # contains tuples of (galaxy,solarsystem)
         for sourcePlanet in self.sourcePlanets:
             galaxy = sourcePlanet.coords.galaxy
-            first = max(1,sourcePlanet.coords.solarSystem - attackRadio)
-            last = min(int(self.config.systemsPerGalaxy),sourcePlanet.coords.solarSystem + attackRadio)
+            first = max(1,sourcePlanet.coords.solarSystem - attackRadius)
+            last = min(int(self.config.systemsPerGalaxy),sourcePlanet.coords.solarSystem + attackRadius)
             for solarSystem in range(first,last +1):
                 tuple = (galaxy, solarSystem)
                 if tuple not in newReachableSolarSystems:

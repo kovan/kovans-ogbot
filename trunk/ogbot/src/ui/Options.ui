@@ -178,7 +178,7 @@
     <string>Attack radius</string>
    </property>
    <property name="buddy" >
-    <cstring>attackRadioSpinBox</cstring>
+    <cstring>attackRadiusSpinBox</cstring>
    </property>
   </widget>
   <widget class="QLabel" name="label_14" >
@@ -220,7 +220,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QSpinBox" name="attackRadioSpinBox" >
+  <widget class="QSpinBox" name="attackRadiusSpinBox" >
    <property name="geometry" >
     <rect>
      <x>250</x>
@@ -580,7 +580,7 @@
   <tabstop>usernameLineEdit</tabstop>
   <tabstop>passwordLineEdit</tabstop>
   <tabstop>attackingShipComboBox</tabstop>
-  <tabstop>attackRadioSpinBox</tabstop>
+  <tabstop>attackRadiusSpinBox</tabstop>
   <tabstop>probesToSendSpinBox</tabstop>
   <tabstop>okButton</tabstop>
   <tabstop>cancelButton</tabstop>

@@ -113,7 +113,7 @@ class Configuration(dict):
         self['username'] = ''
         self['password'] = ''
         self['webpage'] = 'ogame.com.es'      
-        self['attackRadio'] = 10
+        self['attackRadius'] = 10
         self['probesToSend'] = 3
         self['slotsToReserve'] = 0
         self['attackingShip'] = 'smallCargo'
