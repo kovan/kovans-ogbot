@@ -78,7 +78,7 @@ class OptionsDialog(baseclass,formclass):
         for i in ['webpage','username','password','proxy']:
             control = getattr(self,i + "LineEdit")
             control.setText(self.config[i])
-        for i in ['universe','attackRadio','probesToSend','slotsToReserve']:            
+        for i in ['universe','attackRadius','probesToSend','slotsToReserve']:            
             control = getattr(self,i + "SpinBox")
             control.setValue(int(self.config[i]))
         
@@ -111,7 +111,7 @@ class OptionsDialog(baseclass,formclass):
         for i in ['webpage','username','password','proxy']:
             control = getattr(self,i + "LineEdit")
             self.config[i] = control.text()
-        for i in ['universe','attackRadio','probesToSend','slotsToReserve']:            
+        for i in ['universe','attackRadius','probesToSend','slotsToReserve']:            
             control = getattr(self,i + "SpinBox")
             self.config[i] = str(control.value())        
                 

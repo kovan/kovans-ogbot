@@ -81,6 +81,7 @@
     <enum>QFrame::Box</enum>
    </property>
    <property name="pixmap" >
+	<pixmap>src/ui/resources/about.jpeg</pixmap>   
     <pixmap/>
    </property>
   </widget>
@@ -97,6 +98,7 @@
     <enum>QFrame::Box</enum>
    </property>
    <property name="pixmap" >
+	<pixmap>src/ui/resources/pythonlogo.png</pixmap>      
     <pixmap/>
    </property>
   </widget>
@@ -113,6 +115,7 @@
     <enum>QFrame::Box</enum>
    </property>
    <property name="pixmap" >
+		<pixmap>src/ui/resources/qtlogo.JPG</pixmap>      
     <pixmap/>
    </property>
   </widget>
