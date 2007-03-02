@@ -134,6 +134,7 @@ class Bot(threading.Thread):
                 break
             except Exception:
                 traceback.print_exc()
+                self._eventMgr.activityMsg("Something unexpected occured, see log file. Restarting bot.")        
             sleep(5)
     
     def stop(self):

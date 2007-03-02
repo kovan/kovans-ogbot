@@ -72,6 +72,7 @@ class WebAdapter(object):
         
     def __init__(self, config, allTranslations,checkThreadMethod,gui = None):
         self.server = ''
+        self.lastFetch = ''
         self.browser = Browser()
         self.config = config
         self._checkThreadMethod = checkThreadMethod
@@ -168,15 +169,16 @@ class WebAdapter(object):
     def _fetchPhp(self, php, **params):
         params['session'] = self.session
         url = "http://%s/game/%s?%s" % (self.server, php, urllib.urlencode(params))
-        if __debug__: print >>sys.stderr , "         Fetching %s" % url
+        self.lastFetch = url
         return self._fetchValidResponse(url)
     
     def _fetchForm(self, form):
-        if __debug__: print >>sys.stderr, "         Fetching %s" % form
+        self.lastFetch = str(form)
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
-        
+        if __debug__: 
+            print >>sys.stderr, "         Fetching %s" % self.lastFetch
 
         valid = False
         while not valid:
@@ -189,11 +191,15 @@ class WebAdapter(object):
                 response = self.browser.open(request)
                 p = response.read()
 
+                
                 files = os.listdir('debug')
-                if len(files) >= 20:
+                if len(files) >= 20: #never allow more than 20 files
                     files.sort()
                     os.remove('debug/'+files[0])
-                file = open('debug/'+str(datetime.now())+".html", 'w')
+                try: php = ' '+re.findall("/(\w+\.php)",self.lastFetch)[0]
+                except IndexError: php = ''
+                date = datetime.now().strftime("%Y-%m-%d %H.%M.%S")
+                file = open("debug/%s%s.html" %(date,php), 'w')
                 
                 file.write(p.replace('<script','<noscript').replace('</script>','</noscript>').replace('http-equiv="refresh"','http-equiv="kovan-rulez"'))
                 file.close()
