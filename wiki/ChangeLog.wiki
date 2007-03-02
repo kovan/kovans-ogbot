@@ -1,6 +1,13 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+v2.1i
+-----------------------
+ March, 2. 2007     
+-----------------------
+- botdata now is backed up before re-spying.
+- Added support for ogame.com.pt/ogame.com.br and ogame.com.hr/ogame.ba
+
 v2.1e
 -----------------------
  February, 28. 2007     
