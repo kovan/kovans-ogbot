@@ -29,7 +29,7 @@ import traceback
 from Queue import *
 import copy
 import time
-
+import shutil
 import cPickle
 import urllib2
 import itertools
@@ -174,7 +174,7 @@ class Bot(threading.Thread):
 
     
     def _start(self): 
-        #self._checkThreadQueue()
+
         #initializations
         probesToSendDefault, attackRadius = self.config.probesToSend, int(self.config.attackRadius)
         self.attackingShip = INGAME_TYPES_BY_NAME[self.config.attackingShip]           
@@ -207,7 +207,9 @@ class Bot(threading.Thread):
             self.reachableSolarSystems = []
             self._eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
             try:
-                os.remove(FILE_PATHS['gamedata'])              
+                path = FILE_PATHS['gamedata']
+                shutil.move(path,path + ".bak")                
+                os.remove(path)              
             except Exception : pass
             
         # generate reachable solar systems list
@@ -252,12 +254,14 @@ class Bot(threading.Thread):
 
         ## -------------- MAIN LOOP --------------------------
         #gc.set_debug(gc.DEBUG_LEAK)
+        #gc.set_debug(gc.DEBUG_INSTANCES|gc.DEBUG_STATS|gc.DEBUG_COLLECTABLE|gc.DEBUG_UNCOLLECTABLE)
         while True:
             self._saveFiles()
 #            
 #            
 #            print "GC garbage begin ---------------------" 
-#            print gc.garbage
+            #print gc.garbage
+            #del gc.garbage[:]
 #            print "GC garbage end ---------------------" 
 #            
             # generate rentability table
