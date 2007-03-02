@@ -1,6 +1,13 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+
+v2.1k
+-----------------------
+ March, 2. 2007     
+-----------------------
+- Fixed "Connecting..." loop in Windows versions.
+
 v2.1i
 -----------------------
  March, 2. 2007     
@@ -111,17 +118,8 @@ v1.0
  August, 23. 2006     
 -----------------------
 - First release
-- Features: automated spy-and-attack to neighbour inactive planets 
-  with no defenses nor fleet
+- Features: automated spy-and-attack to neighbour inactive planets with no defenses nor fleet
 - Planet database
 
 
-
------------------------
- Contact     
------------------------
-
-jsceballos@gmail.com
-
-http://code.google.com/p/kovans-ogbot
 }}}
