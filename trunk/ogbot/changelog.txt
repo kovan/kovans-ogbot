@@ -1,3 +1,9 @@
+v2.1k
+-----------------------
+ March, 2. 2007     
+-----------------------
+- Fixed "Connecting..." loop in Windows versions.
+
 v2.1i
 -----------------------
  March, 2. 2007     
