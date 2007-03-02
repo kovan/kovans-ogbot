@@ -517,10 +517,10 @@ if __name__ == "__main__":
         try: os.makedirs (os.path.dirname(path))
         except OSError, e: 
             if "File exists" in e: pass             
-    if __debug__:
-        try: os.makedirs ('debug')
-        except OSError, e: 
-            if "File exists" in e: pass      
+
+    try: os.makedirs ('debug')
+    except OSError, e: 
+        if "File exists" in e: pass      
             
     logging.getLogger().setLevel(logging.INFO)
     handler = logging.handlers.RotatingFileHandler(os.path.abspath(FILE_PATHS['log']), 'a', 100000, 10)

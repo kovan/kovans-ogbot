@@ -1,6 +1,6 @@
 v2.1i
 -----------------------
- February, 28. 2007     
+ March, 2. 2007     
 -----------------------
 - botdata now is backed up before re-spying.
 - Added support for ogame.com.pt/ogame.com.br and ogame.com.hr/ogame.ba
