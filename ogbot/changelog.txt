@@ -1,3 +1,14 @@
+v2.1.1
+-----------------------
+ March, 5. 2007     
+-----------------------
+- Added command-line option (-c) to autostart bot without clicking start.
+- Replaced list of planets to avoid by list of players and alliances to avoid.
+- Customizable rentability formula.
+- Redesigned options dialog and added options to customize user-agent and 
+  solar systems per galaxy in the server.
+- Fixed bug "ValueError: list.remove(x): x not in list"
+
 v2.1k
 -----------------------
  March, 2. 2007     

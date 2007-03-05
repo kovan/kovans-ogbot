@@ -58,8 +58,12 @@ class OptionsDialog(baseclass,formclass):
         QObject.connect(self.rotatePlanetsRadio,SIGNAL("clicked()"),self.enablePlanetList)
         QObject.connect(self.addPlanetButton,SIGNAL("clicked()"),self.addPlanetToList)        
         QObject.connect(self.removePlanetButton,SIGNAL("clicked()"),self.removePlanetFromList)                
-        QObject.connect(self.addPlanetButton2,SIGNAL("clicked()"),self.addPlanetToList2)        
-        QObject.connect(self.removePlanetButton2,SIGNAL("clicked()"),self.removePlanetFromList2)                
+        QObject.connect(self.resetRentabilityFormulaButton,SIGNAL("clicked()"),self.resetRentabilityFormula) 
+        QObject.connect(self.resetUserAgentButton,SIGNAL("clicked()"),self.resetUserAgent) 
+                        
+        self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent']
+        self.spinBoxes = ['universe','attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy']
+        self.textEdits = ['playersToAvoid','alliancesToAvoid']
         
         self.enableOrDisablePlanetList(False)
         self.attackingShipComboBox.addItems([str(shiptype) for shiptype in INGAME_TYPES if isinstance(shiptype,Ship)])
@@ -69,33 +73,30 @@ class OptionsDialog(baseclass,formclass):
         
         self.config = Configuration(FILE_PATHS['config'])
         try: self.config.load()
-        except BotError: pass
+        except BotError, e: 
+            QMessageBox.critical(self,"Error in config.ini",str(e))
 
         index = self.attackingShipComboBox.findText(self.config.attackingShip)
         self.attackingShipComboBox.setCurrentIndex(index)
         
                
-        for i in ['webpage','username','password','proxy']:
+        for i in self.lineEdits:
             control = getattr(self,i + "LineEdit")
             control.setText(self.config[i])
-        for i in ['universe','attackRadius','probesToSend','slotsToReserve']:            
+        for i in self.spinBoxes:            
             control = getattr(self,i + "SpinBox")
             control.setValue(int(self.config[i]))
+        for i in self.textEdits:            
+            control = getattr(self,i + "TextEdit")
+            control.setPlainText('\n'.join(self.config[i]))
         
         if self.config.get('sourcePlanets'):
             self.rotatePlanetsRadio.setChecked(True)
             self.enablePlanetList()
             self.sourcePlanetsList.addItems( [repr(p) for p in self.config['sourcePlanets']] )
-
-        if self.config.get('planetsToAvoid'):
-            self.planetsToAvoidList.addItems( [repr(p) for p in self.config['planetsToAvoid']] )
-        
+  
         
     def saveOptions(self):
-        
-        if not self.usernameLineEdit.text() or not self.passwordLineEdit.text() or not self.webpageLineEdit.text():
-            QMessageBox.critical(self,"Error","Required data missing")
-            return
         
         if self.rotatePlanetsRadio.isChecked():
             sourcePlanets = [ Coords(str(self.sourcePlanetsList.item(i).text())) for i in range(self.sourcePlanetsList.count()) ]
@@ -104,18 +105,24 @@ class OptionsDialog(baseclass,formclass):
                 return
         else: sourcePlanets = []
 
-        self.config['planetsToAvoid'] = [ Coords(str(self.planetsToAvoidList.item(i).text())) for i in range(self.planetsToAvoidList.count()) ]
         self.config['sourcePlanets'] = sourcePlanets
         self.config['attackingShip'] = str(self.attackingShipComboBox.currentText().toAscii())
         
-        for i in ['webpage','username','password','proxy']:
+        for i in self.lineEdits:
             control = getattr(self,i + "LineEdit")
             self.config[i] = control.text()
-        for i in ['universe','attackRadius','probesToSend','slotsToReserve']:            
+        for i in self.spinBoxes:            
             control = getattr(self,i + "SpinBox")
             self.config[i] = str(control.value())        
-                
+        for i in self.textEdits:
+            control = getattr(self,i + "TextEdit")
+            self.config[i] = str(control.toPlainText()).split('\n')
+            
         self.config.save()
+        try: self.config.load()                 
+        except BotError,e:
+            QMessageBox.critical(self,"Error in configuration",str(e))
+            return
         self.accept()
 
     def enablePlanetList(self):
@@ -144,19 +151,13 @@ class OptionsDialog(baseclass,formclass):
         index = self.sourcePlanetsList.row(selectedPlanet)
         self.sourcePlanetsList.takeItem(index)
         
-    def addPlanetToList2(self):
-        if self.isMoonCheckBox2.isChecked():
-            coordsType = Coords.Types.moon
-        else : coordsType = Coords.Types.planet
-        coords = Coords(str(self.addPlanetLineEdit2.text()),coordsType = coordsType)
-        self.planetsToAvoidList.addItem(repr(coords))
-        
-    def removePlanetFromList2(self):
-        selectedPlanet = self.planetsToAvoidList.currentItem()
-        if not selectedPlanet:
-            return
-        index = self.planetsToAvoidList.row(selectedPlanet)
-        self.planetsToAvoidList.takeItem(index)
+    def resetRentabilityFormula(self):
+        tmpConfig = Configuration('')
+        self.rentabilityFormulaLineEdit.setText(tmpConfig.rentabilityFormula)
+    def resetUserAgent(self):
+        tmpConfig = Configuration('')
+        self.userAgentLineEdit.setText(tmpConfig.userAgent)
+
 
 formclass, baseclass = uic.loadUiType("src/ui/MainWindow.ui")
 class MainWindow(baseclass,formclass): 
@@ -216,7 +217,9 @@ class MainWindow(baseclass,formclass):
 
         config = Configuration(FILE_PATHS['config'])
         try: config.load()
-        except BotError: self.showOptions()
+        except (BotFatalError, BotError): 
+            self.showOptions()
+
         
         self._planetDb_filter()
     
@@ -242,7 +245,6 @@ class MainWindow(baseclass,formclass):
                 self.bot.join()
             self.bot = Bot(self)
             self.bot.start()
-            #self.botActivityLabel.setText("Starting bot...")
             self.setBotStatusRunning()
             self.startButton.setText("Pause")
             self.stopButton.setEnabled(True)
@@ -464,14 +466,16 @@ class MainWindow(baseclass,formclass):
         self.setBotStatusRunning()     
         item = QListWidgetItem(str(msg))
         self.botActivityList.addItem(item)
-        self.botActivityList.scrollToItem(item)              
+        self.botActivityList.scrollToItem(item)
 
         
 
-def guiMain():
+def guiMain(autostart = False):
     app = QApplication(sys.argv)
     QApplication.setStyle(QStyleFactory.create("plastique"))
     window = MainWindow()
     window.show()
+    if autostart:
+        window.startClicked()
     app.exec_()
     

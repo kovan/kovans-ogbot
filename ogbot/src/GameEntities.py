@@ -117,8 +117,6 @@ class Resources(object):
         
     def total(self):
         return self.metal + self.crystal + self.deuterium
-    def metalEquivalent(self):
-        return int(self.metal + 1.5 * self.crystal + 3 * self.deuterium)
     def half(self):
         return Resources(self.metal/2, self.crystal/2, self.deuterium/2)
     def tuple(self):
@@ -135,8 +133,12 @@ class Resources(object):
         return Resources(self.metal - toSub.metal, self.crystal - toSub.crystal, self.deuterium - toSub.deuterium) 
     def __mul__(self, toMul):
         return Resources(self.metal * toMul, self.crystal * toMul, self.deuterium * toMul) 
-    def rentability(self, flightTime):
-        return self.metalEquivalent() / float(flightTime * 2)
+    def rentability(self, flightTime, formula = ''):
+        if not formula:
+            return float((self.metal + 1.5 * self.crystal + 3 * self.deuterium) / flightTime )
+        else:
+            formula = formula.replace('metal','self.metal').replace('crystal','self.crystal').replace('deuterium','self.deuterium')
+            return float(eval(formula))
 
 
         
