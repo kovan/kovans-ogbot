@@ -206,9 +206,9 @@ class SpyReport(GameMessage):
     def hasExpired(self, serverTime):
         age = self.getAge(serverTime)
         if self.hasNonMissileDefense():
-            return age.days >= 4
+            return age.days >= 5
         elif self.hasFleet():
-            return age.days >= 1
+            return age.days >= 2
         else: 
             return False
     

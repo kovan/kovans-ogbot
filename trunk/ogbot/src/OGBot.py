@@ -47,37 +47,9 @@ from GameEntities import *
 from CommonClasses import *
 from WebAdapter import WebAdapter
 from Constants import *
-
-
             
 
 
-class ResourceSimulation(object):
-    def __init__(self, baseResources, mines):
-        self.simulatedResources = copy.copy(baseResources)
-
-        if mines is not None:
-            self._metalMine = mines.get('metalMine', 0)
-            self._crystalMine = mines.get('crystalMine', 0)
-            self._deuteriumSynthesizer = mines.get('deuteriumSynthesizer', 0)
-        else:
-            self._metalMine, self._crystalMine, self._deuteriumSynthesizer = 22, 19, 11
-            
-    def _setResources(self, resources):
-        self._resourcesSimulationTime = datetime.now() # no need to use server time because it's use is isolated to inside this class
-        self._baseResources = resources         
-        
-    def _calculateResources(self):
-        productionTime = datetime.now() - self._resourcesSimulationTime
-        productionHours = productionTime.seconds / 3600.0
-        produced = Resources()
-        produced.metal      = 30 * self._metalMine      * 1.1 ** self._metalMine      * productionHours
-        produced.crystal   = 20 * self._crystalMine   * 1.1 ** self._crystalMine   * productionHours
-        produced.deuterium = 10 * self._deuteriumSynthesizer * 1.1 ** self._deuteriumSynthesizer * productionHours * (-0.002 * 60 + 1.28) # 60 is the temperature of a planet in position 7
-        return self._baseResources + produced
-            
-    simulatedResources = property(_calculateResources, _setResources)         
-    
 
 class Bot(threading.Thread):
     """Contains the bot logic, independent from the communications with the server.
@@ -364,7 +336,8 @@ class Bot(threading.Thread):
                         notArrivedEspionages[finalPlanet] = espionage
                     except NotEnoughShipsError, e:
                         planetsToSpy.append(finalPlanet) # re-locate planet at the end of the list for later
-                        self._eventMgr.activityMsg("Not enough ships in planet %s. %s" %(sourcePlanet,ships))             
+                        self._eventMgr.activityMsg("Not enough ships in planet %s to spy %s. %s" %(sourcePlanet,finalPlanet,ships))             
+                        sleep(5)
                     
             except NoFreeSlotsError: 
                 self._scanNextSolarSystem();
