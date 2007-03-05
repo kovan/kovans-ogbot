@@ -178,7 +178,7 @@ class WebAdapter(object):
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
         if __debug__: 
-            print >>sys.stderr, "         Fetching %s" % self.lastFetch
+            print >>sys.stderr, "         Fetching " + self.lastFetch
 
         valid = False
         while not valid:

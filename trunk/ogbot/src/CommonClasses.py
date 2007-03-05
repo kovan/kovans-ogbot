@@ -118,10 +118,12 @@ class Configuration(dict):
         self['slotsToReserve'] = 0
         self['attackingShip'] = 'smallCargo'
         self['sourcePlanets'] = []
-        self['planetsToAvoid'] = []       
+        self['playersToAvoid'] = []       
+        self['alliancesToAvoid'] = []       
         self['systemsPerGalaxy'] = 499
-        self['proxy']= ''
+        self['proxy'] = ''
         self['userAgent'] = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)'
+        self['rentabilityFormula'] = '(metal + 1.5 * crystal + 3 * deuterium) / flightTime'
 
         
     def __getattr__(self, attrName):
@@ -129,20 +131,12 @@ class Configuration(dict):
         
     def load(self):
         if not os.path.isfile(self.file):
-            raise BotError("File %s does not exist" % self.file)
+            raise BotFatalError("File %s does not exist" % self.file)
             
         self.configParser.read(self.file)
-
-        # ensure no mandatory parameters are missing in the .ini
-        if not self.configParser.has_option('options', 'universe') \
-        or not self.configParser.has_option('options', 'username') \
-        or not self.configParser.has_option('options', 'password') \
-        or not self.configParser.has_option('options', 'webpage'):         
-            raise BotError("Mandatory parameter(s) missing in config.ini file")
-
         for section in self.configParser.sections():
             self.update(self.configParser.items(section))
-            
+        
         self['webpage'] = self['webpage'].replace("http://", "")
         self['proxy'] = self['proxy'].replace("http://", "")        
         
@@ -155,18 +149,33 @@ class Configuration(dict):
                     sourcePlanets.append(coords)
         self['sourcePlanets'] = sourcePlanets
 
-        planetsToAvoid = []
-        if self.configParser.has_option('options', 'planetsToAvoid'):
-            if '[]' not in self['planetsToAvoid']:
-                for coordsStr in self['planetsToAvoid'].split(','):
-                    coords = Coords(coordsStr)
-                    planetsToAvoid.append(coords)
-        self['planetsToAvoid'] = planetsToAvoid
 
+
+        self['playersToAvoid'] = self._parseList(self['playersToAvoid'])
+        self['alliancesToAvoid'] = self._parseList(self['alliancesToAvoid'])        
+
+        try:
+            if not self.username or not self.password or not self.webpage or not self.universe:
+                raise BotError("Empty username, password, universe or webpage.")
+        except Exception:
+                raise BotError("Missing username, password, universe or webpage.")            
         
         from Constants import INGAME_TYPES_BY_NAME
         if self['attackingShip'] not in INGAME_TYPES_BY_NAME.keys():
-            raise BotError("Invalid attacking ship type in config.ini file")
+            raise BotError("Invalid attacking ship type.")
+        
+        from GameEntities import Resources
+        resources = Resources(10000,8000,7000)
+        try:
+            resources.rentability(10000,self.rentabilityFormula)
+        except Exception, e:
+            raise BotError("Invalid rentability formula: " + str(e))
+            
+    def _parseList(self,listStr):
+        list = []
+        for item in listStr.split(','):
+            list.append(item.strip('''[] ,'"'''))
+        return list
         
     def save(self):
         if not self.configParser.has_section('options'):

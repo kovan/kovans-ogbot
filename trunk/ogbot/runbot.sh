@@ -1,2 +1,2 @@
 #!/bin/sh
-python -O src/OGBot.py
+python -O src/OGBot.py $*

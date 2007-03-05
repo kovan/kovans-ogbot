@@ -199,7 +199,7 @@ class Bot(threading.Thread):
             if storedWebpage != self.config.webpage \
             or storedUniverse != self.config.universe \
             or storedUsername != self.config.username:
-                raise BotError() # if any of those have changed, invalidate stored espionages
+                raise BotError() # if any of those has changed, invalidate stored espionages
 
             self._eventMgr.activityMsg("Loading previous espionage data...") 
         except (EOFError, IOError,BotError,ImportError):
@@ -245,8 +245,9 @@ class Bot(threading.Thread):
         if not self.targetPlanets:
             raise BotFatalError("No inactive planets found in range. Increase range.")    
         
+        # remove allies' planets from list
         for planet in self.targetPlanets[:]:
-            if planet.coords in self.config.planetsToAvoid:
+            if planet.owner in self.config.playersToAvoid or planet.alliance in self.config.alliancesToAvoid:
                 self.targetPlanets.remove(planet)
 
         
@@ -271,7 +272,8 @@ class Bot(threading.Thread):
                 sourcePlanet = self._calculateNearestSourcePlanet(planet)
                 flightTime = sourcePlanet.coords.flightTimeTo(planet.coords)
                 if  self.simulations.has_key(repr(planet.coords)):
-                    rentability = self.simulations[repr(planet.coords)].simulatedResources.rentability(flightTime.seconds)
+                    resources  = self.simulations[repr(planet.coords)].simulatedResources
+                    rentability = resources.rentability(flightTime.seconds,self.config.rentabilityFormula)
                     if not planet.spyReportHistory:
                         rentability = 0
                     elif not planet.spyReportHistory[-1].isUndefended():
@@ -332,7 +334,7 @@ class Bot(threading.Thread):
                             except NotEnoughShipsError, e:
                                 self._eventMgr.activityMsg("No ships in planet %s to attack %s. needed: %s" %(sourcePlanet,finalPlanet,fleet))
                                 sleep(10)
-                        else:
+                        else: # planet's espionage report timed out, re-spy.
                             if finalPlanet not in planetsToSpy and finalPlanet not in notArrivedEspionages:
                                 planetsToSpy.append(finalPlanet)
                             break
@@ -390,9 +392,9 @@ class Bot(threading.Thread):
                     elif self._web.serverTime() > espionage.arrivalTime + timedelta(seconds=10):
                         # probably due to buggy espionage report (containing only N;)
                         del notArrivedEspionages[planet]
-                        try: del self.simulations[repr(finalPlanet.coords)]
+                        try: del self.simulations[repr(planet.coords)]
                         except KeyError: pass
-                        self.targetPlanets.remove(finalPlanet)
+                        self.targetPlanets.remove(planet)
                         #self._eventMgr.activityMsg("Espionage from %s to %s timed out." %(espionage.sourcePlanet,espionage.targetPlanet))
         
             sleep(1)            
@@ -429,7 +431,7 @@ class Bot(threading.Thread):
 
             found = [p for p in self.targetPlanets if p.coords == planet.coords]
             if 'inactive' in planet.ownerStatus:
-                if not found and not planet.coords in self.config.planetsToAvoid:
+                if not found and not planet.owner in self.config.playersToAvoid and not planet.alliance in self.config.alliancesToAvoid:
                     # we found a new inactive planet
                     self.targetPlanets.append(planet)    #insert planet into main planet list
                     random.shuffle(self.targetPlanets)
@@ -461,22 +463,6 @@ class Bot(threading.Thread):
         return None
 
         
-    def waitForFreeSlot(self):
-        waitingForSlot = False
-        while True:
-            freeSlots = self._web.getFreeSlots()
-            if freeSlots > 0:
-                break
-            if not waitingForSlot:
-                self._eventMgr.waitForSlotBegin()
-                waitingForSlot = True
-            sleep(10)
-        else: sleep(10)
-        if waitingForSlot: 
-            self._eventMgr.waitForSlotEnd()
-        return freeSlots
-    
-    
     def _checkThreadQueue(self):
         try:
             msg = self.msgQueue.get(False)
@@ -503,7 +489,8 @@ class Bot(threading.Thread):
 if __name__ == "__main__":
     
     parser = OptionParser()
-    parser.add_option("-c", "--console", action="store_true", help="Run in console mode'")
+    parser.add_option("-c", "--console", action="store_true", help="Run in console mode'") # not working
+    parser.add_option("-a", "--autostart", action="store_true", help="Auto start bot, no need to click Start button")
     parser.add_option("-w", "--workdir", help="Specify working directory (useful to run various bots at once). If not specified defaults to 'files'")    
     (options, args) = parser.parse_args()
     
@@ -535,5 +522,7 @@ if __name__ == "__main__":
         bot.join()
     else:
         from gui import guiMain
-        guiMain()
+        guiMain(options.autostart)
+
+            
         
