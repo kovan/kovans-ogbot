@@ -21,18 +21,9 @@ Note for Gentoo Linux: there is not a pyqt-4 package, so !PyQt must be compiled 
 A: There is a user who wrote about it in the Google Group:
 http://groups.google.com/group/kovans-ogbot/browse_frm/thread/674a21ebcc4fe7d4
 
-===Q: My server has less than 500 solar systems per galaxy!===
-
-A: The number of solar systems per galaxy can be changed in the configuration file (located in files/config/config.ini)
-
 ===Q: I found some error in the bot, how do I report it?===
 
 A: Go to the issues tab and open a new issue, then follow the instructions. 
-
-===Q: What user-agent does the bot send?===
-
-A: By default the bot identifies itself as Internet Explorer 6 running on a fresh Windows XP installation. This is: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1). 
-But it can be changed in the configuration file (files/config/config.ini)
 
 ===Q: How do I reset the bot?===
 
@@ -55,7 +46,7 @@ A: Sure. What you have to do is create a new translation file for your language 
 A: All contributions are welcome. The basic requirement to be able to contribute in the development is the knowledge of Python, although to mess with some other parts, knowing other things is required. For example to mess with communication with OGame servers you need to know a bit of HTTP, HTML and probably regexps, and to mess with interface you need to know QT.
 If you want to use part or all of OGBot's code in your project, you can if you follow the GPL license requisites.
 
-===Q: How do I run the multi-platform source version of the bot in Windows?===
+===Q: How do I run the multi-platform (source) version of the bot in Windows?===
 
 A: The easiest and recommended way to run the bot in Windows is to use the prepared version, but it is possible to use the generic version. These are the steps:
 
@@ -80,7 +71,9 @@ A:
 
 ===Q: How does the bot choose which planet to attack?===
 
-A: Here is an extract from one issue's comments that explains the differences in the algorithms between OGBot versions 1 and 2.
+A: It assigns a rentability (a number) to each planet and always attacks that with the most rentability. Since 2.1.1, the rentability formula can be customized in Advanced Options.
+
+Here is an extract from one issue's comments that explains the differences in the algorithms between OGBot versions 1 and 2.
 
 _The_ _v2_ _algorithm_ _is_ _indeed_ _completly_
 _different_ _from_ _that_ _of_ _v1._ _v1's_ _algorithm_ _consisted_ _simply_ _in:_ 
