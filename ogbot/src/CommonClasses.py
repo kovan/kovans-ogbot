@@ -151,8 +151,10 @@ class Configuration(dict):
 
 
 
-        self['playersToAvoid'] = self._parseList(self['playersToAvoid'])
-        self['alliancesToAvoid'] = self._parseList(self['alliancesToAvoid'])        
+        if isinstance(self['playersToAvoid'],str):
+            self['playersToAvoid'] = self._parseList(self['playersToAvoid'])
+        if isinstance(self['alliancesToAvoid'],str):            
+            self['alliancesToAvoid'] = self._parseList(self['alliancesToAvoid'])        
 
         try:
             if not self.username or not self.password or not self.webpage or not self.universe:
@@ -205,6 +207,34 @@ class Translations(dict):
             except Exception, e: 
                 raise BotError("Malformed languaje file (%s%s): %s"%(fileName,extension,e))
         # after all this access to a translated string is obtained thru p.e.: self['spanish']['smallCargo']
+        
+class ResourceSimulation(object):
+    def __init__(self, baseResources, mines):
+        self.simulatedResources = copy.copy(baseResources)
+
+        if mines is not None:
+            self._metalMine = mines.get('metalMine', 0)
+            self._crystalMine = mines.get('crystalMine', 0)
+            self._deuteriumSynthesizer = mines.get('deuteriumSynthesizer', 0)
+        else:
+            self._metalMine, self._crystalMine, self._deuteriumSynthesizer = 22, 19, 11
+            
+    def _setResources(self, resources):
+        self._resourcesSimulationTime = datetime.now() # no need to use server time because it's use is isolated to inside this class
+        self._baseResources = resources         
+        
+    def _calculateResources(self):
+        productionTime = datetime.now() - self._resourcesSimulationTime
+        productionHours = productionTime.seconds / 3600.0
+        from GameEntities import Resources
+        produced = Resources()
+        produced.metal      = 30 * self._metalMine      * 1.1 ** self._metalMine      * productionHours
+        produced.crystal   = 20 * self._crystalMine   * 1.1 ** self._crystalMine   * productionHours
+        produced.deuterium = 10 * self._deuteriumSynthesizer * 1.1 ** self._deuteriumSynthesizer * productionHours * (-0.002 * 60 + 1.28) # 60 is the temperature of a planet in position 7
+        return self._baseResources + produced
+            
+    simulatedResources = property(_calculateResources, _setResources)         
+    
         
 class Enum(object):
     @classmethod

@@ -281,13 +281,6 @@ class MainWindow(baseclass,formclass):
             self.launchBrowserButton.setEnabled(False)
         
 
-#        command = "cmd /c start http://%s/game/index.php?session=%s" % (self.server,self.session)
-#        QProcess(self).start(command)
-        
-    def viewLog(self):
-#        command = 'cmd /c start "%s"' % FILE_PATHS['log']
-#        QProcess(self).start(command)
-        pass
 
     def showAbout(self):
         window = AboutDialog()
@@ -386,17 +379,7 @@ class MainWindow(baseclass,formclass):
     # ------------------------------------------------------------------------
     
             
-    def errorSendingProbes(self, planet, probesCount,reason): 
-        self.increaseProgressBar()                
-        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Error while sending probes: %s" % reason]
-        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightRed)            
-        
 
-    def errorAttackingPlanet(self, planet, reason): 
-        self.increaseProgressBar()                
-        texts = [datetime.now().strftime("%X %x")] + planet.toStringList() + ["Errror while attacking: %s" % reason]
-        self.setActivityTreeItem(str(planet.coords), texts, MyColors.lightRed)
-                
 
   
             
