@@ -231,7 +231,7 @@ class Bot(threading.Thread):
         #gc.set_debug(gc.DEBUG_INSTANCES|gc.DEBUG_STATS|gc.DEBUG_COLLECTABLE|gc.DEBUG_UNCOLLECTABLE)
         while True:
             self._saveFiles()
-#            
+
 #            
 #            print "GC garbage begin ---------------------" 
             #print gc.garbage
@@ -241,7 +241,7 @@ class Bot(threading.Thread):
             # generate rentability table
             rentabilities = [] # list of the form (planet,rentability)
             for planet in self.targetPlanets:
-                sourcePlanet = self._calculateNearestSourcePlanet(planet)
+                sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
                 flightTime = sourcePlanet.coords.flightTimeTo(planet.coords)
                 if  self.simulations.has_key(repr(planet.coords)):
                     resources  = self.simulations[repr(planet.coords)].simulatedResources
@@ -286,7 +286,7 @@ class Bot(threading.Thread):
                             simulation =  self.simulations[repr(finalPlanet.coords)]
                             resourcesToSteal = simulation.simulatedResources.half()
                             ships = int((resourcesToSteal.total() + 5000) / self.attackingShip.capacity)
-                            sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet)
+                            sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet.coords)
                             fleet = { self.attackingShip.name : ships }
                             mission = Mission(Mission.Types.attack, sourcePlanet, finalPlanet, fleet)
                             try:
@@ -304,7 +304,7 @@ class Bot(threading.Thread):
 
                                 break
                             except NotEnoughShipsError, e:
-                                self._eventMgr.activityMsg("No ships in planet %s to attack %s. needed: %s" %(sourcePlanet,finalPlanet,fleet))
+                                self._eventMgr.activityMsg("No ships in planet %s to attack %s. %s" %(sourcePlanet,finalPlanet,e))
                                 sleep(10)
                         else: # planet's espionage report timed out, re-spy.
                             if finalPlanet not in planetsToSpy and finalPlanet not in notArrivedEspionages:
@@ -314,7 +314,7 @@ class Bot(threading.Thread):
                 if planetsToSpy:
                     # SPY
                     finalPlanet = planetsToSpy.pop(0)
-                    sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet)
+                    sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet.coords)
                     action = "Spying"                        
                     if not finalPlanet.spyReportHistory:
                         probesToSend = probesToSendDefault
@@ -330,21 +330,18 @@ class Bot(threading.Thread):
                     try:
                         self._web.launchMission(espionage)
                         self._eventMgr.activityMsg("%s  %s from %s with %s" % (action,finalPlanet, sourcePlanet, ships))
-                        if espionage.fleet['espionageProbe'] < int(probesToSend):
-                            self._eventMgr.activityMsg("There were not enough probes for the espionage. Needed %s but sent only %s" % (probesToSend,espionage.fleet))
-                        sleep(5)
                         notArrivedEspionages[finalPlanet] = espionage
                     except NotEnoughShipsError, e:
                         planetsToSpy.append(finalPlanet) # re-locate planet at the end of the list for later
-                        self._eventMgr.activityMsg("Not enough ships in planet %s to spy %s. %s" %(sourcePlanet,finalPlanet,ships))             
-                        sleep(5)
+                        self._eventMgr.activityMsg("Not enough ships in planet %s to spy %s. %s" %(sourcePlanet,finalPlanet,e))             
+                    sleep(5)                        
                     
             except NoFreeSlotsError: 
                 self._scanNextSolarSystem();
                 self._eventMgr.statusMsg("Fleet limit hit")      
-                sleep(2)
+                sleep(8)
             except FleetSendError, e: 
-                self._eventMgr.activityMsg("For planet %s: %s" %(finalPlanet,e))
+                self._eventMgr.activityMsg("Error sending fleet for planet %s: %s" %(finalPlanet,e))
                 try: del self.simulations[repr(finalPlanet.coords)]
                 except KeyError: pass
                 self.targetPlanets.remove(finalPlanet)
@@ -368,7 +365,7 @@ class Bot(threading.Thread):
                         try: del self.simulations[repr(planet.coords)]
                         except KeyError: pass
                         self.targetPlanets.remove(planet)
-                        #self._eventMgr.activityMsg("Espionage from %s to %s timed out." %(espionage.sourcePlanet,espionage.targetPlanet))
+                        self._eventMgr.activityMsg("Planet %s was deleted because it cannot be spied." % espionage.targetPlanet)
         
             sleep(1)            
 
@@ -398,7 +395,10 @@ class Bot(threading.Thread):
                 
         else: galaxy,solarSystem = tuple
 
-        solarSystem = self._web.getSolarSystem(galaxy, solarSystem)                        
+        try:
+            solarSystem = self._web.getSolarSystem(galaxy, solarSystem)                        
+        except BotFatalError:
+            raise BotFatalError("Probably there is not enough deuterium in  not enough deuterium in %s" % self._calculateNearestSourcePlanet(Coords(galaxy,solarSystem,1)))
         self._planetDb.writeMany(solarSystem.values())        
         for planet in solarSystem.values():
 
@@ -415,15 +415,15 @@ class Bot(threading.Thread):
                         try: del self.simulations[repr(storedPlanet.coords)]
                         except KeyError: pass
     
-    def _calculateNearestSourcePlanet(self,enemyPlanet):
+    def _calculateNearestSourcePlanet(self,coords):
         minDistance = sys.maxint
         for sourcePlanet in self.sourcePlanets:
-            distance = sourcePlanet.coords.distanceTo(enemyPlanet.coords)
+            distance = sourcePlanet.coords.distanceTo(coords)
             if distance < minDistance:
                 nearestSourcePlanet = sourcePlanet
                 minDistance = distance
-        if nearestSourcePlanet.coords.galaxy != enemyPlanet.coords.galaxy:
-            BotFatalError("You own no planet in the same galaxy of %s, the planet could not be attacked (this should never happen)" % enemyPlanet)
+        if nearestSourcePlanet.coords.galaxy != coords.galaxy:
+            BotFatalError("You own no planet in the same galaxy of %s, the planet could not be attacked (this should never happen)" % coords)
             
         return nearestSourcePlanet
 
