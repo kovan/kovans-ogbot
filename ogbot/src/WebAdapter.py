@@ -106,7 +106,10 @@ class WebAdapter(object):
         page.seek(0)                        
         form = ParseResponse(page, backwards_compat=False)[0]        
         select = form.find_control(name = "Uni")
-        self.server = select.get(label = self.config.universe +'. '+  self.translations['universe'], nr=0).name
+	translation = self.translations['universe']
+        if self.serverLanguage is "tw":
+            translation = translation.decode('gb2312').encode('utf-8')
+        self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
         # retrieve and store galaxy fetching form
         page = self._fetchPhp('galaxy.php')
         try:
