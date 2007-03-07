@@ -377,11 +377,12 @@ class Bot(threading.Thread):
             if (serverTime.hour == 0 and serverTime.minute >= 6 and serverTime.minute <= 7):
                 self._targetSolarSystemsIter = iter(self.reachableSolarSystems)             
                 self.scanning = True
-                self._eventMgr.activityMsg("Performing daily inactives scan")                
+                self._eventMgr.activityMsg("Performing background daily inactives scan")                
                 return
                 
             if now - self.lastInactiveScanTime >= timedelta(days = 1):
                 self.scanning = True
+                self._eventMgr.activityMsg("Performing background daily inactives scan")   
 
             if self.scanning:
                 try:
