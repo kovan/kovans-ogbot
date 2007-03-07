@@ -67,6 +67,23 @@ A:
   # QT 4.0 or newer, by Trolltech.
   # !PyQt4 (python bindings for QT).
 
+===Q: Are there any 'hidden' configuration options?===
+
+A: There are some command-line options:
+
+{{{
+usage: runbot.sh [options]
+
+options:
+  -h, --help            show this help message and exit
+  -c, --console         Run in console mode
+  -a, --autostart       Auto start bot, no need to click Start button
+  -w WORKDIR, --workdir=WORKDIR
+                        Specify working directory (useful to run various bots
+                        at once). If not specified defaults to 'files'
+
+}}}
+
 ===Q: How does the bot choose which planet to attack?===
 
 A: It assigns a rentability (a number) to each planet and always attacks that with the most rentability. Since 2.1.1, the rentability formula can be customized in Advanced Options.
