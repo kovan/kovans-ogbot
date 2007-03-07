@@ -1,3 +1,9 @@
+v2.1.1b
+-----------------------
+ March, 5. 2007     
+-----------------------
+- Fixed bug "AttributeError: 'list' object has no attribute 'split'"
+
 v2.1.1
 -----------------------
  March, 5. 2007     
