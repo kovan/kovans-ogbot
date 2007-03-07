@@ -106,6 +106,10 @@ class WebAdapter(object):
         page.seek(0)                        
         form = ParseResponse(page, backwards_compat=False)[0]        
         select = form.find_control(name = "Uni")
+        translation = self.translations['universe']
+        if self.serverLanguage is "tw":
+            translation = translation.decode('gb2312').encode('utf-8')
+        self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
 	translation = self.translations['universe']
         if self.serverLanguage is "tw":
             translation = translation.decode('gb2312').encode('utf-8')
@@ -199,9 +203,9 @@ class WebAdapter(object):
                 if len(files) >= 20: #never allow more than 20 files
                     files.sort()
                     os.remove('debug/'+files[0])
-                try: php = ' '+re.findall("/(\w+\.php)",self.lastFetch)[0]
+                try: php = '_'+re.findall("/(\w+\.php)",self.lastFetch)[0]
                 except IndexError: php = ''
-                date = datetime.now().strftime("%Y-%m-%d %H.%M.%S")
+                date = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
                 file = open("debug/%s%s.html" %(date,php), 'w')
                 
                 file.write(p.replace('<script','<noscript').replace('</script>','</noscript>').replace('http-equiv="refresh"','http-equiv="kovan-rulez"'))
@@ -211,7 +215,7 @@ class WebAdapter(object):
                     return response                
                 elif self.translations['youAttemptedToLogIn'] in p:         
                     raise BotFatalError("Invalid username and/or password.")
-                elif self.translations['concurrentPetitionsError'] in p:
+                elif not p or self.translations['concurrentPetitionsError'] in p:
                     valid = False
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
 
@@ -300,8 +304,8 @@ class WebAdapter(object):
                 except AttributeError: # no planet in that position
                     continue 
             return planets
-        except IndexError:
-            raise BotFatalError("Probably there is not enough deuterium.")
+        except IndexError,e:
+            raise BotFatalError()
         
     def getSpyReports(self):
         page = self._fetchPhp('messages.php').read()
@@ -368,39 +372,26 @@ class WebAdapter(object):
         # 1st step: select fleet
         page = self._fetchPhp('flotten1.php', mode='Flotte', cp=mission.sourcePlanet.code)
         pageText = page.read()
-        page.seek(0)        
+
         if self.translations['fleetLimitReached'] in pageText:
             raise NoFreeSlotsError()
-
-        usedSlotsNums = re.findall(r"<th>([0-9]+)</th>", pageText)
-
-        if len(usedSlotsNums) == 0:
-            usedSlots = 0
-        else: usedSlots = int(usedSlotsNums[-1])
-        match = self.REGEXPS['maxSlots'].search(pageText)
-        maxFleets = int(match.group(1))
-        freeSlots = maxFleets - usedSlots
-        if freeSlots <= int(slotsToReserve):
-            raise NoFreeSlotsError()
-    
-        fleet = {}
-        for code, cuantity in self.REGEXPS['availableFleet'].findall(pageText):
-            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity.replace('.',''))
         
-        for shipType, required in mission.fleet.items():
-            availableShips = fleet.get(shipType,0)
-            if availableShips == 0:
-                raise NotEnoughShipsError(fleet)
-            if abortIfNotEnough and availableShips  < int(required):
-                raise NotEnoughShipsError(fleet)
+        if self.getFreeSlots(pageText) <= int(slotsToReserve):
+            raise NoFreeSlotsError()
+        
+        fleet = self.getAvailableFleet(None,pageText)
+        
+        page.seek(0)            
+        form = ParseResponse(page, backwards_compat=False)[-1]        
+        
+        for shipType, requested in mission.fleet.items():
+            available = fleet.get(shipType,0)
+            if available == 0 or (abortIfNotEnough and available  < requested):
+                raise NotEnoughShipsError('Requested: %s. Available: %s' %({shipType:requested},available))
             
-        form = ParseResponse(page, backwards_compat=False)[-1]
-        for shipType, cuantity in mission.fleet.items():
-            shipCode = INGAME_TYPES_BY_NAME[shipType].code
-            try:
-                form[shipCode] = str(cuantity)
-            except ControlNotFoundError:
-                raise NotEnoughShipsError(fleet)
+            shipCode = INGAME_TYPES_BY_NAME[shipType].code            
+            form[shipCode] = str(cuantity)
+            
 
         # 2nd step: select destination and speed
         page = self._fetchForm(form)
@@ -432,9 +423,9 @@ class WebAdapter(object):
             if   self.translations['fleetLimitReached2'] in errors:
                 raise NoFreeSlotsError()
             elif self.translations['noShipSelected'] in errors:
-                raise NotEnoughShipsError()
+                raise NotEnoughShipsError('Requested: %s. Available: ?' % mission.fleet)
             else: 
-                raise FleetSendError(" Error sending fleet: " + str(errors))
+                raise FleetSendError(errors + ' ' +page)
 
         resultPage = {}
         for type, value in self.REGEXPS['fleetSendResult'].findall(page):
@@ -471,8 +462,10 @@ class WebAdapter(object):
             mission.fleet = sentFleet
         
     
-    def getFreeSlots(self):
-        page = self._fetchPhp('flotten1.php', mode='Flotte').read()
+    def getFreeSlots(self,alreadyFetchedPage = None):
+        page = alreadyFetchedPage
+        if not page:
+            page = self._fetchPhp('flotten1.php', mode='Flotte').read()
         usedSlotsNums = re.findall(r"<th>([0-9]+)</th>", page)
 
         if len(usedSlotsNums) == 0:
@@ -481,8 +474,10 @@ class WebAdapter(object):
         maxFleets = int(self.REGEXPS['maxSlots'].search(page).group(1))
         return maxFleets - usedSlots
     
-    def getAvailableFleet(self, planet):    
-        page = self._fetchPhp('flotten1.php', mode='Flotte', cp=planet.code).read()
+    def getAvailableFleet(self, planet,alreadyFetchedPage = None):    
+        page = alreadyFetchedPage
+        if not page:
+            page = self._fetchPhp('flotten1.php', mode='Flotte', cp=planet.code).read()
         fleet = {}
         for code, cuantity in self.REGEXPS['availableFleet'].findall(page):
             fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity.replace('.',''))
