@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>576</width>
-    <height>337</height>
+    <width>591</width>
+    <height>371</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -36,26 +36,10 @@
     <string/>
    </property>
   </widget>
-  <widget class="QPushButton" name="okButton" >
-   <property name="geometry" >
-    <rect>
-     <x>480</x>
-     <y>10</y>
-     <width>92</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>OK</string>
-   </property>
-   <property name="autoDefault" >
-    <bool>false</bool>
-   </property>
-  </widget>
   <widget class="QPushButton" name="cancelButton" >
    <property name="geometry" >
     <rect>
-     <x>480</x>
+     <x>490</x>
      <y>40</y>
      <width>91</width>
      <height>26</height>
@@ -68,17 +52,20 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="Line" name="line" >
+  <widget class="QPushButton" name="okButton" >
    <property name="geometry" >
     <rect>
-     <x>470</x>
-     <y>80</y>
-     <width>21</width>
-     <height>251</height>
+     <x>490</x>
+     <y>10</y>
+     <width>92</width>
+     <height>26</height>
     </rect>
    </property>
-   <property name="orientation" >
-    <enum>Qt::Vertical</enum>
+   <property name="text" >
+    <string>OK</string>
+   </property>
+   <property name="autoDefault" >
+    <bool>false</bool>
    </property>
   </widget>
   <widget class="QToolBox" name="toolBox" >
@@ -86,20 +73,20 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>461</width>
-     <height>321</height>
+     <width>471</width>
+     <height>371</height>
     </rect>
    </property>
    <property name="currentIndex" >
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page_3" >
     <property name="geometry" >
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>461</width>
-      <height>261</height>
+      <width>471</width>
+      <height>281</height>
      </rect>
     </property>
     <attribute name="label" >
@@ -465,18 +452,145 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>461</width>
-      <height>261</height>
+      <width>471</width>
+      <height>311</height>
      </rect>
     </property>
     <attribute name="label" >
      <string>Advanced options</string>
     </attribute>
+    <widget class="QRadioButton" name="radioButton_5" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>111</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>most crystal</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>60</y>
+       <width>191</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>most total resources</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_3" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>221</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>most resources applying ratio 3:2:1</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_4" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>80</y>
+       <width>111</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>most metal</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_16" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>0</y>
+       <width>230</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>Attack the planet with:</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_6" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>120</y>
+       <width>161</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>most deuterium</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_2" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>211</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>best resources / distance relation</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_8" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>190</y>
+       <width>231</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>Solar systems per galaxy in the server:</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_7" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>140</y>
+       <width>111</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>custom formula:</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="rentabilityFormulaLineEdit" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>160</y>
+       <width>461</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
     <widget class="QGroupBox" name="groupBox_2" >
      <property name="geometry" >
       <rect>
-       <x>0</x>
-       <y>0</y>
+       <x>260</x>
+       <y>10</y>
        <width>211</width>
        <height>141</height>
       </rect>
@@ -543,31 +657,11 @@
       </property>
      </widget>
     </widget>
-    <widget class="QLineEdit" name="rentabilityFormulaLineEdit" >
-     <property name="geometry" >
-      <rect>
-       <x>0</x>
-       <y>180</y>
-       <width>401</width>
-       <height>25</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="QLineEdit" name="userAgentLineEdit" >
-     <property name="geometry" >
-      <rect>
-       <x>0</x>
-       <y>230</y>
-       <width>401</width>
-       <height>25</height>
-      </rect>
-     </property>
-    </widget>
     <widget class="QLabel" name="label_7" >
      <property name="geometry" >
       <rect>
-       <x>220</x>
-       <y>120</y>
+       <x>240</x>
+       <y>240</y>
        <width>230</width>
        <height>20</height>
       </rect>
@@ -576,43 +670,24 @@
       <string>(e.g: joe:password@myproxy.com:3128)</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="resetUserAgentButton" >
+    <widget class="QLabel" name="label_9" >
      <property name="geometry" >
       <rect>
-       <x>410</x>
-       <y>230</y>
-       <width>51</width>
-       <height>26</height>
+       <x>10</x>
+       <y>220</y>
+       <width>212</width>
+       <height>21</height>
       </rect>
      </property>
      <property name="text" >
-      <string>Reset</string>
-     </property>
-     <property name="autoDefault" >
-      <bool>false</bool>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="resetRentabilityFormulaButton" >
-     <property name="geometry" >
-      <rect>
-       <x>410</x>
-       <y>180</y>
-       <width>51</width>
-       <height>26</height>
-      </rect>
-     </property>
-     <property name="text" >
-      <string>Reset</string>
-     </property>
-     <property name="autoDefault" >
-      <bool>false</bool>
+      <string>Proxy server (leave empty for none):</string>
      </property>
     </widget>
     <widget class="QSpinBox" name="systemsPerGalaxySpinBox" >
      <property name="geometry" >
       <rect>
-       <x>220</x>
-       <y>20</y>
+       <x>250</x>
+       <y>190</y>
        <width>61</width>
        <height>23</height>
       </rect>
@@ -624,69 +699,69 @@
       <number>1</number>
      </property>
     </widget>
-    <widget class="QLabel" name="label_5" >
+    <widget class="QLineEdit" name="proxyLineEdit" >
      <property name="geometry" >
       <rect>
-       <x>0</x>
-       <y>160</y>
-       <width>281</width>
-       <height>16</height>
+       <x>230</x>
+       <y>220</y>
+       <width>241</width>
+       <height>24</height>
       </rect>
-     </property>
-     <property name="text" >
-      <string>Rentability formula used to calculate next target:</string>
      </property>
     </widget>
     <widget class="QLabel" name="label_6" >
      <property name="geometry" >
       <rect>
-       <x>0</x>
-       <y>210</y>
-       <width>231</width>
+       <x>10</x>
+       <y>250</y>
+       <width>66</width>
        <height>16</height>
       </rect>
      </property>
      <property name="text" >
-      <string>User agent sent to OGame servers:</string>
+      <string>User agent:</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="proxyLineEdit" >
+    <widget class="QLineEdit" name="userAgentLineEdit" >
      <property name="geometry" >
       <rect>
-       <x>220</x>
-       <y>90</y>
-       <width>241</width>
+       <x>10</x>
+       <y>270</y>
+       <width>401</width>
        <height>25</height>
       </rect>
      </property>
     </widget>
-    <widget class="QLabel" name="label_8" >
+    <widget class="QPushButton" name="resetUserAgentButton" >
      <property name="geometry" >
       <rect>
-       <x>220</x>
-       <y>0</y>
-       <width>231</width>
-       <height>21</height>
+       <x>420</x>
+       <y>270</y>
+       <width>51</width>
+       <height>26</height>
       </rect>
      </property>
      <property name="text" >
-      <string>Solar systems per galaxy in the server:</string>
+      <string>Reset</string>
      </property>
-    </widget>
-    <widget class="QLabel" name="label_9" >
-     <property name="geometry" >
-      <rect>
-       <x>220</x>
-       <y>70</y>
-       <width>231</width>
-       <height>21</height>
-      </rect>
-     </property>
-     <property name="text" >
-      <string>Proxy server (leave empty for none):</string>
+     <property name="autoDefault" >
+      <bool>false</bool>
      </property>
     </widget>
    </widget>
+  </widget>
+  <widget class="Line" name="line" >
+   <property name="geometry" >
+    <rect>
+     <x>480</x>
+     <y>80</y>
+     <width>21</width>
+     <height>291</height>
+    </rect>
+   </property>
+   <property name="orientation" >
+    <enum>Qt::Vertical</enum>
+   </property>
   </widget>
  </widget>
  <tabstops>
