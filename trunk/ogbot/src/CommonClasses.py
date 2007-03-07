@@ -177,7 +177,7 @@ class Configuration(dict):
         list = []
         for item in listStr.split(','):
             list.append(item.strip('''[] ,'"'''))
-        return list
+        return [i for i in list if i]
         
     def save(self):
         if not self.configParser.has_section('options'):

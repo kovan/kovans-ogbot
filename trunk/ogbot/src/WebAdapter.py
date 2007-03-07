@@ -110,10 +110,6 @@ class WebAdapter(object):
         if self.serverLanguage is "tw":
             translation = translation.decode('gb2312').encode('utf-8')
         self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
-	translation = self.translations['universe']
-        if self.serverLanguage is "tw":
-            translation = translation.decode('gb2312').encode('utf-8')
-        self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
         # retrieve and store galaxy fetching form
         page = self._fetchPhp('galaxy.php')
         try:
