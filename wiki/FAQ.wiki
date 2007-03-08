@@ -40,9 +40,13 @@ A: Deactivate IP check in OGame options.
 
 A: You have to set the BROWSER environment variable to the command of the browser you want to use. A list of possible values and further instructions can be found here: http://docs.python.org/lib/module-webbrowser.html
 
+===Q: How can I choose the language?===
+
+A: You can't. A common confusion is that language files also translate the bot messages. This is not true. Bot messages and user interface are always in English. Language files are only to support different countries' OGames. The correct language file will automatically be selected after the bot connects to the server and detects its language.
+
 ===Q: My language is not supported. Can I contribute a translation?===
 
-A: Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to the author and it will probably be included in the next release. Non-occidental languages should work also.
+A: Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to the author and it will probably be included in the next release.
 
 ===Q: How do I run the multi-platform (source) version of the bot in Windows?===
 
