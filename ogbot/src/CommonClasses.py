@@ -176,8 +176,9 @@ class Configuration(dict):
     def _parseList(self,listStr):
         list = []
         for item in listStr.split(','):
-            list.append(item.strip('''[] ,'"'''))
-        return [i for i in list if i]
+            item = item.strip('''[] ,'"''')
+            if item : list.append(item)
+        return list
         
     def save(self):
         if not self.configParser.has_section('options'):

@@ -107,7 +107,7 @@ class WebAdapter(object):
         form = ParseResponse(page, backwards_compat=False)[0]        
         select = form.find_control(name = "Uni")
         translation = self.translations['universe']
-        if self.serverLanguage is "tw":
+        if self.serverLanguage == "tw":
             translation = translation.decode('gb2312').encode('utf-8')
         self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
         # retrieve and store galaxy fetching form
@@ -311,6 +311,8 @@ class WebAdapter(object):
             
         reports = []              
         for code, rawMessage in rawMessages.items():
+#            if 'class="combatreport"' in rawMessage:
+#                [2:444:6] (A:8.000)
             if 'class="espionagereport"' not in rawMessage:
                 continue
             
@@ -421,7 +423,7 @@ class WebAdapter(object):
             elif self.translations['noShipSelected'] in errors:
                 raise NotEnoughShipsError('Requested: %s. Available: ?' % mission.fleet)
             else: 
-                raise FleetSendError(errors + ' ' +page)
+                raise FleetSendError(errors)
 
         resultPage = {}
         for type, value in self.REGEXPS['fleetSendResult'].findall(page):
