@@ -58,7 +58,7 @@ class OptionsDialog(baseclass,formclass):
         QObject.connect(self.rotatePlanetsRadio,SIGNAL("clicked()"),self.enablePlanetList)
         QObject.connect(self.addPlanetButton,SIGNAL("clicked()"),self.addPlanetToList)        
         QObject.connect(self.removePlanetButton,SIGNAL("clicked()"),self.removePlanetFromList)                
-        QObject.connect(self.resetRentabilityFormulaButton,SIGNAL("clicked()"),self.resetRentabilityFormula) 
+        #QObject.connect(self.resetRentabilityFormulaButton,SIGNAL("clicked()"),self.resetRentabilityFormula) 
         QObject.connect(self.resetUserAgentButton,SIGNAL("clicked()"),self.resetUserAgent) 
                         
         self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent']

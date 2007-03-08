@@ -318,7 +318,7 @@ class Bot(threading.Thread):
                     action = "Spying"                        
                     if not finalPlanet.spyReportHistory:
                         probesToSend = probesToSendDefault
-                        action = "Spying for the 1st time "
+                        action = "Spying for the 1st time"
                     else:
                         probesToSend = finalPlanet.spyReportHistory[-1].probesSent    
                         if not finalPlanet.spyReportHistory[-1].hasAllNeededInfo():
@@ -377,12 +377,12 @@ class Bot(threading.Thread):
             if (serverTime.hour == 0 and serverTime.minute >= 6 and serverTime.minute <= 7):
                 self._targetSolarSystemsIter = iter(self.reachableSolarSystems)             
                 self.scanning = True
-                self._eventMgr.activityMsg("Performing background daily inactives scan")                
+                self._eventMgr.activityMsg("Performing 00h background inactives scan")                
                 return
                 
             if now - self.lastInactiveScanTime >= timedelta(days = 1):
                 self.scanning = True
-                self._eventMgr.activityMsg("Performing background daily inactives scan")   
+                self._eventMgr.activityMsg("Performing daily background inactives scan")   
 
             if self.scanning:
                 try:
