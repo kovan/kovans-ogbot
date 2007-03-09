@@ -53,17 +53,30 @@ class OptionsDialog(baseclass,formclass):
     def __init__(self):
         baseclass.__init__(self)        
         self.setupUi(self)
+        
+
+        self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent']
+        self.spinBoxes = ['universe','attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy']
+        self.textEdits = ['playersToAvoid','alliancesToAvoid']
+        self.formulas = {
+                    'defaultFormula': Configuration('').rentabilityFormula,
+                    'mostWithRatio' : 'metal + 1.5 * crystal + 3 * deuterium',
+                    'mostTotal'     : 'metal + crystal + deuterium',
+                    'mostMetal'     : 'metal',
+                    'mostCrystal'   : 'crystal',
+                    'mostDeuterium' : 'deuterium'
+                    }        
+                
+        for name in self.formulas.keys():
+            control = getattr(self,name + "RadioButton")
+            QObject.connect(control,SIGNAL("clicked()"),self.updateRentabilityFormula)
         QObject.connect(self.okButton,SIGNAL("clicked()"),self.saveOptions)
         QObject.connect(self.mainPlanetRadio,SIGNAL("clicked()"),self.disablePlanetList)
         QObject.connect(self.rotatePlanetsRadio,SIGNAL("clicked()"),self.enablePlanetList)
         QObject.connect(self.addPlanetButton,SIGNAL("clicked()"),self.addPlanetToList)        
         QObject.connect(self.removePlanetButton,SIGNAL("clicked()"),self.removePlanetFromList)                
-        #QObject.connect(self.resetRentabilityFormulaButton,SIGNAL("clicked()"),self.resetRentabilityFormula) 
         QObject.connect(self.resetUserAgentButton,SIGNAL("clicked()"),self.resetUserAgent) 
-                        
-        self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent']
-        self.spinBoxes = ['universe','attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy']
-        self.textEdits = ['playersToAvoid','alliancesToAvoid']
+
         
         self.enableOrDisablePlanetList(False)
         self.attackingShipComboBox.addItems([str(shiptype) for shiptype in INGAME_TYPES if isinstance(shiptype,Ship)])
@@ -89,12 +102,20 @@ class OptionsDialog(baseclass,formclass):
         for i in self.textEdits:            
             control = getattr(self,i + "TextEdit")
             control.setPlainText('\n'.join(self.config[i]))
-        
+
         if self.config.get('sourcePlanets'):
             self.rotatePlanetsRadio.setChecked(True)
             self.enablePlanetList()
             self.sourcePlanetsList.addItems( [repr(p) for p in self.config['sourcePlanets']] )
-  
+        
+
+        formulasReversed = dict([(formula,name) for name,formula in self.formulas.items() ])
+        if self.config.rentabilityFormula in formulasReversed:
+            control = formulasReversed[self.config.rentabilityFormula] + "RadioButton"
+            getattr(self,control).setChecked(True)
+        else:
+            self.customFormulaRadioButton.setChecked(True)
+            
         
     def saveOptions(self):
         
@@ -108,9 +129,10 @@ class OptionsDialog(baseclass,formclass):
         self.config['sourcePlanets'] = sourcePlanets
         self.config['attackingShip'] = str(self.attackingShipComboBox.currentText().toAscii())
         
+
         for i in self.lineEdits:
             control = getattr(self,i + "LineEdit")
-            self.config[i] = control.text()
+            self.config[i] = str(control.text())
         for i in self.spinBoxes:            
             control = getattr(self,i + "SpinBox")
             self.config[i] = str(control.value())        
@@ -118,6 +140,8 @@ class OptionsDialog(baseclass,formclass):
             control = getattr(self,i + "TextEdit")
             self.config[i] = str(control.toPlainText()).split('\n')
             
+       
+        
         self.config.save()
         try: self.config.load()                 
         except BotError,e:
@@ -151,13 +175,15 @@ class OptionsDialog(baseclass,formclass):
         index = self.sourcePlanetsList.row(selectedPlanet)
         self.sourcePlanetsList.takeItem(index)
         
-    def resetRentabilityFormula(self):
-        tmpConfig = Configuration('')
-        self.rentabilityFormulaLineEdit.setText(tmpConfig.rentabilityFormula)
     def resetUserAgent(self):
         tmpConfig = Configuration('')
         self.userAgentLineEdit.setText(tmpConfig.userAgent)
 
+    def updateRentabilityFormula(self):
+        for name,formula in self.formulas.items():
+            control = getattr(self,name + "RadioButton")
+            if control.isChecked():
+                self.rentabilityFormulaLineEdit.setText(formula)
 
 formclass, baseclass = uic.loadUiType("src/ui/MainWindow.ui")
 class MainWindow(baseclass,formclass): 

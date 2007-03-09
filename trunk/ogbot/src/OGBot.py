@@ -17,12 +17,14 @@ import codecs
 
 # python library:
 
-import sys
+import sys,os
 
 sys.path.insert(0,'src')
 sys.path.insert(0,'lib')
 
-
+if os.getcwd().endswith("src"):
+    os.chdir("..")    
+    
 import logging, logging.handlers
 import threading
 import traceback
@@ -33,11 +35,9 @@ import shutil
 import cPickle
 import urllib2
 import itertools
-import os,gc
+import gc
 import random
 
-if os.getcwd().endswith("src"):
-    os.chdir("..")	
     
 from datetime import datetime, timedelta
 from optparse import OptionParser
@@ -317,6 +317,7 @@ class Bot(threading.Thread):
                     sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet.coords)
                     action = "Spying"                        
                     if not finalPlanet.spyReportHistory:
+                        probesToSendInitial = [planet.spyReportHistory[-1] for planet in self.targetPlanets if planet.spyReportHistory]
                         probesToSend = probesToSendDefault
                         action = "Spying for the 1st time"
                     else:
@@ -396,10 +397,9 @@ class Bot(threading.Thread):
                 
         else: galaxy,solarSystem = tuple
 
-        try:
-            solarSystem = self._web.getSolarSystem(galaxy, solarSystem)                        
-        except BotFatalError:
-            raise BotFatalError("Probably there is not enough deuterium in  not enough deuterium in %s" % self._calculateNearestSourcePlanet(Coords(galaxy,solarSystem,1)))
+
+        solarSystem = self._web.getSolarSystem(galaxy, solarSystem)                        
+
         self._planetDb.writeMany(solarSystem.values())        
         for planet in solarSystem.values():
 
@@ -457,8 +457,10 @@ class Bot(threading.Thread):
     def getControlUrl(self):
         return self._web.getControlUrl()
 
-
-
+class GalaxyScanner(object):
+    def __init__(self,webAdapter):
+        self._web = webAdapter
+    def scanNext(self):
 
 if __name__ == "__main__":
     

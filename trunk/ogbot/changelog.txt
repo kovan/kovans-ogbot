@@ -1,11 +1,13 @@
 v2.1.2
 -----------------------
- March, 5. 2007     
+ March, 8. 2007     
 -----------------------
-- If probes crash planet is marked as defended and is no longer spied.
-- Selectable attack algorithm
-- Initial number of probes now autocalculated.
-- Made possible translation to chinese and korean.
+- Selectable attack algorithm.
+- If espionage probes crash, planet is marked as defended and is no longer spied.
+- Initial number of probes to send now autocalculated.
+- Made possible translation to chinese and korean (further testing needed).
+- Fixed bug in daily inactive scan which after a while resulted in message 
+  "Fatal error found, terminating. There are no undefended planets in range."
 - Fixed bug bot not attacking players with no alliance.
 - Other minor fixes.
 
@@ -19,7 +21,7 @@ v2.1.1
 -----------------------
  March, 5. 2007     
 -----------------------
-- Added command-line option (-c) to autostart bot without clicking start.
+- Added command-line option (-a) to autostart bot without clicking start.
 - Replaced list of planets to avoid by list of players and alliances to avoid.
 - Customizable rentability formula.
 - Redesigned options dialog and added options to customize user-agent and 
