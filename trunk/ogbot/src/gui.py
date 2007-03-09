@@ -85,9 +85,10 @@ class OptionsDialog(baseclass,formclass):
     def loadOptions(self):
         
         self.config = Configuration(FILE_PATHS['config'])
-        try: self.config.load()
-        except BotError, e: 
-            QMessageBox.critical(self,"Error in config.ini",str(e))
+        if os.path.isfile(FILE_PATHS['config']):
+            try: self.config.load()
+            except BotError, e: 
+                QMessageBox.critical(self,"Error in configuration",str(e))
 
         index = self.attackingShipComboBox.findText(self.config.attackingShip)
         self.attackingShipComboBox.setCurrentIndex(index)
@@ -340,7 +341,7 @@ class MainWindow(baseclass,formclass):
         for planet in self._planetDb.readAll():
             attrName = re.sub(r" (\w)",lambda m: m.group(0).upper().strip(),columnToFilter.lower()) # convert names from style "Player status" to style "playerStatus"
             columnValue = str(getattr(planet,attrName))
-            reportCount = str(len(planet.espionagesHistory))
+            reportCount = str(len(planet.espionageHistory))
             if reportCount == '0' : reportCount = '-'
             if filterText.lower() in columnValue.lower():
                 item = QTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, reportCount])
@@ -352,7 +353,7 @@ class MainWindow(baseclass,formclass):
         coordsStr = str(planetTreeSelectedItem.text(0))
         self.reportsTree.clear()
         planet = self._planetDb.read(coordsStr)
-        self._planetDb_fillReportsTree(planet.espionagesHistory)
+        self._planetDb_fillReportsTree(planet.espionageHistory)
         
     def _planetDb_fillReportsTree(self,reports):
         if len(reports) == 0:
@@ -379,7 +380,7 @@ class MainWindow(baseclass,formclass):
         coordsStr = str(reportsTreeSelectedItem.text(2))
         
         planet =  self._planetDb.read(coordsStr)
-        report = [report for report in planet.espionagesHistory if str(report.code) == codeStr][0]
+        report = [report for report in planet.espionageHistory if str(report.code) == codeStr][0]
         
         for i in ["fleet","defense","buildings","research"]:
             tree = getattr(self,i + "Tree")
@@ -395,7 +396,7 @@ class MainWindow(baseclass,formclass):
     def showAllReports(self):
         self.reportsTree.clear()
         allPlanets = self._planetDb.readAll()
-        allReports = [planet.espionagesHistory[-1] for planet in allPlanets if len(planet.espionagesHistory) > 0]
+        allReports = [planet.espionageHistory[-1] for planet in allPlanets if len(planet.espionageHistory) > 0]
         self._planetDb_fillReportsTree(allReports)
         
 
@@ -429,7 +430,7 @@ class MainWindow(baseclass,formclass):
     def connected(self):
         self.setConnectionOK()        
         self.launchBrowserButton.setEnabled(True)
-    def simulationsUpdate(self,simulations,rentabilities):
+    def simulationsUpdate(self,rentabilities):
         self.setConnectionOK()
 
         self.botActivityTree.clear() 
@@ -443,15 +444,14 @@ class MainWindow(baseclass,formclass):
                 planet,rentability = planet
             else: rentability = 0
 
-            if not planet.espionagesHistory: 
+            if not planet.espionageHistory: 
                 simulatedResources = 'Not spied'
                 defendedStr = 'Not spied'
                 minesStr = 'Not spied'
             else:
-                try:
-                    simulatedResources = simulations[repr(planet.coords)].simulatedResources
-                except KeyError: simulatedResources = '?'
-                report = planet.espionagesHistory[-1]
+                simulatedResources = planet.simulation.simulatedResources
+                
+                report = planet.espionageHistory[-1]
                 if  report.defense == None:
                     defendedStr = '?'
                 elif  report.isUndefended():
