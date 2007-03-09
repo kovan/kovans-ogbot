@@ -9,7 +9,7 @@ v2.1.2
 - Fixed bug in daily inactive scan which after a while resulted in message 
   "Fatal error found, terminating. There are no undefended planets in range."
 - Fixed bug bot not attacking players with no alliance.
-- Other minor fixes.
+- Source refactored and other minor fixes.
 
 v2.1.1b
 -----------------------

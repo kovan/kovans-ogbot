@@ -163,10 +163,9 @@ class EnemyPlanet (Planet):
         self.owner = owner
         self.alliance = alliance
         self.ownerStatus = ownerstatus
-        self.espionagesHistory = []
-        self.attackTime = None
-        self.activeMissions = []
-        
+        self.espionageHistory = []
+        self.simulation = None
+                
     def toStringList(self):
         return [str(self.coords), self.name, self.owner, self.alliance]
     
@@ -189,7 +188,6 @@ class EspionageReport(GameMessage):
         self.buildings = buildings
         self.research = research
         self.probesSent = 0
-        self.simulation = None
 
             
     def __repr__(self):

@@ -76,14 +76,14 @@ class PlanetDb(object):
             coordsStr = str(planet.coords)
             planetRead = self._db.get(coordsStr)
             if planetRead:
-                planet.espionagesHistory = planetRead.espionagesHistory
+                planet.espionageHistory = planetRead.espionageHistory
             self._db[coordsStr] = planet
         self._db.close()    
         
 #    def addEspionageToPlanet(self,coordsStr,espionage):                
 #        self._open()
 #        planet = self._db.get(coordsStr)
-#        planet.espionagesHistory.append(espionage)
+#        planet.espionageHistory.append(espionage)
 #        self._db[str(planet.coords)] = planet
 #        self._db.close()
                 
@@ -124,11 +124,11 @@ class Configuration(dict):
         self['password'] = ''
         self['webpage'] = 'ogame.com.es'      
         self['attackRadius'] = 10
-        self['probesToSend'] = 3
         self['slotsToReserve'] = 0
         self['attackingShip'] = 'smallCargo'
         self['sourcePlanets'] = []
         self['playersToAvoid'] = []       
+        self['probesToSend'] = 1
         self['alliancesToAvoid'] = []       
         self['systemsPerGalaxy'] = 499
         self['proxy'] = ''
