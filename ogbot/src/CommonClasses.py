@@ -180,7 +180,7 @@ class Configuration(dict):
             if item : list.append(item)
         return list
         
-    def save(self):
+    def save(self):      
         if not self.configParser.has_section('options'):
             self.configParser.add_section('options')
 

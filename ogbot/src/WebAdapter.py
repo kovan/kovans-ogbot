@@ -35,17 +35,6 @@ from Constants import *
 from GameEntities import *
 
 
-def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:52                        
-    ''' parses a time string formatted in OGame's most usual format and 
-    converts it to a datetime object'''
-    strTime = "%s %s" % (datetime.now().year, strTime)
-    format = "%Y " + format
-            
-    goodLocale = locale.getlocale() 
-    locale.setlocale(locale.LC_ALL, 'C')   
-    tuple = time.strptime(strTime, format) 
-    locale.setlocale(locale.LC_ALL, goodLocale) 
-    return datetime(*tuple[0:6])
 
 class WebAdapter(object):
     """Encapsulates the details of the communication with the ogame servers. This involves
@@ -112,15 +101,7 @@ class WebAdapter(object):
         elif  self.serverLanguage == "kr":
             translation = translation.decode('Euc-kr').encode('utf-8')
         self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
-        # retrieve and store galaxy fetching form
-        page = self._fetchPhp('galaxy.php')
-        try:
-            form = ParseResponse(page, backwards_compat=False)[0]
-        except IndexError:
-            page.seek(0)
-            raise BotFatalError(page.read())
-            
-        self.galaxyForm = form         
+ 
 
     def generateRegexps(self,translations):
         spyReportTmp  = r'%s (?P<planetName>.*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
@@ -150,7 +131,7 @@ class WebAdapter(object):
             }, 
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
             'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"',re.I), 
-            'maxSlots':re.compile(r"m(?:a|á)x\. ([0-9]+)",re.I), 
+            'maxSlots':re.compile(r"%s([0-9]+)" %  translations['maxFleets'].replace('.','\. '),re.I), 
             'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE|re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
             
@@ -240,7 +221,7 @@ class WebAdapter(object):
         return response
     
     def doLogin(self):
-        if self.serverTimeDelta and self.serverTime().hour == 3 and self.serverTime.minute == 0: # don't connect immediately after 3am server reset
+        if self.serverTimeDelta and self.serverTime().hour == 3 and self.serverTime().minute == 0: # don't connect immediately after 3am server reset
             sleep(40)                
         
         page = self._fetchValidResponse(self.webpage)
@@ -277,11 +258,10 @@ class WebAdapter(object):
     def getSolarSystem(self, galaxy, solarSystem, deuteriumSourcePlanet = None):
         try:
             planets = {}         
-            self.galaxyForm['galaxy'] = str(galaxy)
-            self.galaxyForm['system'] = str(solarSystem)
+
             if deuteriumSourcePlanet:
                 self._fetchPhp('overview.php', cp=self.deuteriumSourcePlanet.code)
-            page = self._fetchForm(self.galaxyForm).read()
+            page = self._fetchPhp('galaxy.php',galaxy=galaxy,system=solarSystem).read()
             html = BeautifulSoup(page)              
             galaxyTable = html.findAll('table', width="569")[0]
             rowCount = 0
@@ -302,8 +282,8 @@ class WebAdapter(object):
                 except AttributeError: # no planet in that position
                     continue 
             return planets
-        except IndexError,e:
-            raise BotFatalError()
+        except IndexError:
+            raise BotFatalError("Probably there is not enough deuterium.")
         
     def getSpyReports(self):
         page = self._fetchPhp('messages.php').read()
@@ -520,3 +500,17 @@ class WebAdapter(object):
             return False
         return True   
     
+
+
+
+def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:52                        
+    ''' parses a time string formatted in OGame's most usual format and 
+    converts it to a datetime object'''
+    strTime = "%s %s" % (datetime.now().year, strTime)
+    format = "%Y " + format
+            
+    goodLocale = locale.getlocale() 
+    locale.setlocale(locale.LC_ALL, 'C')   
+    tuple = time.strptime(strTime, format) 
+    locale.setlocale(locale.LC_ALL, goodLocale) 
+    return datetime(*tuple[0:6])
