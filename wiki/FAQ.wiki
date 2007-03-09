@@ -22,7 +22,7 @@ A: There is a user who wrote about it in the [http://groups.google.com/group/kov
 
 ===Q: I found some error in the bot, how do I report it?===
 
-A: Go to the issues tab and open a new issue in the [http://code.google.com/p/kovans-ogbot/issues/list issues tab], then follow the instructions. 
+A: Go to the issues tab and open a new issue in the [http://code.google.com/p/kovans-ogbot/issues/list issues tab], then follow the instructions. Before that, make sure the error is not already posted. If it is, you can click the star near it to be notified of changes and comments. 
 
 ===Q: I have Commander mode. Will the bot still work?===
 
