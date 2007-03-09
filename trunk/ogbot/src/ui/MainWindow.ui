@@ -220,7 +220,7 @@
              </layout>
             </item>
             <item>
-             <widget class="QTreeWidget" name="spyReportsTree" >
+             <widget class="QTreeWidget" name="reportsTree" >
               <property name="alternatingRowColors" >
                <bool>true</bool>
               </property>

@@ -163,7 +163,7 @@ class EnemyPlanet (Planet):
         self.owner = owner
         self.alliance = alliance
         self.ownerStatus = ownerstatus
-        self.spyReportHistory = []
+        self.espionagesHistory = []
         self.attackTime = None
         self.activeMissions = []
         
@@ -177,7 +177,7 @@ class GameMessage(object):
     def __init__(self, code):
         self.code = code
 
-class SpyReport(GameMessage):
+class EspionageReport(GameMessage):
     def __init__(self, coords, planetName, date, resources, code, fleet=None, defense=None, buildings=None, research=None):
         GameMessage.__init__(self, code)
         self.coords = coords
@@ -189,6 +189,7 @@ class SpyReport(GameMessage):
         self.buildings = buildings
         self.research = research
         self.probesSent = 0
+        self.simulation = None
 
             
     def __repr__(self):

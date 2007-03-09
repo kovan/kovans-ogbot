@@ -69,11 +69,21 @@ class PlanetDb(object):
         for planet in planetList:
             self._db[str(planet.coords)] = planet              
         self._db.close()
-    
+        
+    def writeManyKeepReports(self, planetList):   
+        self._open(True)
+        for planet in planetList:
+            coordsStr = str(planet.coords)
+            planetRead = self._db.get(coordsStr)
+            if planetRead:
+                planet.espionagesHistory = planetRead.espionagesHistory
+            self._db[coordsStr] = planet
+        self._db.close()    
+        
 #    def addEspionageToPlanet(self,coordsStr,espionage):                
 #        self._open()
 #        planet = self._db.get(coordsStr)
-#        planet.spyReportHistory.append(espionage)
+#        planet.espionagesHistory.append(espionage)
 #        self._db[str(planet.coords)] = planet
 #        self._db.close()
                 
@@ -172,6 +182,9 @@ class Configuration(dict):
             resources.rentability(10000,self.rentabilityFormula)
         except Exception, e:
             raise BotError("Invalid rentability formula: " + str(e))
+        
+        if 'ogame.com.es' in self.webpage and self.universe == 42:
+            raise BotError("Bot doesn't work in that universe.")
             
     def _parseList(self,listStr):
         list = []

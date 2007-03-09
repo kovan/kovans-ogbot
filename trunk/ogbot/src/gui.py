@@ -204,14 +204,14 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.stopButton,SIGNAL("clicked()"),self.stopClicked)                
         QObject.connect(self.searchButton,SIGNAL("clicked()"),self._planetDb_filter)                        
         QObject.connect(self.planetsTree,SIGNAL("currentItemChanged (QTreeWidgetItem*,QTreeWidgetItem*)"),self._planetDb_updateReportsTree)        
-        QObject.connect(self.spyReportsTree,SIGNAL("currentItemChanged (QTreeWidgetItem*,QTreeWidgetItem*)"),self._planetDb_updateReportDetailsTrees)                
+        QObject.connect(self.reportsTree,SIGNAL("currentItemChanged (QTreeWidgetItem*,QTreeWidgetItem*)"),self._planetDb_updateReportDetailsTrees)                
         QObject.connect(self.reloadDbButton,SIGNAL("clicked()"),self._planetDb_filter)                        
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
         
         self.splitter.setSizes([230,111,0])
         #self.botActivityLabel.setBackgroundRole(QPalette.AlternateBase) # background of a ligh color
         self.setStatusBar(None)
-        self.spyReportsTree.header().setResizeMode(QHeaderView.Stretch)
+        self.reportsTree.header().setResizeMode(QHeaderView.Stretch)
         
         self.planetsTree.header().setResizeMode(QHeaderView.Stretch)                
         self.botActivityTree.header().setResizeMode(QHeaderView.Interactive)
@@ -335,67 +335,67 @@ class MainWindow(baseclass,formclass):
         columnToFilter = str(self.planetFilterComboBox.currentText())
         self.planetsTree.clear()
         self._planetDb = PlanetDb(FILE_PATHS['planetdb'])
-        self.spyReportsTree.clear()                
+        self.reportsTree.clear()                
         
         for planet in self._planetDb.readAll():
             attrName = re.sub(r" (\w)",lambda m: m.group(0).upper().strip(),columnToFilter.lower()) # convert names from style "Player status" to style "playerStatus"
             columnValue = str(getattr(planet,attrName))
-            spyReportCount = str(len(planet.spyReportHistory))
-            if spyReportCount == '0' : spyReportCount = '-'
+            reportCount = str(len(planet.espionagesHistory))
+            if reportCount == '0' : reportCount = '-'
             if filterText.lower() in columnValue.lower():
-                item = QTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, spyReportCount])
+                item = QTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, reportCount])
                 self.planetsTree.addTopLevelItem(item)
                 
     def _planetDb_updateReportsTree(self,planetTreeSelectedItem):
         if not planetTreeSelectedItem:
             return
         coordsStr = str(planetTreeSelectedItem.text(0))
-        self.spyReportsTree.clear()
+        self.reportsTree.clear()
         planet = self._planetDb.read(coordsStr)
-        self._planetDb_fillReportsTree(planet.spyReportHistory)
+        self._planetDb_fillReportsTree(planet.espionagesHistory)
         
-    def _planetDb_fillReportsTree(self,spyReports):
-        if len(spyReports) == 0:
+    def _planetDb_fillReportsTree(self,reports):
+        if len(reports) == 0:
             return
-        self.spyReportsTree.clear()
-        for spyReport in spyReports:
-            res = spyReport.resources
-            onlyHasMissiles = not spyReport.hasNonMissileDefense() and spyReport.hasDefense()
+        self.reportsTree.clear()
+        for report in reports:
+            res = report.resources
+            onlyHasMissiles = not report.hasNonMissileDefense() and report.hasDefense()
             if onlyHasMissiles: defense = "Only missiles"
-            else: defense = spyReport.hasInfoAbout("defense")
+            else: defense = report.hasInfoAbout("defense")
             
-            itemData = [spyReport.code,spyReport.date.strftime("%X %x"),str(spyReport.coords),str(res.metal),str(res.crystal),str(res.deuterium)]
-            itemData += [spyReport.hasInfoAbout("fleet"),defense,str(spyReport.probesSent)]            
+            itemData = [report.code,report.date.strftime("%X %x"),str(report.coords),str(res.metal),str(res.crystal),str(res.deuterium)]
+            itemData += [report.hasInfoAbout("fleet"),defense,str(report.probesSent)]            
             item = QTreeWidgetItem(itemData)
-            self.spyReportsTree.addTopLevelItem(item)
+            self.reportsTree.addTopLevelItem(item)
             
         self.splitter.setSizes([230,111,1])
-        self.spyReportsTree.setCurrentItem(self.spyReportsTree.topLevelItem(0))            
+        self.reportsTree.setCurrentItem(self.reportsTree.topLevelItem(0))            
         
-    def _planetDb_updateReportDetailsTrees(self,spyReportsTreeSelectedItem):
-        if spyReportsTreeSelectedItem is None:
+    def _planetDb_updateReportDetailsTrees(self,reportsTreeSelectedItem):
+        if reportsTreeSelectedItem is None:
             return
-        codeStr = str(spyReportsTreeSelectedItem.text(0))        
-        coordsStr = str(spyReportsTreeSelectedItem.text(2))
+        codeStr = str(reportsTreeSelectedItem.text(0))        
+        coordsStr = str(reportsTreeSelectedItem.text(2))
         
         planet =  self._planetDb.read(coordsStr)
-        spyReport = [report for report in planet.spyReportHistory if str(report.code) == codeStr][0]
+        report = [report for report in planet.espionagesHistory if str(report.code) == codeStr][0]
         
         for i in ["fleet","defense","buildings","research"]:
             tree = getattr(self,i + "Tree")
             tree.clear()
-            var = spyReport.hasInfoAbout(i) +" "+ i # var results in, p.e: "Unknown fleet"
+            var = report.hasInfoAbout(i) +" "+ i # var results in, p.e: "Unknown fleet"
             if var == "Yes " + i:
                 items = []
-                for type, cuantity in  getattr(spyReport,i).items():
+                for type, cuantity in  getattr(report,i).items():
                     items.append(QTreeWidgetItem([type,str(cuantity)]))
             else: items = [QTreeWidgetItem([var])]
             tree.addTopLevelItems(items)
 
     def showAllReports(self):
-        self.spyReportsTree.clear()
+        self.reportsTree.clear()
         allPlanets = self._planetDb.readAll()
-        allReports = [planet.spyReportHistory[-1] for planet in allPlanets if len(planet.spyReportHistory) > 0]
+        allReports = [planet.espionagesHistory[-1] for planet in allPlanets if len(planet.espionagesHistory) > 0]
         self._planetDb_fillReportsTree(allReports)
         
 
@@ -443,13 +443,15 @@ class MainWindow(baseclass,formclass):
                 planet,rentability = planet
             else: rentability = 0
 
-            if not planet.spyReportHistory: 
+            if not planet.espionagesHistory: 
                 simulatedResources = 'Not spied'
                 defendedStr = 'Not spied'
                 minesStr = 'Not spied'
             else:
-                simulatedResources = simulations[repr(planet.coords)].simulatedResources
-                report = planet.spyReportHistory[-1]
+                try:
+                    simulatedResources = simulations[repr(planet.coords)].simulatedResources
+                except KeyError: simulatedResources = '?'
+                report = planet.espionagesHistory[-1]
                 if  report.defense == None:
                     defendedStr = '?'
                 elif  report.isUndefended():
