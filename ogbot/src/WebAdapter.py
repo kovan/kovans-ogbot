@@ -104,12 +104,12 @@ class WebAdapter(object):
  
 
     def generateRegexps(self,translations):
-        spyReportTmp  = r'%s (?P<planetName>.*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
-        spyReportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
-        spyReportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
-        spyReportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9.]+)</td>\n'
-        spyReportTmp += r'<td>.*?</td><td>(?P<energy>[-0-9.]+)</td></tr>'  
-        spyReportTmp2 = r'<table width=[0-9]+><tr><td class=c colspan=4>%s(.*?)</table>'
+        reportTmp  = r'%s (?P<planetName>.*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
+        reportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
+        reportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
+        reportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9.]+)</td>\n'
+        reportTmp += r'<td>.*?</td><td>(?P<energy>[-0-9.]+)</td></tr>'  
+        reportTmp2 = r'<table width=[0-9]+><tr><td class=c colspan=4>%s(.*?)</table>'
 
         
         self.REGEXP_COORDS_STR  = r"([1-9]{1,3}):([0-9]{1,3}):([0-9]{1,2})"
@@ -120,13 +120,13 @@ class WebAdapter(object):
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>',re.I), 
             'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?) +.*?\['+self.REGEXP_COORDS_STR+'].*?</option>',re.I), 
-            'spyReport': 
+            'report': 
             {
-                'all'  :    re.compile(spyReportTmp, re.LOCALE|re.I), 
-                'fleet':    re.compile(spyReportTmp2 % translations['fleets'], re.DOTALL|re.I), 
-                'defense':  re.compile(spyReportTmp2 % translations['defense'], re.DOTALL|re.I), 
-                'buildings':re.compile(spyReportTmp2 % translations['buildings'], re.DOTALL|re.I), 
-                'research': re.compile(spyReportTmp2 % translations['research'], re.DOTALL|re.I), 
+                'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
+                'fleet':    re.compile(reportTmp2 % translations['fleets'], re.DOTALL|re.I), 
+                'defense':  re.compile(reportTmp2 % translations['defense'], re.DOTALL|re.I), 
+                'buildings':re.compile(reportTmp2 % translations['buildings'], re.DOTALL|re.I), 
+                'research': re.compile(reportTmp2 % translations['research'], re.DOTALL|re.I), 
                 'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9.]+)</td>",re.DOTALL|re.I)
             }, 
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
@@ -285,7 +285,7 @@ class WebAdapter(object):
         except IndexError:
             raise BotFatalError("Probably there is not enough deuterium.")
         
-    def getSpyReports(self):
+    def getEspionageReports(self):
         page = self._fetchPhp('messages.php').read()
         rawMessages = {}
         for match in self.REGEXPS['messages.php'].finditer(page):
@@ -298,7 +298,7 @@ class WebAdapter(object):
             if 'class="espionagereport"' not in rawMessage:
                 continue
             
-            m = self.REGEXPS['spyReport']['all'].search(rawMessage)
+            m = self.REGEXPS['report']['all'].search(rawMessage)
             if m == None: #theorically should never happen
                 warnings.warn("Error parsing espionage report.")
                 continue
@@ -307,19 +307,19 @@ class WebAdapter(object):
             date = parseTime(m.group('date'), "%m-%d %H:%M:%S")
             resources = Resources(m.group('metal').replace('.',''), m.group('crystal').replace('.',''), m.group('deuterium').replace('.',''))
 
-            spyReport = SpyReport(coords, planetName, date, resources, code)
+            report = EspionageReport(coords, planetName, date, resources, code)
             
             for i in "fleet", "defense", "buildings", "research":
                 dict = None
-                match = self.REGEXPS['spyReport'][i].search(rawMessage)
+                match = self.REGEXPS['report'][i].search(rawMessage)
                 if match:
                     dict, text = {}, match.group(1)
-                    for fullName, cuantity in self.REGEXPS['spyReport']['details'].findall(text):
+                    for fullName, cuantity in self.REGEXPS['report']['details'].findall(text):
                         dict[self.translationsByLocalText[fullName.strip()]] = int(cuantity.replace('.',''))
                         
-                setattr(spyReport, i, dict)
+                setattr(report, i, dict)
                 
-            reports.append(spyReport)
+            reports.append(report)
             
         return reports
         
