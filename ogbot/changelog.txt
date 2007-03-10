@@ -1,6 +1,14 @@
+
+v2.1.2b
+-----------------------
+ March, 11. 2007     
+-----------------------
+- Fixed bug AttributeError: 'module' object has no attribute 'SpyReport'
+- Fixed bug WindowsError: [Error 13] (...) files/botdata/gamedata.dat'
+
 v2.1.2
 -----------------------
- March, 8. 2007     
+ March, 10. 2007     
 -----------------------
 - Selectable attack algorithm.
 - Less memory used.
@@ -11,7 +19,7 @@ v2.1.2
 - Fixed bug in daily inactive scan which after a while resulted in message 
   "Fatal error found, terminating. There are no undefended planets in range."
 - Fixed bug bot not attacking players with no alliance.
-- Source refactored and other minor fixes.
+- Source code refactored and other minor fixes.
 
 v2.1.1b
 -----------------------
