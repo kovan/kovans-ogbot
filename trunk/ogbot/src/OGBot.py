@@ -119,11 +119,13 @@ class Bot(threading.Thread):
             shutil.move(path,path + ".bak")
         except IOError: pass
         
-        pickler = cPickle.Pickler(open(path, 'wb'),2)
+        file = open(path, 'wb')
+        pickler = cPickle.Pickler(file,2)
         for i in [self.targetPlanets,self.reachableSolarSystems,self.lastInactiveScanTime,
                   self.config.webpage,self.config.universe,self.config.username]:
                   pickler.dump(i)
-                
+        file.close()
+         
     def _connect(self):
         self._eventMgr.activityMsg("Connecting...")        
         self._web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue,self.gui)
@@ -156,7 +158,8 @@ class Bot(threading.Thread):
         # load previous planets
 
         try:
-            u = cPickle.Unpickler(open(FILE_PATHS['gamedata'], 'rb'))
+            file = open(FILE_PATHS['gamedata'], 'rb')
+            u = cPickle.Unpickler(file)
             
             self.targetPlanets = u.load()
             self.reachableSolarSystems = u.load()
@@ -164,14 +167,15 @@ class Bot(threading.Thread):
             storedWebpage = u.load()
             storedUniverse = u.load()
             storedUsername = u.load()
-                        
+            file.close()
+                 
             if storedWebpage != self.config.webpage \
             or storedUniverse != self.config.universe \
             or storedUsername != self.config.username:
                 raise BotError() # if any of those has changed, invalidate stored espionages
 
             self._eventMgr.activityMsg("Loading previous espionage data...") 
-        except (EOFError, IOError,BotError,ImportError):
+        except (EOFError, IOError,BotError,ImportError,AttributeError):
             self.targetPlanets = []
             self.reachableSolarSystems = []
             self._eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
@@ -217,19 +221,9 @@ class Bot(threading.Thread):
         
         self._eventMgr.activityMsg("Bot started.")
 
-        ## -------------- MAIN LOOP --------------------------
-        #gc.set_debug(gc.DEBUG_LEAK)
-        #gc.set_debug(gc.DEBUG_INSTANCES|gc.DEBUG_STATS|gc.DEBUG_COLLECTABLE|gc.DEBUG_UNCOLLECTABLE)
+        # -------------- MAIN LOOP ---------------
         while True:
             self._saveFiles()
-
-#            
-#            print "GC garbage begin ---------------------" 
-            #print gc.garbage
-            #del gc.garbage[:]
-#            print "GC garbage end ---------------------" 
-#            
-
 
             # background inactive search    
             serverTime = self._web.serverTime()
@@ -381,7 +375,7 @@ class Bot(threading.Thread):
                         # probably due to buggy espionage report (containing only N;)
                         del notArrivedEspionages[planet]
                         self.targetPlanets.remove(planet)
-                        self._eventMgr.activityMsg("Planet %s was deleted because it cannot be spied." % espionage.targetPlanet)
+                        self._eventMgr.activityMsg("Espionage report from %s never arrived. Deleting planet." % espionage.targetPlanet)
         
             sleep(1)            
 
