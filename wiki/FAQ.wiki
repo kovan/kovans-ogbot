@@ -90,7 +90,8 @@ options:
 
 ===Q: How does the bot choose which planet to attack?===
 
-A: It assigns a rentability (a number) to each planet and always attacks that with the most rentability. Since 2.1.1, the rentability formula can be customized in Advanced Options.
+A: It assigns a rentability (a number) to each planet and always attacks that with the most rentability. Since v2.1.2, the planet selection algorithm can be chosen in Advanced Options.
+
 
 Here is an extract from one issue's comments that explains the differences in the algorithms between OGBot versions 1 and 2.
 
