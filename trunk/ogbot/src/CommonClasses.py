@@ -75,9 +75,11 @@ class PlanetDb(object):
         for planet in planetList:
             coordsStr = str(planet.coords)
             planetRead = self._db.get(coordsStr)
+            saved = planet.espionageHistory            
             if planetRead:
                 planet.espionageHistory = planetRead.espionageHistory
             self._db[coordsStr] = planet
+            planet.espionageHistory = saved
         self._db.close()    
         
 #    def addEspionageToPlanet(self,coordsStr,espionage):                
