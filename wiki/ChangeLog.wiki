@@ -1,6 +1,21 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+v2.1.2
+-----------------------
+ March, 10. 2007     
+-----------------------
+- Selectable attack algorithm.
+- Less memory used.
+- Algorithm that selects how many probes are sent is smarter.
+- Now nothing is never deleted from the database.
+- Planets are shown ordered.
+- Made possible translation to chinese and korean (further testing needed).
+- Fixed bug in daily inactive scan which after a while resulted in message 
+  "Fatal error found, terminating. There are no undefended planets in range."
+- Fixed bug bot not attacking players with no alliance.
+- Source code refactored and other minor fixes.
+
 v2.1.1b
 -----------------------
  March, 5. 2007     
