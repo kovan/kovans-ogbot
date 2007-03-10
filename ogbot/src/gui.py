@@ -338,15 +338,20 @@ class MainWindow(baseclass,formclass):
         self._planetDb = PlanetDb(FILE_PATHS['planetdb'])
         self.reportsTree.clear()                
         
-        for planet in self._planetDb.readAll():
-            attrName = re.sub(r" (\w)",lambda m: m.group(0).upper().strip(),columnToFilter.lower()) # convert names from style "Player status" to style "playerStatus"
-            columnValue = str(getattr(planet,attrName))
-            reportCount = str(len(planet.espionageHistory))
-            if reportCount == '0' : reportCount = '-'
-            if filterText.lower() in columnValue.lower():
-                item = QTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, reportCount])
-                self.planetsTree.addTopLevelItem(item)
-                
+        try:
+            allPlanets = self._planetDb.readAll()
+        except AttributeError:
+            os.remove(FILE_PATHS['planetdb'])     
+        else:        
+            for planet in allPlanets:
+                attrName = re.sub(r" (\w)",lambda m: m.group(0).upper().strip(),columnToFilter.lower()) # convert names from style "Player status" to style "playerStatus"
+                columnValue = str(getattr(planet,attrName))
+                reportCount = str(len(planet.espionageHistory))
+                if reportCount == '0' : reportCount = '-'
+                if filterText.lower() in columnValue.lower():
+                    item = QTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, reportCount])
+                    self.planetsTree.addTopLevelItem(item)
+           
     def _planetDb_updateReportsTree(self,planetTreeSelectedItem):
         if not planetTreeSelectedItem:
             return
