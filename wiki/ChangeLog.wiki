@@ -1,7 +1,7 @@
 #summary What's new on each version.
 #labels Featured
 {{{
-v2.1.2c
+v2.1.2d
 -----------------------
  March, 12. 2007     
 -----------------------
