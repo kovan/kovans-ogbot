@@ -199,7 +199,6 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.aboutButton,SIGNAL("clicked()"),self.showAbout)
         QObject.connect(self.optionsButton,SIGNAL("clicked()"),self.showOptions)
         QObject.connect(self.launchBrowserButton,SIGNAL("clicked()"),self.launchBrowser)
-    #  QObject.connect(self.viewLogButton,SIGNAL("clicked()"),self.viewLog)
         QObject.connect(self.showAllReportsButton,SIGNAL("clicked()"),self.showAllReports)    
         QObject.connect(self.startButton,SIGNAL("clicked()"),self.startClicked)
         QObject.connect(self.stopButton,SIGNAL("clicked()"),self.stopClicked)                
@@ -210,22 +209,15 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
         
         self.splitter.setSizes([230,111,0])
-        #self.botActivityLabel.setBackgroundRole(QPalette.AlternateBase) # background of a ligh color
         self.setStatusBar(None)
         self.reportsTree.header().setResizeMode(QHeaderView.Stretch)
         
         self.planetsTree.header().setResizeMode(QHeaderView.Stretch)                
         self.botActivityTree.header().setResizeMode(QHeaderView.Interactive)
         self.botActivityTree.header().setStretchLastSection(False)
-        self.botActivityTree.header().resizeSection(0,70)                
-        self.botActivityTree.header().resizeSection(1,80)                        
-        self.botActivityTree.header().resizeSection(2,111)
-        self.botActivityTree.header().resizeSection(3,111)        
-        self.botActivityTree.header().resizeSection(4,111)        
-        self.botActivityTree.header().resizeSection(5,300)         
-        self.botActivityTree.header().resizeSection(6,60)                 
-        self.botActivityTree.header().resizeSection(7,120)        
-        #self.progressBar.setVisible(False)
+        headerSizes = [70,80,111,111,111,300,60,120]
+        for i in range(8):
+            self.botActivityTree.header().resizeSection(i,headerSizes[i])
                 
         for i in ["fleet","defense","buildings","research"]:
             tree = getattr(self,i + "Tree")
@@ -247,7 +239,7 @@ class MainWindow(baseclass,formclass):
         except (BotFatalError, BotError): 
             self.showOptions()
 
-        
+        self.setWindowTitle("%s uni%s %s" %(self.windowTitle(),config.universe,config.webpage))
         self._planetDb_filter()
     
     def _dispatchBotMessages(self):
@@ -372,7 +364,7 @@ class MainWindow(baseclass,formclass):
             
             itemData = [report.code,report.date.strftime("%X %x"),str(report.coords),str(res.metal),str(res.crystal),str(res.deuterium)]
             itemData += [report.hasInfoAbout("fleet"),defense,str(report.probesSent)]            
-            item = QTreeWidgetItem(itemData)
+            item = MyTreeWidgetItem(itemData)
             self.reportsTree.addTopLevelItem(item)
             
         self.splitter.setSizes([230,111,1])
@@ -483,6 +475,19 @@ class MainWindow(baseclass,formclass):
         item = QListWidgetItem(str(msg))
         self.botActivityList.addItem(item)
         self.botActivityList.scrollToItem(item)
+
+
+class MyTreeWidgetItem(QTreeWidgetItem):
+    # subclassed just to implement sorting by numbers instead of by strings
+    def __lt__(self,other):
+        sortCol = self.treeWidget().sortColumn()
+        myNumber, ok1 = self.text(sortCol).toInt()
+        otherNumber, ok2 = other.text(sortCol).toInt()
+        if not ok1 or not ok2:
+            return self.text(sortCol) < other.text(sortCol)
+        else:
+            return myNumber < otherNumber
+        
 
         
 

@@ -176,6 +176,8 @@ class Bot(threading.Thread):
 
             self._eventMgr.activityMsg("Loading previous espionage data...") 
         except (EOFError, IOError,BotError,ImportError,AttributeError):
+            try: file.close()            
+            except UnboundLocalError: pass
             self.targetPlanets = []
             self.reachableSolarSystems = []
             self._eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
@@ -183,6 +185,8 @@ class Bot(threading.Thread):
                 path = FILE_PATHS['gamedata']
                 os.remove(path)              
             except Exception : pass
+
+
             
         # generate reachable solar systems list
         newReachableSolarSystems = [] # contains tuples of (galaxy,solarsystem)
@@ -267,9 +271,7 @@ class Bot(threading.Thread):
             try:
                 # check for missing and expired reports and add them to spy queue
                 allSpied = True
-                shuffledPlanets = copy.copy(self.targetPlanets)
-                random.shuffle(shuffledPlanets)
-                for planet in shuffledPlanets:
+                for planet in self.targetPlanets:
                     if not planet.espionageHistory  \
                     or planet.espionageHistory[-1].hasExpired(self._web.serverTime())  \
                     or not planet.espionageHistory[-1].hasAllNeededInfo():
@@ -393,7 +395,6 @@ class Bot(threading.Thread):
                         print >>sys.stderr, "New inactive planet found: " + str(planet)
                     
                     self.targetPlanets.append(planet)    #insert planet into main planet list
-                    #random.shuffle(self.targetPlanets)
             elif found: # no longer inactive
                 if __debug__: 
                     print >>sys.stderr, "Planet no longer inactive: " + str(found[0])

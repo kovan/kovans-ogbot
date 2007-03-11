@@ -62,6 +62,7 @@ class WebAdapter(object):
     def __init__(self, config, allTranslations,checkThreadMethod,gui = None):
         self.server = ''
         self.lastFetch = ''
+        self.serverCharset = ''        
         self.browser = Browser()
         self.config = config
         self._checkThreadMethod = checkThreadMethod
@@ -101,7 +102,7 @@ class WebAdapter(object):
         elif  self.serverLanguage == "kr":
             translation = translation.decode('Euc-kr').encode('utf-8')
         self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
- 
+
 
     def generateRegexps(self,translations):
         reportTmp  = r'%s (?P<planetName>.*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
@@ -134,7 +135,7 @@ class WebAdapter(object):
             'maxSlots':re.compile(r"%s([0-9]+)" %  translations['maxFleets'].replace('.','\. '),re.I), 
             'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE|re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
-            
+            'charset':re.compile(r'content="text/html; charset=(.*?)"',re.I)
         }
         
         
@@ -253,6 +254,7 @@ class WebAdapter(object):
         strTime = self.REGEXPS['serverTime'].findall(page)[0]
         serverTime = parseTime(strTime)
         self.serverTimeDelta = serverTime - datetime.now()
+        self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
         return myPlanets
 
     def getSolarSystem(self, galaxy, solarSystem, deuteriumSourcePlanet = None):
@@ -483,15 +485,17 @@ class WebAdapter(object):
 
     def saveState(self):
         file = open(FILE_PATHS['webstate'], 'wb')
-        cPickle.dump(self.server, file,2)         
-        cPickle.dump(self.session, file,2)
+        pickler = cPickle.Pickler(file,2)        
+        pickler.dump(self.server)         
+        pickler.dump(self.session)
         file.close()
         
     def loadState(self):
         try:
             file = open(FILE_PATHS['webstate'], 'rb')
-            self.server = cPickle.load(file)            
-            self.session = cPickle.load(file)
+            u = cPickle.Unpickler(file)            
+            self.server = u.load()            
+            self.session = u.load()
             file.close()
         except (EOFError, IOError):
             try:
