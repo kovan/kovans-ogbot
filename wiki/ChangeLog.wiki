@@ -1,6 +1,14 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+v2.1.2c
+-----------------------
+ March, 12. 2007     
+-----------------------
+- Planets are spied oredered to simulate human behaviour
+- Planets are ordered correctly by resources in the database tab.
+- Server and universe shown in windows title.
+- Fixed another WindowsError: [Error 13]
 
 v2.1.2b
 -----------------------
