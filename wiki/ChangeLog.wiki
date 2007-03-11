@@ -1,6 +1,14 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+
+v2.1.2b
+-----------------------
+ March, 11. 2007     
+-----------------------
+- Fixed bug AttributeError: 'module' object has no attribute 'SpyReport'
+- Fixed bug WindowsError: [Error 13] (...) files/botdata/gamedata.dat'
+
 v2.1.2
 -----------------------
  March, 10. 2007     
