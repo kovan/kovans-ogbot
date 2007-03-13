@@ -20,7 +20,7 @@ import os
 import urllib
 import types
 import cPickle
-
+import socket
 import urllib2
 import copy
 import sys
@@ -68,10 +68,11 @@ class WebAdapter(object):
         self._checkThreadMethod = checkThreadMethod
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
-        
         self.browser.set_handle_refresh(True, 0, False) # HTTPRefreshProcessor(0,False)         
         self.browser.set_handle_robots(False) # do not obey website's anti-bot indications
         self.browser.addheaders = [('User-agent', self.config.userAgent)]
+        socket.setdefaulttimeout(10.0)
+                                         
         if self.config.proxy:
             self.browser.set_proxies({"http":"http://"+self.config.proxy})
         if config.webpage.endswith('.ba') or config.webpage.endswith('.com.hr'):
@@ -224,7 +225,7 @@ class WebAdapter(object):
     def doLogin(self):
         if self.serverTimeDelta and self.serverTime().hour == 3 and self.serverTime().minute == 0: # don't connect immediately after 3am server reset
             sleep(40)                
-        
+        self.lastFetch = self.webpage
         page = self._fetchValidResponse(self.webpage)
         form = ParseResponse(page, backwards_compat=False)[0]
         form["Uni"]   = [self.server]
