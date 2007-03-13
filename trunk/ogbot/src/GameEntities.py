@@ -137,7 +137,7 @@ class Resources(object):
         if not formula:
             return float((self.metal + 1.5 * self.crystal + 3 * self.deuterium) / flightTime )
         else:
-            formula = formula.replace('metal','self.metal').replace('crystal','self.crystal').replace('deuterium','self.deuterium')
+            formula = formula.replace('metal','self.metal').replace('crystal','self.crystal').replace('deuterium','self.deuterium').replace('flightTime','float(flightTime)')
             return float(eval(formula))
 
 
