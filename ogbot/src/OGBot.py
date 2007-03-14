@@ -285,10 +285,10 @@ class Bot(threading.Thread):
             
             # update lists of own planets
             for planet,time in planetsWithoutCargos.items():
-                if serverTime - time > timedelta(minutes=5):
+                if serverTime - time > timedelta(minutes=8):
                     del planetsWithoutCargos[planet]
             for planet,time in planetsWithoutProbes.items():
-                if serverTime - time > timedelta(minutes=1):
+                if serverTime - time > timedelta(minutes=3):
                     del planetsWithoutProbes[planet]
                                 
             try:
@@ -395,16 +395,18 @@ class Bot(threading.Thread):
                             notArrivedEspionages[finalPlanet] = espionage                            
                             planetsToSpy.remove(finalPlanet)
                             self._eventMgr.activityMsg("%s %s from %s with %s" % (action,finalPlanet, sourcePlanet, ships))
+                            sleep(5)                                   
                         except NotEnoughShipsError, e:
                             planetsWithoutProbes[sourcePlanet] = serverTime
                             self._eventMgr.activityMsg("Not enough ships in planet %s to spy %s. %s" %(sourcePlanet,finalPlanet,e))             
-                        sleep(5)                        
             except NoFreeSlotsError: 
                 self._eventMgr.statusMsg("Fleet limit hit")
                 sleep(8)
             except FleetSendError, e: 
                 self._eventMgr.activityMsg("Error sending fleet for planet %s: %s" %(finalPlanet,e))
                 self.targetPlanets.remove(finalPlanet)
+                if finalPlanet in planetsToSpy:
+                    planetsToSpy.remove(finalPlanet)
         
         
             sleep(1)            
