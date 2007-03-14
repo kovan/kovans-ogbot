@@ -82,13 +82,6 @@ class PlanetDb(object):
             planet.espionageHistory = saved
         self._db.close()    
         
-#    def addEspionageToPlanet(self,coordsStr,espionage):                
-#        self._open()
-#        planet = self._db.get(coordsStr)
-#        planet.espionageHistory.append(espionage)
-#        self._db[str(planet.coords)] = planet
-#        self._db.close()
-                
     def read(self, coordsStr):
         self._open()         
         planet = self._db.get(coordsStr)
@@ -222,7 +215,7 @@ class Translations(dict):
                 self[translation['languageCode']] = translation 
             except Exception, e: 
                 raise BotError("Malformed languaje file (%s%s): %s"%(fileName,extension,e))
-        # after all this access to a translated string is obtained thru p.e.: self['spanish']['smallCargo']
+        # after all this access to a translated string is obtained thru p.e.: self['es']['smallCargo']
         
 class ResourceSimulation(object):
     def __init__(self, baseResources, mines):

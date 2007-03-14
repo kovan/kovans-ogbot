@@ -230,12 +230,12 @@ class Bot(threading.Thread):
             # background inactive search    
             serverTime = self._web.serverTime()
 
-            if (serverTime.hour == 0 and serverTime.minute >= 6 and serverTime.minute <= 15)\
+            if (serverTime.hour == 0 and serverTime.minute >= 6 and serverTime.minute <= 20 and self.lastInactiveScanTime.day != serverTime.day) \
             or serverTime - self.lastInactiveScanTime >= timedelta(days = 1, hours = 1):
                 if not self.scanning: # trigger scan
                     self._targetSolarSystemsIter = iter(self.reachableSolarSystems)             
                     self.scanning = True
-                    self._eventMgr.activityMsg("Performing inactives scan.")                                        
+                    self._eventMgr.activityMsg("Performing daily inactives scan.")                                        
 
             if self.scanning:
                 try:
@@ -244,7 +244,7 @@ class Bot(threading.Thread):
                         self._scanSolarSystem(galaxy, solarSystem);                        
                 except StopIteration:
                     self.lastInactiveScanTime = serverTime                        
-                    self._eventMgr.activityMsg("Inactives scan finished.")                                                            
+                    self._eventMgr.activityMsg("Daily inactives scan finished.")                                                            
                     self.scanning = False
             
 
@@ -289,6 +289,8 @@ class Bot(threading.Thread):
             try:
                 # check for missing and expired reports and add them to spy queue
                 allSpied = True
+#                shuffledPlanets = copy.copy(self.targetPlanets)
+#                random.shuffle(shuffledPlanets)
                 for planet in self.targetPlanets:
                     if not planet.espionageHistory  \
                     or planet.espionageHistory[-1].hasExpired(self._web.serverTime())  \
@@ -302,16 +304,12 @@ class Bot(threading.Thread):
  
 
                 if allSpied and not planetsToSpy: # attack if there are no unespied planets remaining
-                    found = [x for x in rentabilities if x[1] > 0]
-                    if not found:
+                    attackablePlanets = [x for x in rentabilities if x[0] not in notArrivedEspionages and x[1] > 0]
+                    if not attackablePlanets:
                         self._eventMgr.simulationsUpdate(rentabilities)
                         raise BotFatalError("There are no undefended planets in range.")
                     # ATTACK
-                    for finalPlanet, rentability in rentabilities:
-                        if rentability <= 0: # ensure undefended
-                            continue
-                        if finalPlanet in notArrivedEspionages:
-                            continue
+                    for finalPlanet, rentability in attackablePlanets:
                         if finalPlanet.espionageHistory[-1].getAge(self._web.serverTime()).seconds < 600:                            
                             resourcesToSteal = finalPlanet.simulation.simulatedResources.half()
                             ships = int((resourcesToSteal.total() + 5000) / self.attackingShip.capacity)
@@ -320,7 +318,7 @@ class Bot(threading.Thread):
                             mission = Mission(Mission.Types.attack, sourcePlanet, finalPlanet, fleet)
                             try:
                                 self._web.launchMission(mission,False,self.config.slotsToReserve)        
-                                self._eventMgr.activityMsg( "Attacking  %s from %s with %s" % (finalPlanet, sourcePlanet,fleet))
+                                self._eventMgr.activityMsg( "ATTACKING %s from %s with %s" % (finalPlanet, sourcePlanet,fleet))
                                 shipsSent = mission.fleet[self.attackingShip.name]                                        
                                 if shipsSent < ships:
                                     factor = shipsSent / float(ships)
@@ -349,9 +347,8 @@ class Bot(threading.Thread):
                     if not finalPlanet.espionageHistory:
                         # send no. of probes equal to the average no. of probes sent until now.
                         probes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory]
-                        if len(probes) > 8: probesToSend = int(sum(probes) / len(probes)) 
-                        else: pass #TODO: temporary fix
-                        probesToSend = self.config.probesToSend
+                        if len(probes) > 10: probesToSend = int(sum(probes) / len(probes)) 
+                        else: probesToSend = self.config.probesToSend
                         action = "Spying for the 1st time"
                     else:
                         probesToSend = finalPlanet.espionageHistory[-1].probesSent    
@@ -392,11 +389,10 @@ class Bot(threading.Thread):
             found = [p for p in self.targetPlanets if p.coords == planet.coords]
             if 'inactive' in planet.ownerStatus:
                 if not found and not planet.owner in self.config.playersToAvoid and not planet.alliance in self.config.alliancesToAvoid:
-                    # we found a new inactive planet
                     if __debug__: 
                         print >>sys.stderr, "New inactive planet found: " + str(planet)
                     self.targetPlanets.append(planet) 
-            elif found: # no longer inactive
+            elif found:
                 if __debug__: 
                     print >>sys.stderr, "Planet no longer inactive: " + str(found[0])
                 self.targetPlanets.remove(found[0])
@@ -416,10 +412,11 @@ class Bot(threading.Thread):
     def _didEspionageArrive(self, espionage, displayedReports):
         reports = [report for report in displayedReports if report.coords == espionage.targetPlanet.coords and report.date >= espionage.launchTime]
         reports.sort(key=lambda x:x.date, reverse=True)
-        if len(reports) > 0:
+        if reports:
             self._web.deleteMessage(reports[0])
             return reports[0]
-        return None
+        else: 
+            return None
 
         
     def _checkThreadQueue(self):
@@ -438,15 +435,9 @@ class Bot(threading.Thread):
                         break
         except Empty: pass         
     
-    
-    def getControlUrl(self):
-        return self._web.getControlUrl()
 
-class GalaxyScanner(object):
-    def __init__(self,webAdapter):
-        self._web = webAdapter
-    def scanNext(self):
-        pass
+
+
     
 if __name__ == "__main__":
     
@@ -466,11 +457,11 @@ if __name__ == "__main__":
         FILE_PATHS[key] = path
         try: os.makedirs (os.path.dirname(path))
         except OSError, e: 
-            if "File exists" in e: pass             
+            if "File exists" not in str(e): raise e
 
     try: os.makedirs ('debug')
     except OSError, e: 
-        if "File exists" in e: pass      
+            if "File exists" not in str(e): raise e
             
     logging.getLogger().setLevel(logging.INFO)
     handler = logging.handlers.RotatingFileHandler(os.path.abspath(FILE_PATHS['log']), 'a', 100000, 10)
