@@ -148,8 +148,6 @@ class WebAdapter(object):
         return self._session
     session = property(getSession, setSession)    
     
-    def getControlUrl(self):
-        return "http://%s/game/index.php?session=%s" % (self.server, self.session)
     
     def serverTime(self):
         return self.serverTimeDelta + datetime.now()
@@ -179,7 +177,7 @@ class WebAdapter(object):
                 response = self.browser.open(request)
                 p = response.read()
 
-                
+                # store last 20 pages fetched in the debug directory:
                 files = os.listdir('debug')
                 if len(files) >= 20: #never allow more than 20 files
                     files.sort()
@@ -188,9 +186,10 @@ class WebAdapter(object):
                 except IndexError: php = ''
                 date = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
                 file = open("debug/%s%s.html" %(date,php), 'w')
-                
                 file.write(p.replace('<script','<noscript').replace('</script>','</noscript>').replace('http-equiv="refresh"','http-equiv="kovan-rulez"'))
                 file.close()
+                
+                
                 response.seek(0)
                 if skipValidityCheck:
                     return response                
@@ -514,8 +513,7 @@ def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:
     strTime = "%s %s" % (datetime.now().year, strTime)
     format = "%Y " + format
             
-    goodLocale = locale.getlocale() 
     locale.setlocale(locale.LC_ALL, 'C')   
     tuple = time.strptime(strTime, format) 
-    locale.setlocale(locale.LC_ALL, goodLocale) 
+    locale.resetlocale()
     return datetime(*tuple[0:6])
