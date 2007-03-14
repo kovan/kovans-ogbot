@@ -4,6 +4,8 @@ v2.1.2e
 -----------------------
 - If espionage probes crash, planet is marked as defended.
 - Option to stop attacks one hour before midnight to free fleet slots for attacks to new inactives.
+- Daily inactives scan is now done ASAP each day.
+- Minor changes and bugfixes
 
 v2.1.2c
 -----------------------
