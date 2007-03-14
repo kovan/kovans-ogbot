@@ -153,8 +153,9 @@ class Bot(threading.Thread):
         self.attackingShip = INGAME_TYPES_BY_NAME[self.config.attackingShip]           
         notArrivedEspionages = {}
         planetsToSpy = []
-
-                
+        planetsWithoutCargos = {}
+        planetsWithoutProbes = {}
+                        
         # load previous planets
         try:
             file = open(FILE_PATHS['gamedata'], 'rb')
@@ -230,8 +231,7 @@ class Bot(threading.Thread):
             # background inactive search    
             serverTime = self._web.serverTime()
 
-            if (serverTime.hour == 0 and serverTime.minute >= 6 and serverTime.minute <= 20 and self.lastInactiveScanTime.day != serverTime.day) \
-            or serverTime - self.lastInactiveScanTime >= timedelta(days = 1, hours = 1):
+            if self.lastInactiveScanTime.day != serverTime.day and not (serverTime.hour == 0 and serverTime.minute < 6):
                 if not self.scanning: # trigger scan
                     self._targetSolarSystemsIter = iter(self.reachableSolarSystems)             
                     self.scanning = True
@@ -247,7 +247,6 @@ class Bot(threading.Thread):
                     self._eventMgr.activityMsg("Daily inactives scan finished.")                                                            
                     self.scanning = False
             
-
 
             # check for newly arrived espionages
             if len(notArrivedEspionages) > 0:
@@ -281,11 +280,17 @@ class Bot(threading.Thread):
                 else: 
                     rentability = 0
                 rentabilities.append((planet,rentability))
-                
             rentabilities.sort(key=lambda x:x[1], reverse=True) # sorty by rentability
-             
             self._eventMgr.simulationsUpdate(rentabilities)
-
+            
+            # update lists of own planets
+            for planet,time in planetsWithoutCargos.items():
+                if serverTime - time > timedelta(minutes=5):
+                    del planetsWithoutCargos[planet]
+            for planet,time in planetsWithoutProbes.items():
+                if serverTime - time > timedelta(minutes=1):
+                    del planetsWithoutProbes[planet]
+                                
             try:
                 # check for missing and expired reports and add them to spy queue
                 allSpied = True
@@ -293,7 +298,7 @@ class Bot(threading.Thread):
 #                random.shuffle(shuffledPlanets)
                 for planet in self.targetPlanets:
                     if not planet.espionageHistory  \
-                    or planet.espionageHistory[-1].hasExpired(self._web.serverTime())  \
+                    or planet.espionageHistory[-1].hasExpired(serverTime)  \
                     or not planet.espionageHistory[-1].hasAllNeededInfo():
                         allSpied = False
                         if planet not in planetsToSpy and planet not in notArrivedEspionages.keys():
@@ -304,16 +309,29 @@ class Bot(threading.Thread):
  
 
                 if allSpied and not planetsToSpy: # attack if there are no unespied planets remaining
-                    attackablePlanets = [x for x in rentabilities if x[0] not in notArrivedEspionages and x[1] > 0]
-                    if not attackablePlanets:
-                        self._eventMgr.simulationsUpdate(rentabilities)
-                        raise BotFatalError("There are no undefended planets in range.")
-                    # ATTACK
-                    for finalPlanet, rentability in attackablePlanets:
+                    finalPlanet = None
+                    # search target:
+                    for planet, rentability in rentabilities:
+                        if planet in notArrivedEspionages or rentability <= 0:
+                            continue
+                        sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
+                        if sourcePlanet in planetsWithoutCargos:
+                            continue
+                        finalPlanet = planet
+                        break
+                        
+                    if not finalPlanet:
+                        if planetsWithoutCargos:
+                            self._eventMgr.activityMsg("No planet has attacking ships. Waiting...")
+                            sleep(10)
+                        else:
+                            self._eventMgr.simulationsUpdate(rentabilities)
+                            raise BotFatalError("There are no undefended planets in range or .")
+                    else:
+                        # ATTACK
                         if finalPlanet.espionageHistory[-1].getAge(self._web.serverTime()).seconds < 600:                            
                             resourcesToSteal = finalPlanet.simulation.simulatedResources.half()
                             ships = int((resourcesToSteal.total() + 5000) / self.attackingShip.capacity)
-                            sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet.coords)
                             fleet = { self.attackingShip.name : ships }
                             mission = Mission(Mission.Types.attack, sourcePlanet, finalPlanet, fleet)
                             try:
@@ -328,48 +346,59 @@ class Bot(threading.Thread):
                                     finalPlanet.simulation.simulatedResources -= resourcesToSteal                                        
                                 sleep(30)
                                 self._eventMgr.simulationsUpdate(rentabilities)
-
-                                break
+    
                             except NotEnoughShipsError, e:
                                 self._eventMgr.activityMsg("No ships in planet %s to attack %s. %s" %(sourcePlanet,finalPlanet,e))
-                                sleep(15)
-                        else: # planet's espionage report timed out, re-spy.
-                            if finalPlanet not in planetsToSpy and finalPlanet not in notArrivedEspionages:
-                                planetsToSpy.append(finalPlanet)
-                            break
+                                planetsWithoutCargos[sourcePlanet] = serverTime
+                                
+                        elif finalPlanet not in planetsToSpy and finalPlanet not in notArrivedEspionages:
+                            #planet's espionage report timed out, re-spy.                        
+                            planetsToSpy.append(finalPlanet)
+
                         
                 if planetsToSpy:
                     # SPY
-                    finalPlanet = planetsToSpy.pop(0)
-                    sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet.coords)
-                    action = "Spying"                        
-                    
-                    if not finalPlanet.espionageHistory:
-                        # send no. of probes equal to the average no. of probes sent until now.
-                        probes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory]
-                        if len(probes) > 10: probesToSend = int(sum(probes) / len(probes)) 
-                        else: probesToSend = self.config.probesToSend
-                        action = "Spying for the 1st time"
+                    finalPlanet = None
+                    # search target:
+                    for planet in planetsToSpy:
+                        sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
+                        if sourcePlanet not in planetsWithoutProbes:
+                            finalPlanet = planet
+                            break
+                        
+                    if not finalPlanet:
+                        self._eventMgr.activityMsg("There is no planet with enought espionage probes. Waiting...")                        
+                        sleep(10)
                     else:
-                        probesToSend = finalPlanet.espionageHistory[-1].probesSent    
-                        if not finalPlanet.espionageHistory[-1].hasAllNeededInfo():
-                            # we need to send more probes to get the defense or buildings data
-                            action = "Re-spying with more probes"
-                            probesToSend = max(int (1.5 * probesToSend),probesToSend +2) # non-linear increase in the number of probes
-
-                    samePlayerProbes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory and planet.owner == finalPlanet.owner]                                                
-                    probesToSend = max(samePlayerProbes + [probesToSend])
-                    ships = {'espionageProbe':probesToSend}
-                    
-                    espionage = Mission(Mission.Types.spy, sourcePlanet, finalPlanet, ships)
-                    try:
-                        self._web.launchMission(espionage)
-                        self._eventMgr.activityMsg("%s %s from %s with %s" % (action,finalPlanet, sourcePlanet, ships))
-                        notArrivedEspionages[finalPlanet] = espionage
-                    except NotEnoughShipsError, e:
-                        planetsToSpy.append(finalPlanet) # re-locate planet at the end of the list for later
-                        self._eventMgr.activityMsg("Not enough ships in planet %s to spy %s. %s" %(sourcePlanet,finalPlanet,e))             
-                    sleep(5)                        
+                        action = "Spying"                        
+                        
+                        if not finalPlanet.espionageHistory:
+                            # send no. of probes equal to the average no. of probes sent until now.
+                            probes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory]
+                            if len(probes) > 10: probesToSend = int(sum(probes) / len(probes)) 
+                            else: probesToSend = self.config.probesToSend
+                            action = "Spying for the 1st time"
+                        else:
+                            probesToSend = finalPlanet.espionageHistory[-1].probesSent    
+                            if not finalPlanet.espionageHistory[-1].hasAllNeededInfo():
+                                # we need to send more probes to get the defense or buildings data
+                                action = "Re-spying with more probes"
+                                probesToSend = max(int (1.5 * probesToSend),probesToSend +2) # non-linear increase in the number of probes
+    
+                        samePlayerProbes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory and planet.owner == finalPlanet.owner]                                                
+                        probesToSend = max(samePlayerProbes + [probesToSend])
+                        ships = {'espionageProbe':probesToSend}
+                        
+                        espionage = Mission(Mission.Types.spy, sourcePlanet, finalPlanet, ships)
+                        try:
+                            self._web.launchMission(espionage)
+                            notArrivedEspionages[finalPlanet] = espionage                            
+                            planetsToSpy.remove(finalPlanet)
+                            self._eventMgr.activityMsg("%s %s from %s with %s" % (action,finalPlanet, sourcePlanet, ships))
+                        except NotEnoughShipsError, e:
+                            planetsWithoutProbes[sourcePlanet] = serverTime
+                            self._eventMgr.activityMsg("Not enough ships in planet %s to spy %s. %s" %(sourcePlanet,finalPlanet,e))             
+                        sleep(5)                        
             except NoFreeSlotsError: 
                 self._eventMgr.statusMsg("Fleet limit hit")
                 sleep(8)
