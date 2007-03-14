@@ -288,7 +288,7 @@ class Bot(threading.Thread):
                 if serverTime - time > timedelta(minutes=8):
                     del planetsWithoutCargos[planet]
             for planet,time in planetsWithoutProbes.items():
-                if serverTime - time > timedelta(minutes=3):
+                if serverTime - time > timedelta(minutes=2):
                     del planetsWithoutProbes[planet]
                                 
             try:
@@ -367,7 +367,7 @@ class Bot(threading.Thread):
                             break
                         
                     if not finalPlanet:
-                        self._eventMgr.activityMsg("There is no planet with enought espionage probes. Waiting...")                        
+                        self._eventMgr.activityMsg("There is no planet with enough espionage probes. Waiting...")                        
                         sleep(10)
                     else:
                         action = "Spying"                        
@@ -395,7 +395,7 @@ class Bot(threading.Thread):
                             notArrivedEspionages[finalPlanet] = espionage                            
                             planetsToSpy.remove(finalPlanet)
                             self._eventMgr.activityMsg("%s %s from %s with %s" % (action,finalPlanet, sourcePlanet, ships))
-                            sleep(5)                                   
+                            sleep(10)                                   
                         except NotEnoughShipsError, e:
                             planetsWithoutProbes[sourcePlanet] = serverTime
                             self._eventMgr.activityMsg("Not enough ships in planet %s to spy %s. %s" %(sourcePlanet,finalPlanet,e))             

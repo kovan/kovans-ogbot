@@ -252,7 +252,7 @@ class Enum(object):
     
 
 def sleep(seconds):
-    for dummy in range(0, random.randrange(seconds-5, seconds+5)):
+    for dummy in range(0, random.randrange(seconds-2, seconds+5)):
         time.sleep(1)
         
 def addCommas(number):
