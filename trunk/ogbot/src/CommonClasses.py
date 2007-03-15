@@ -129,7 +129,6 @@ class Configuration(dict):
         self['proxy'] = ''
         self['userAgent'] = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)'
         self['rentabilityFormula'] = '(metal + 1.5 * crystal + 3 * deuterium) / flightTime'
-
         
     def __getattr__(self, attrName):
         return self[attrName]
@@ -252,7 +251,7 @@ class Enum(object):
     
 
 def sleep(seconds):
-    for dummy in range(0, random.randrange(seconds-2, seconds+5)):
+    for dummy in range(0, random.randrange(seconds-1, seconds+5)):
         time.sleep(1)
         
 def addCommas(number):
