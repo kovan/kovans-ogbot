@@ -652,6 +652,11 @@
                 <string>Mine levels</string>
                </property>
               </column>
+              <column>
+               <property name="text" >
+                <string>Source planet</string>
+               </property>
+              </column>
              </widget>
             </item>
            </layout>
