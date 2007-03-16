@@ -215,8 +215,8 @@ class MainWindow(baseclass,formclass):
         self.planetsTree.header().setResizeMode(QHeaderView.Stretch)                
         self.botActivityTree.header().setResizeMode(QHeaderView.Interactive)
         self.botActivityTree.header().setStretchLastSection(False)
-        headerSizes = [70,80,111,111,111,300,60,120]
-        for i in range(8):
+        headerSizes = [70,75,111,111,70,300,60,120,140]
+        for i in range(len(headerSizes)):
             self.botActivityTree.header().resizeSection(i,headerSizes[i])
                 
         for i in ["fleet","defense","buildings","research"]:
@@ -438,8 +438,8 @@ class MainWindow(baseclass,formclass):
                 
         for planet in rentabilities:
             if isinstance(planet,tuple):
-                planet,rentability = planet
-            else: rentability = 0
+                planet,rentability,sourcePlanet = planet
+            else: rentability,sourcePlanet = 0,'?'
 
             if not planet.espionageHistory: 
                 simulatedResources = 'Not spied'
@@ -461,7 +461,7 @@ class MainWindow(baseclass,formclass):
                 else:
                     minesStr = "M: %s, C: %s D: %s" % (report.buildings.get('metalMine',0),report.buildings.get('crystalMine',0),report.buildings.get('deuteriumSynthesizer',0))
                      
-            item = QTreeWidgetItem(["%.2f" % rentability,str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources),defendedStr,minesStr])
+            item = QTreeWidgetItem(["%.2f" % rentability,str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources),defendedStr,minesStr,str(sourcePlanet)])
             if rentability > 0:
                 value = int (rentability *  255 / maxRentability)
                 backColor = QColor(255-value,255,255-value)            

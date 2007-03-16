@@ -121,7 +121,7 @@ class WebAdapter(object):
         {
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>',re.I), 
-            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?) +.*?\['+self.REGEXP_COORDS_STR+'].*?</option>',re.I), 
+            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>',re.I), 
             'report': 
             {
                 'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
@@ -248,7 +248,7 @@ class WebAdapter(object):
             for planet in myPlanets:
                 if planet.coords == coords: # we found a moon for this planet
                     coords.coordsType = Coords.Types.moon
-            planet = OwnPlanet(coords, name, code)
+            planet = OwnPlanet(coords, name.strip(), code)
             myPlanets.append(planet)
         
         strTime = self.REGEXPS['serverTime'].findall(page)[0]
@@ -285,7 +285,7 @@ class WebAdapter(object):
                     continue 
             return planets
         except IndexError:
-            raise BotFatalError("Probably there is not enough deuterium.")
+            raise BotError("Probably there is not enough deuterium in current planet.")
         
     def getEspionageReports(self):
         page = self._fetchPhp('messages.php').read()

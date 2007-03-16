@@ -196,9 +196,9 @@ class Bot(threading.Thread):
         newReachableSolarSystems = [] # contains tuples of (galaxy,solarsystem)
         for sourcePlanet in self.sourcePlanets:
             galaxy = sourcePlanet.coords.galaxy
-            first = max(1,sourcePlanet.coords.solarSystem - attackRadius)
-            last = min(int(self.config.systemsPerGalaxy),sourcePlanet.coords.solarSystem + attackRadius)
-            for solarSystem in range(first,last +1):
+            firstSystem = max(1,sourcePlanet.coords.solarSystem - attackRadius)
+            lastSystem = min(int(self.config.systemsPerGalaxy),sourcePlanet.coords.solarSystem + attackRadius)
+            for solarSystem in range(firstSystem,lastSystem +1):
                 tuple = (galaxy, solarSystem)
                 if tuple not in newReachableSolarSystems:
                     newReachableSolarSystems.append(tuple)
@@ -273,7 +273,7 @@ class Bot(threading.Thread):
 
             
             # generate rentability table
-            rentabilities = [] # list of the form (planet,rentability)
+            rentabilities = [] # list of the form (planet,rentability,sourcePlanet)
             for planet in self.targetPlanets:
                 sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
                 flightTime = sourcePlanet.coords.flightTimeTo(planet.coords)
@@ -284,11 +284,11 @@ class Bot(threading.Thread):
                         rentability = -rentability
                 else: 
                     rentability = 0
-                rentabilities.append((planet,rentability))
+                rentabilities.append((planet,rentability,sourcePlanet))
             rentabilities.sort(key=lambda x:x[1], reverse=True) # sorty by rentability
             self._eventMgr.simulationsUpdate(rentabilities)
             
-            # update lists of own planets
+            # update lists of own planets with no ships
             for planet,time in planetsWithoutShips.items():
                 if serverTime - time > timedelta(minutes=10):
                     del planetsWithoutShips[planet]
@@ -299,8 +299,6 @@ class Bot(threading.Thread):
             try:
                 # check for missing and expired reports and add them to spy queue
                 allSpied = True
-#                shuffledPlanets = copy.copy(self.targetPlanets)
-#                random.shuffle(shuffledPlanets)
                 for planet in self.targetPlanets:
                     if not planet.espionageHistory  \
                     or planet.espionageHistory[-1].hasExpired(serverTime)  \
@@ -317,11 +315,8 @@ class Bot(threading.Thread):
                 if rushMode or (allSpied and not planetsToSpy): # attack if there are no unespied planets remaining
                     finalPlanet = None
                     # search target:
-                    for planet, rentability in rentabilities:
-                        if planet in notArrivedEspionages or rentability <= 0:
-                            continue
-                        sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
-                        if sourcePlanet in planetsWithoutShips:
+                    for planet, rentability,sourcePlanet in rentabilities:
+                        if planet in notArrivedEspionages or rentability <= 0 or sourcePlanet in planetsWithoutShips:
                             continue
                         finalPlanet = planet
                         break
@@ -341,16 +336,14 @@ class Bot(threading.Thread):
                             try:
                                 self._attackPlanet(sourcePlanet, finalPlanet, self.attackingShip)
                                 sleep(30)
-                                
-                            except NotEnoughShipsError, e:
+                            except NotEnoughShipsError, e1:
                                 try:
                                     self._attackPlanet(sourcePlanet, finalPlanet, self.secondaryAttackingShip)
                                     sleep(30)                             
-                                except NotEnoughShipsError, e:
-                                    self._eventMgr.activityMsg("No ships in planet %s to attack %s. %s" %(sourcePlanet,finalPlanet,e))
+                                except NotEnoughShipsError, e2:
+                                    self._eventMgr.activityMsg("No ships in planet %s to attack %s. %s and %s" %(sourcePlanet,finalPlanet,e1,e2))
                                     planetsWithoutShips[sourcePlanet] = serverTime
                             self._eventMgr.simulationsUpdate(rentabilities)                                
-                                
                         elif finalPlanet not in planetsToSpy and finalPlanet not in notArrivedEspionages:
                             #planet's espionage report timed out, re-spy.                        
                             planetsToSpy.append(finalPlanet)
@@ -368,11 +361,9 @@ class Bot(threading.Thread):
                             finalPlanet = planet
                             break
                         
-                        
                     if not finalPlanet:
                         finalPlanet = planetsToSpy[0]
                         sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet.coords)
-                     
                     
                     if not finalPlanet.espionageHistory:
                         # send no. of probes equal to the average no. of probes sent until now.
