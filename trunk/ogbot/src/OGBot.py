@@ -827,12 +827,10 @@ if __name__ == "__main__":
         path = dirPrefix + '/' + path
         FILE_PATHS[key] = path
         try: os.makedirs (os.path.dirname(path))
-        except OSError, e: 
-            if "File exists" not in str(e): raise e
+        except OSError, e: pass
 
     try: os.makedirs ('debug')
-    except OSError, e: 
-            if "File exists" not in str(e): raise e
+    except OSError, e: pass
             
     logging.getLogger().setLevel(logging.INFO)
     handler = logging.handlers.RotatingFileHandler(os.path.abspath(FILE_PATHS['log']), 'a', 100000, 10)
