@@ -351,107 +351,106 @@ class WebAdapter(object):
         self._fetchPhp('b_building.php', bau=building.code, cp=planet.code)
         
     def launchMission(self, mission,abortIfNotEnough = True,slotsToReserve = 0):
-        valid = False
-        while not valid:
-            valid = True
-            # assure cuantities are integers
-            for shipType, cuantity in mission.fleet.items(): 
-                mission.fleet[shipType] = int(cuantity)
-                        
-            # 1st step: select fleet
-            page = self._fetchPhp('flotten1.php', mode='Flotte', cp=mission.sourcePlanet.code)
-            pageText = page.read()
-    
-            if self.translations['fleetLimitReached'] in pageText:
+
+        # assure cuantities are integers
+        for shipType, cuantity in mission.fleet.items(): 
+            mission.fleet[shipType] = int(cuantity)
+                    
+        # 1st step: select fleet
+        page = self._fetchPhp('flotten1.php', mode='Flotte', cp=mission.sourcePlanet.code)
+        pageText = page.read()
+
+        if self.translations['fleetLimitReached'] in pageText:
+            raise NoFreeSlotsError()
+        
+        if self.getFreeSlots(pageText) <= int(slotsToReserve):
+            raise NoFreeSlotsError()
+        
+        availableFleet = self.getAvailableFleet(None,pageText)
+        
+        page.seek(0)            
+        form = ParseResponse(page, backwards_compat=False)[-1]        
+        
+        for shipType, requested in mission.fleet.items():
+            available = availableFleet.get(shipType,0)
+            if available == 0 or (abortIfNotEnough and available  < requested):
+                raise NotEnoughShipsError(availableFleet,{shipType:requested},available)
+            
+            shipCode = INGAME_TYPES_BY_NAME[shipType].code            
+            form[shipCode] = str(cuantity)
+            
+
+        # 2nd step: select destination and speed
+        page = self._fetchForm(form)
+        
+        forms = ParseResponse(page, backwards_compat=False)
+        if len(forms) == 0 or 'flotten3.php' not in forms[0].action:
+            raise NoFreeSlotsError()
+        form = forms[0]
+        destCoords = mission.targetPlanet.coords         
+        form['galaxy']    = str(destCoords.galaxy)
+        form['system']    = str(destCoords.solarSystem)
+        form['planet']    = str(destCoords.planet)
+        form['planettype']= [str(destCoords.coordsType)]
+        form['speed']      = [str(mission.speedPercentage / 10)]
+        # 3rd step:  select mission and resources to carry
+        page = self._fetchForm(form)
+        form = ParseResponse(page, backwards_compat=False)[0]
+        form['order']      = [str(mission.missionType)]
+        resources = mission.resources
+        form['resource1'] = str(resources.metal)
+        form['resource2'] = str(resources.crystal)
+        form['resource3'] = str(resources.deuterium)                   
+        # 4th and final step: check result
+        page = self._fetchForm(form).read()
+        
+        if self.translations['fleetCouldNotBeSent'] in page:
+            self.launchMission(mission, abortIfNotEnough, slotsToReserve)
+            return
+        
+        errors = self.REGEXPS['fleetSendError'].findall(page)
+        if len(errors) > 0 or 'class="success"' not in page:
+            errors = str(errors)
+            if   self.translations['fleetLimitReached2'] in errors:
                 raise NoFreeSlotsError()
+            elif self.translations['noShipSelected'] in errors:
+                raise NotEnoughShipsError(availableFleet,mission.fleet)
+            else: 
+                raise FleetSendError(errors)
+
+        resultPage = {}
+        for type, value in self.REGEXPS['fleetSendResult'].findall(page):
+            resultPage[type] = value
+
+        # fill remaining mission fields
+        arrivalTime = parseTime(resultPage[self.translations['arrivalTime']])
+        returnTime = parseTime(resultPage[self.translations['returnTime']])
+        mission.flightTime = returnTime - arrivalTime
+        mission.launchTime = arrivalTime - mission.flightTime
+        mission.distance =  int(resultPage[self.translations['distance']].replace('.',''))
+        mission.consumption = int(resultPage[self.translations['consumption']].replace('.',''))
             
-            if self.getFreeSlots(pageText) <= int(slotsToReserve):
-                raise NoFreeSlotsError()
-            
-            availableFleet = self.getAvailableFleet(None,pageText)
-            
-            page.seek(0)            
-            form = ParseResponse(page, backwards_compat=False)[-1]        
-            
-            for shipType, requested in mission.fleet.items():
-                available = availableFleet.get(shipType,0)
-                if available == 0 or (abortIfNotEnough and available  < requested):
-                    raise NotEnoughShipsError(availableFleet,{shipType:requested},available)
-                
-                shipCode = INGAME_TYPES_BY_NAME[shipType].code            
-                form[shipCode] = str(cuantity)
-                
-    
-            # 2nd step: select destination and speed
-            page = self._fetchForm(form)
-            
-            forms = ParseResponse(page, backwards_compat=False)
-            if len(forms) == 0 or 'flotten3.php' not in forms[0].action:
-                raise NoFreeSlotsError()
-            form = forms[0]
-            destCoords = mission.targetPlanet.coords         
-            form['galaxy']    = str(destCoords.galaxy)
-            form['system']    = str(destCoords.solarSystem)
-            form['planet']    = str(destCoords.planet)
-            form['planettype']= [str(destCoords.coordsType)]
-            form['speed']      = [str(mission.speedPercentage / 10)]
-            # 3rd step:  select mission and resources to carry
-            page = self._fetchForm(form)
-            form = ParseResponse(page, backwards_compat=False)[0]
-            form['order']      = [str(mission.missionType)]
-            resources = mission.resources
-            form['resource1'] = str(resources.metal)
-            form['resource2'] = str(resources.crystal)
-            form['resource3'] = str(resources.deuterium)                   
-            # 4th and final step: check result
-            page = self._fetchForm(form).read()
-            
-            if self.translations['errorSendingFleet'] in page:
-                valid = False
-            
-            errors = self.REGEXPS['fleetSendError'].findall(page)
-            if len(errors) > 0 or 'class="success"' not in page:
-                errors = str(errors)
-                if   self.translations['fleetLimitReached2'] in errors:
-                    raise NoFreeSlotsError()
-                elif self.translations['noShipSelected'] in errors:
-                    raise NotEnoughShipsError(availableFleet,mission.fleet)
-                else: 
-                    raise FleetSendError(errors)
-    
-            resultPage = {}
-            for type, value in self.REGEXPS['fleetSendResult'].findall(page):
-                resultPage[type] = value
-    
-            # fill remaining mission fields
-            arrivalTime = parseTime(resultPage[self.translations['arrivalTime']])
-            returnTime = parseTime(resultPage[self.translations['returnTime']])
-            mission.flightTime = returnTime - arrivalTime
-            mission.launchTime = arrivalTime - mission.flightTime
-            mission.distance =  int(resultPage[self.translations['distance']].replace('.',''))
-            mission.consumption = int(resultPage[self.translations['consumption']].replace('.',''))
-                
-            # check simulation formulas are working correctly:
-            assert mission.distance == mission.sourcePlanet.coords.distanceTo(mission.targetPlanet.coords)
-            flightTime = mission.sourcePlanet.coords.flightTimeTo(mission.targetPlanet.coords, int(resultPage[self.translations['speed']].replace('.','')))
-            margin = timedelta(seconds = 3)
-            assert mission.flightTime > flightTime - margin and mission.flightTime < flightTime + margin
-            # check mission was sent as expected:
-            assert str(mission.sourcePlanet.coords) in resultPage[self.translations['start']]
-            assert str(mission.targetPlanet.coords) in resultPage[self.translations['target']] 
-            
-            # check the requested fleet was sent intact:
-            sentFleet = {}
-            for fullName, value in resultPage.items():
-                name = self.translationsByLocalText.get(fullName)
-                if name is None:
-                    continue
-                if name in INGAME_TYPES_BY_NAME.keys():
-                    sentFleet[name] = int(value.replace('.',''))
-    
-            if mission.fleet != sentFleet:
-                warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % ( mission.fleet, sentFleet))
-                mission.fleet = sentFleet
+        # check simulation formulas are working correctly:
+        assert mission.distance == mission.sourcePlanet.coords.distanceTo(mission.targetPlanet.coords)
+        flightTime = mission.sourcePlanet.coords.flightTimeTo(mission.targetPlanet.coords, int(resultPage[self.translations['speed']].replace('.','')))
+        margin = timedelta(seconds = 3)
+        assert mission.flightTime > flightTime - margin and mission.flightTime < flightTime + margin
+        # check mission was sent as expected:
+        assert str(mission.sourcePlanet.coords) in resultPage[self.translations['start']]
+        assert str(mission.targetPlanet.coords) in resultPage[self.translations['target']] 
+        
+        # check the requested fleet was sent intact:
+        sentFleet = {}
+        for fullName, value in resultPage.items():
+            name = self.translationsByLocalText.get(fullName)
+            if name is None:
+                continue
+            if name in INGAME_TYPES_BY_NAME.keys():
+                sentFleet[name] = int(value.replace('.',''))
+
+        if mission.fleet != sentFleet:
+            warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % ( mission.fleet, sentFleet))
+            mission.fleet = sentFleet
         
     
     def getFreeSlots(self,alreadyFetchedPage = None):

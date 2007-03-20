@@ -267,7 +267,7 @@ class Bot(threading.Thread):
             
 
             # check for newly arrived espionages
-            if len(notArrivedEspionages) > 0:
+            if notArrivedEspionages:
                 displayedReports = self._web.getEspionageReports()
                 for planet, espionage in notArrivedEspionages.items():
                     report = self._didEspionageArrive(espionage, displayedReports)
@@ -306,7 +306,7 @@ class Bot(threading.Thread):
 
             if (serverTime.hour == 22 and serverTime.minute >= 30) or serverTime.hour == 23 or (serverTime.hour == 0 and not rushMode):
                 self._eventMgr.statusMsg("Pre-midnight pause")
-                sleep(1)
+                sleep(4)
                 continue
             # update lists of own planets with no ships
             for planet,time in planetsWithoutShips.items():
