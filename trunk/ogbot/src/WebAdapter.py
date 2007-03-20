@@ -26,7 +26,7 @@ import copy
 import sys
 import httplib
 import warnings
-from datetime import datetime
+from datetime import datetime,time
 from mechanize import *
 from ClientForm import HTMLForm, ParseResponse, ControlNotFoundError;
 from BeautifulSoup import *
@@ -217,6 +217,11 @@ class WebAdapter(object):
             except (urllib2.URLError, httplib.IncompleteRead, httplib.BadStatusLine), e:
                 self._eventMgr.connectionError(e)
                 valid = False
+            except Exception, e:
+                if "timed out" in str(e):
+                    self._eventMgr.connectionError("timed out")
+                    valid = False
+                else: raise e
             if not valid: 
                 sleep(5)
         return response
@@ -262,7 +267,7 @@ class WebAdapter(object):
             planets = {}         
 
             if deuteriumSourcePlanet:
-                self._fetchPhp('overview.php', cp=self.deuteriumSourcePlanet.code)
+                self._fetchPhp('overview.php', cp=deuteriumSourcePlanet.code)
             page = self._fetchPhp('galaxy.php',galaxy=galaxy,system=solarSystem).read()
             html = BeautifulSoup(page)              
             galaxyTable = html.findAll('table', width="569")[0]
@@ -363,15 +368,15 @@ class WebAdapter(object):
             if self.getFreeSlots(pageText) <= int(slotsToReserve):
                 raise NoFreeSlotsError()
             
-            fleet = self.getAvailableFleet(None,pageText)
+            availableFleet = self.getAvailableFleet(None,pageText)
             
             page.seek(0)            
             form = ParseResponse(page, backwards_compat=False)[-1]        
             
             for shipType, requested in mission.fleet.items():
-                available = fleet.get(shipType,0)
+                available = availableFleet.get(shipType,0)
                 if available == 0 or (abortIfNotEnough and available  < requested):
-                    raise NotEnoughShipsError('Requested: %s. Available: %s' %({shipType:requested},available))
+                    raise NotEnoughShipsError(availableFleet,{shipType:requested},available)
                 
                 shipCode = INGAME_TYPES_BY_NAME[shipType].code            
                 form[shipCode] = str(cuantity)
@@ -410,7 +415,7 @@ class WebAdapter(object):
                 if   self.translations['fleetLimitReached2'] in errors:
                     raise NoFreeSlotsError()
                 elif self.translations['noShipSelected'] in errors:
-                    raise NotEnoughShipsError('Requested: %s. Available: ?' % mission.fleet)
+                    raise NotEnoughShipsError(availableFleet,mission.fleet)
                 else: 
                     raise FleetSendError(errors)
     
