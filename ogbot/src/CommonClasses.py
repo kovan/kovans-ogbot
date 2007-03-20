@@ -32,10 +32,17 @@ import random
 
 class BotError(Exception): pass
 class BotFatalError (BotError): pass
-class FleetSendError(BotError): pass
-class NotEnoughShipsError (FleetSendError): pass
-class NoFreeSlotsError(FleetSendError): pass
 class ManuallyTerminated(BotError): pass
+class FleetSendError(BotError): pass
+class NoFreeSlotsError(FleetSendError): pass
+class NotEnoughShipsError (FleetSendError):
+    def __init__(self,allFleetAvailable,requested,available = None):
+        self.allFleetAvailable = allFleetAvailable
+        self.requested = requested
+        self.available = available
+    def __str__(self):
+        return 'Requested: %s. Available: %s' %(self.requested,self.available)
+
 
     
 class ThreadMsg(object):    pass
@@ -251,7 +258,9 @@ class Enum(object):
     
 
 def sleep(seconds):
+    
     for dummy in range(0, random.randrange(seconds-1, seconds+5)):
+    #for dummy in range(0,seconds-5):
         time.sleep(1)
         
 def addCommas(number):
