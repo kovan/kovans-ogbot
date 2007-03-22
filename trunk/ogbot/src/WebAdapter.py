@@ -13,6 +13,7 @@
 #      *                                                                       *
 #      *************************************************************************
 #
+import threading
 import locale
 import time
 import re
@@ -261,14 +262,18 @@ class WebAdapter(object):
         self.serverTimeDelta = serverTime - datetime.now()
         self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
         return myPlanets
-
+    
+    def getSolarSystems(self, solarSystems, deuteriumSourcePlanet = None):
+        pass
+        
     def getSolarSystem(self, galaxy, solarSystem, deuteriumSourcePlanet = None):
-        try:
-            planets = {}         
+        planets = {}         
 
-            if deuteriumSourcePlanet:
-                self._fetchPhp('overview.php', cp=deuteriumSourcePlanet.code)
-            page = self._fetchPhp('galaxy.php',galaxy=galaxy,system=solarSystem).read()
+        if deuteriumSourcePlanet:
+            self._fetchPhp('overview.php', cp=deuteriumSourcePlanet.code)
+        page = self._fetchPhp('galaxy.php',galaxy=galaxy,system=solarSystem).read()
+        
+        try:
             html = BeautifulSoup(page)              
             galaxyTable = html.findAll('table', width="569")[0]
             rowCount = 0
@@ -276,9 +281,10 @@ class WebAdapter(object):
                 try:
                     rowCount += 1
                     columns = row.findAll('th')
-                    name = str(columns[2].string).strip()
-                    name = re.sub(r'&nbsp;.*', '', name) # remove planet idle time from name
-                    owner = str(columns[5].a.span.string).strip()
+                    
+                    name        = str(columns[2].string).strip()
+                    name        = re.sub(r'&nbsp;.*', '', name) # remove planet idle time from name
+                    owner       = str(columns[5].a.span.string).strip()
                     ownerStatus = str(columns[5].a.span['class'])
                     if columns[6].a != None: # player has alliance
                         alliance = str(columns[6].a.string).strip()
@@ -288,9 +294,10 @@ class WebAdapter(object):
                     planets[str(planet.coords)] = planet
                 except AttributeError: # no planet in that position
                     continue 
-            return planets
+        
         except IndexError:
             raise BotError("Probably there is not enough deuterium in current planet.")
+        return planets
         
     def getEspionageReports(self):
         page = self._fetchPhp('messages.php').read()
@@ -359,16 +366,10 @@ class WebAdapter(object):
         # 1st step: select fleet
         page = self._fetchPhp('flotten1.php', mode='Flotte', cp=mission.sourcePlanet.code)
         pageText = page.read()
-
-        if self.translations['fleetLimitReached'] in pageText:
-            raise NoFreeSlotsError()
+        page.seek(0)            
         
-        if self.getFreeSlots(pageText) <= int(slotsToReserve):
-            raise NoFreeSlotsError()
         
         availableFleet = self.getAvailableFleet(None,pageText)
-        
-        page.seek(0)            
         form = ParseResponse(page, backwards_compat=False)[-1]        
         
         for shipType, requested in mission.fleet.items():
@@ -379,12 +380,14 @@ class WebAdapter(object):
             shipCode = INGAME_TYPES_BY_NAME[shipType].code            
             form[shipCode] = str(cuantity)
             
+        if self.getFreeSlots(pageText) <= int(slotsToReserve):
+            raise NoFreeSlotsError()
 
         # 2nd step: select destination and speed
         page = self._fetchForm(form)
         
         forms = ParseResponse(page, backwards_compat=False)
-        if len(forms) == 0 or 'flotten3.php' not in forms[0].action:
+        if forms or 'flotten3.php' not in forms[0].action:
             raise NoFreeSlotsError()
         form = forms[0]
         destCoords = mission.targetPlanet.coords         
@@ -411,7 +414,7 @@ class WebAdapter(object):
         errors = self.REGEXPS['fleetSendError'].findall(page)
         if len(errors) > 0 or 'class="success"' not in page:
             errors = str(errors)
-            if   self.translations['fleetLimitReached2'] in errors:
+            if   self.translations['fleetLimitReached'] in errors:
                 raise NoFreeSlotsError()
             elif self.translations['noShipSelected'] in errors:
                 raise NotEnoughShipsError(availableFleet,mission.fleet)
@@ -461,7 +464,8 @@ class WebAdapter(object):
 
         if len(usedSlotsNums) == 0:
             usedSlots = 0
-        else: usedSlots = int(usedSlotsNums[-1])
+        else: 
+            usedSlots = int(usedSlotsNums[-1])
         maxFleets = int(self.REGEXPS['maxSlots'].search(page).group(1))
         return maxFleets - usedSlots
     
@@ -513,7 +517,46 @@ class WebAdapter(object):
             return False
         return True   
     
+class ScanThread(threading.Thread):
+    def __init__(self,browser,queue,targets):
+        self._browser = browser
+        self._queue = queue
+        self._targets = targets
+    def run(self):
+        for solarSystem,galaxy in self.targets:
+            pass
+        
+        planets = {}         
 
+        if deuteriumSourcePlanet:
+            self._fetchPhp('overview.php', cp=deuteriumSourcePlanet.code)
+        page = self._fetchPhp('galaxy.php',galaxy=galaxy,system=solarSystem).read()
+        
+        try:
+            html = BeautifulSoup(page)              
+            galaxyTable = html.findAll('table', width="569")[0]
+            rowCount = 0
+            for row in galaxyTable.findAll('tr', recursive=False)[2:16]:
+                try:
+                    rowCount += 1
+                    columns = row.findAll('th')
+                    
+                    name        = str(columns[2].string).strip()
+                    name        = re.sub(r'&nbsp;.*', '', name) # remove planet idle time from name
+                    owner       = str(columns[5].a.span.string).strip()
+                    ownerStatus = str(columns[5].a.span['class'])
+                    if columns[6].a != None: # player has alliance
+                        alliance = str(columns[6].a.string).strip()
+                    else: alliance = ''
+                    # Absolutely ALL EnemyPlanet objects of the bot are created here
+                    planet = EnemyPlanet(Coords(galaxy, solarSystem, rowCount), owner, ownerStatus, name, alliance)
+                    planets[str(planet.coords)] = planet
+                except AttributeError: # no planet in that position
+                    continue 
+        
+        except IndexError:
+            raise BotError("Probably there is not enough deuterium in current planet.")
+        return planets        
 
 
 def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:52                        
