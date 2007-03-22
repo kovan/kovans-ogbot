@@ -244,7 +244,7 @@ class Bot(threading.Thread):
         while True:
             self._saveFiles()
             serverTime = self._web.serverTime()
-            rushMode =  serverTime.hour == 0 and serverTime.minute >= 6 and serverTime.minute <= 59
+            rushMode =  ( serverTime.hour == 0 or serverTime.hour == 1 ) and serverTime.minute >= 6 and serverTime.minute <= 59
 
             
             # background inactive search    
@@ -358,13 +358,14 @@ class Bot(threading.Thread):
                         # ATTACK
                         if finalPlanet.espionageHistory[-1].getAge(self._web.serverTime()).seconds < 600:                            
                             try:
-                                self._attackPlanet(sourcePlanet, finalPlanet, self.attackingShip,False)
-                                if not rushMode: sleep(30)
+                                
+                                self._attackPlanet(sourcePlanet, finalPlanet, self.attackingShip,not rushMode)
+                                if not rushMode: sleep(25)
                             except NotEnoughShipsError, e1:
                                 if rushMode:
                                     try:
                                         self._attackPlanet(sourcePlanet, finalPlanet, self.secondaryAttackingShip)
-                                        if not rushMode: sleep(30)                            
+                                        if not rushMode: sleep(25)                            
                                     except NotEnoughShipsError, e2:
                                         self._eventMgr.activityMsg("No ships in planet %s to attack %s. %s and %s" %(sourcePlanet,finalPlanet,e1,e2))
                                         planetsWithoutShips[sourcePlanet] = serverTime
@@ -383,9 +384,7 @@ class Bot(threading.Thread):
                     # search target:
                     for planet in planetsToSpy:
                         sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
-                        if sourcePlanet in planetsWithoutProbes:
-                            continue
-                        else:
+                        if sourcePlanet not in planetsWithoutProbes:
                             finalPlanet = planet
                             break
                         
@@ -400,13 +399,14 @@ class Bot(threading.Thread):
                         else: probesToSend = self.config.probesToSend
                         action = "Spying for the 1st time"
                     else:
-                        action = "Spying"                           
+                       
                         probesToSend = finalPlanet.espionageHistory[-1].probesSent    
                         if not finalPlanet.espionageHistory[-1].hasAllNeededInfo():
                             # we need to send more probes to get the defense or buildings data
                             action = "Re-spying with more probes"
                             probesToSend = max(int (1.5 * probesToSend),probesToSend +2) # non-linear increase in the number of probes
-
+                        else:
+                            action = "Spying before the attack"
                     samePlayerProbes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory and planet.owner == finalPlanet.owner]                                                
                     probesToSend = max(samePlayerProbes + [probesToSend])
                     ships = {'espionageProbe':probesToSend}
@@ -761,8 +761,7 @@ class Bot(threading.Thread):
                 newPlanet.espionageHistory = oldPlanet.espionageHistory
                 newPlanet.simulation = oldPlanet.simulation
             else:
-                if __debug__: 
-                    print >>sys.stderr, "New inactive planet found: " + str(newPlanet)
+                if __debug__: print >>sys.stderr, "New inactive planet found: " + str(newPlanet)
                 self.newInactivePlanets.append(newPlanet)
                 foundPlanets.append(newPlanet)                
             
