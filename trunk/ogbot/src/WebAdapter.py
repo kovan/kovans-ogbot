@@ -387,7 +387,7 @@ class WebAdapter(object):
         page = self._fetchForm(form)
         
         forms = ParseResponse(page, backwards_compat=False)
-        if forms or 'flotten3.php' not in forms[0].action:
+        if not forms or 'flotten3.php' not in forms[0].action:
             raise NoFreeSlotsError()
         form = forms[0]
         destCoords = mission.targetPlanet.coords         
@@ -518,18 +518,16 @@ class WebAdapter(object):
         return True   
     
 class ScanThread(threading.Thread):
-    def __init__(self,browser,queue,targets):
+    def __init__(self,browser,queue,solarSystems):
         self._browser = browser
         self._queue = queue
-        self._targets = targets
+        self._solarSystems = solarSystems
     def run(self):
         for solarSystem,galaxy in self.targets:
             pass
         
         planets = {}         
 
-        if deuteriumSourcePlanet:
-            self._fetchPhp('overview.php', cp=deuteriumSourcePlanet.code)
         page = self._fetchPhp('galaxy.php',galaxy=galaxy,system=solarSystem).read()
         
         try:
