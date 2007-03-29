@@ -1,7 +1,10 @@
-v2.1.3
+v2.2
 -----------------------
  March, ?. 2007     
 -----------------------
+- Before attaks only one probe is sent.
+- Much faster inactive planets search.
+- Reserved slots are no longer filled with senseless espionages.
 - If espionage probes crash, planet is marked as defended.
 - Attacks and espionages from planets with no probes or cargos are deactivated for a while.
 - Rush mode at midnight (attack new inactive planets as they are found if they are very rentable).
@@ -9,6 +12,8 @@ v2.1.3
 - Daily inactives scan is now done ASAP each day.
 - Any available cargo type is sent if the selected type of attacking fleet is not available.
 - Source planet is shown in the main window.
+- Fixed issue 103.
+- Internal algorithms rewritten.
 - Minor changes and fixes.
 - New translation item added in language files.
 
