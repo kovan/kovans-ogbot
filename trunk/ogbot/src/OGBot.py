@@ -24,7 +24,8 @@ sys.path.insert(0,'lib')
 
 if os.getcwd().endswith("src"):
     os.chdir("..")    
-    
+
+import locale
 import logging, logging.handlers
 import threading
 import traceback
@@ -34,10 +35,9 @@ import shutil
 import cPickle
 import urllib2
 import itertools
-import gc
 import random
-
-    
+import warnings
+import math
 from datetime import *
 from optparse import OptionParser
 from itertools import * 
@@ -50,7 +50,7 @@ from WebAdapter import WebAdapter
 from Constants import *
             
 
-
+from datetime import time
 
 
 class Bot(threading.Thread):
@@ -81,18 +81,16 @@ class Bot(threading.Thread):
         threading.Thread.__init__(self, name="BotThread")
         self.gui = gui
         self.msgQueue = Queue()
-        self._eventMgr = Bot.EventManager(gui)
+        self.eventMgr = Bot.EventManager(gui)
         self._planetDb = PlanetDb(FILE_PATHS['planetdb'])
         self.config = Configuration(FILE_PATHS['config'])                   
-        self._web = None
+        self.web = None
         self.myPlanets = []
         self.config.load()
         self.allTranslations = Translations()
         self.targetPlanets = []
         self.reachableSolarSystems = []
-        self.newInactivePlanets = []
         self._notArrivedEspionages = {}
-        self.scanning = False
 
         self.attackingShip = INGAME_TYPES_BY_NAME[self.config.attackingShip]
         if self.attackingShip.name == 'smallCargo':
@@ -111,34 +109,22 @@ class Bot(threading.Thread):
                 break
             except BotFatalError, e:
                 self.stop()
-                self._eventMgr.fatalException(e)
+                self.eventMgr.fatalException(e)
                 break
             except Exception:
                 traceback.print_exc()
-                self._eventMgr.activityMsg("Something unexpected occured, see log file. Restarting bot.")        
-            sleep(5)
+                self.eventMgr.activityMsg("Something unexpected occured, see log file. Restarting bot.")        
+            mySleep(5)
     
     def stop(self):
-        if self._web:
-            self._web.saveState()
-            
-    def _saveFiles(self):
-        path = FILE_PATHS['gamedata']
-        try:
-            shutil.move(path,path + ".bak")
-        except IOError: pass
-        
-        file = open(path, 'wb')
-        pickler = cPickle.Pickler(file,2)
-        for i in [self.targetPlanets,self.reachableSolarSystems,self.lastInactiveScanTime,
-                  self.config.webpage,self.config.universe,self.config.username]:
-                  pickler.dump(i)
-        file.close()
+        if self.web:
+            self.web.saveState()
+  
          
     def _connect(self):
-        self._eventMgr.activityMsg("Connecting...")        
-        self._web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue,self.gui)
-        self.myPlanets = self._web.getMyPlanets()
+        self.eventMgr.activityMsg("Connecting...")        
+        self.web = WebAdapter(self.config, self.allTranslations, self.gui)
+        self.myPlanets = self.web.getMyPlanets()
 
         ownedCoords = [repr(planet.coords) for planet in self.myPlanets]
         for coords in self.config.sourcePlanets:
@@ -152,319 +138,13 @@ class Bot(threading.Thread):
                     self.sourcePlanets.append(planet)
         if not self.sourcePlanets:
             self.sourcePlanets.append(self.myPlanets[0]) # the user did not select any source planet, so use the main planet as source
-        self._eventMgr.connected()            
+        self.eventMgr.connected()            
 
+  
     
-    def _start(self): 
+    def _start(self):
 
-        #initializations
-        attackRadius = int(self.config.attackRadius)
-        notArrivedEspionages = {}
-        planetsToSpy = []
-        planetsWithoutShips = {}
-        planetsWithoutProbes = {}
-        rushMode = False
-        self.attackingShip = INGAME_TYPES_BY_NAME[self.config.attackingShip]
-        if self.attackingShip.name == 'smallCargo':
-            self.secondaryAttackingShip = INGAME_TYPES_BY_NAME['largeCargo']
-        else:
-            self.secondaryAttackingShip = INGAME_TYPES_BY_NAME['smallCargo']
-                                    
-        # load previous planets
-        try:
-            file = open(FILE_PATHS['gamedata'], 'rb')
-            u = cPickle.Unpickler(file)
-            self.targetPlanets = u.load()
-            self.reachableSolarSystems = u.load()
-            self.lastInactiveScanTime = u.load()
-            storedWebpage = u.load()
-            storedUniverse = u.load()
-            storedUsername = u.load()
-            file.close()
-                 
-            if storedWebpage != self.config.webpage \
-            or storedUniverse != self.config.universe \
-            or storedUsername != self.config.username:
-                raise BotError() # if any of those has changed, invalidate stored espionages
-
-            self._eventMgr.activityMsg("Loading previous espionage data...") 
-        except (EOFError, IOError,BotError,ImportError,AttributeError):
-            try: file.close()            
-            except UnboundLocalError: pass
-            self.targetPlanets = []
-            self.reachableSolarSystems = []
-            self._eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
-            try:
-                path = FILE_PATHS['gamedata']
-                os.remove(path)              
-            except Exception : pass
-
-
-            
-        # generate reachable solar systems list
-        newReachableSolarSystems = [] # contains tuples of (galaxy,solarsystem)
-        for sourcePlanet in self.sourcePlanets:
-            galaxy = sourcePlanet.coords.galaxy
-            firstSystem = max(1,sourcePlanet.coords.solarSystem - attackRadius)
-            lastSystem = min(int(self.config.systemsPerGalaxy),sourcePlanet.coords.solarSystem + attackRadius)
-            for solarSystem in range(firstSystem,lastSystem +1):
-                tuple = (galaxy, solarSystem)
-                if tuple not in newReachableSolarSystems:
-                    newReachableSolarSystems.append(tuple)
-        
-        if newReachableSolarSystems != self.reachableSolarSystems: # something changed in configuration (attack radio or attack sources)
-            self.reachableSolarSystems = newReachableSolarSystems
-            del(newReachableSolarSystems)            
-            # remove planets that are not in range anymore            
-            for planet in self.targetPlanets[:]:
-                if (planet.coords.galaxy,planet.coords.solarSystem) not in self.reachableSolarSystems:
-                    self.targetPlanets.remove(planet)
-            self._eventMgr.activityMsg("Searching inactive planets in range... This might take a while, but will only be done once.")            
-            
-            # re-scan for inactive planets
-            for galaxy,solarSystem in self.reachableSolarSystems: 
-                self._scanSolarSystem(galaxy,solarSystem)      
-                self._eventMgr.simulationsUpdate(self.targetPlanets)
-            self.lastInactiveScanTime = self._web.serverTime()
-
-        if not self.targetPlanets:
-            raise BotFatalError("No inactive planets found in range. Increase range.")    
-        
-        # remove planets to avoid from target list
-        for planet in self.targetPlanets[:]:
-            if planet.owner in self.config.playersToAvoid or planet.alliance in self.config.alliancesToAvoid:
-                self.targetPlanets.remove(planet)
-            if not planet.simulation and planet.espionageHistory:
-                planet.simulation = ResourceSimulation(planet.espionageHistory[-1].resources, planet.espionageHistory[-1].buildings)
-
-     
-        self._eventMgr.activityMsg("Bot started.")
-
-        # -------------- MAIN LOOP ---------------
-        while True:
-            self._saveFiles()
-            serverTime = self._web.serverTime()
-            rushMode =  ( serverTime.hour == 0 or serverTime.hour == 1 ) and serverTime.minute >= 6 and serverTime.minute <= 59
-
-            
-            # background inactive search    
-            if self.lastInactiveScanTime.day != serverTime.day and not (serverTime.hour == 0 and serverTime.minute < 6):
-                if not self.scanning: # trigger scan
-                    self._targetSolarSystemsIter = iter(self.reachableSolarSystems)             
-                    self.scanning = True
-                    self.newInactivePlanets = []
-                    self._eventMgr.activityMsg("Performing daily inactives scan.")                                        
-
-            if self.scanning:
-                try:
-                    for dummy in range(5):
-                        galaxy, solarSystem = self._targetSolarSystemsIter.next()
-                        self._scanSolarSystem(galaxy, solarSystem);                        
-                except StopIteration:
-                    self.lastInactiveScanTime = serverTime                        
-                    self._eventMgr.activityMsg("Daily inactives scan finished.")                                                            
-                    self.scanning = False
-            
-
-            # check for newly arrived espionages
-            if notArrivedEspionages:
-                displayedReports = self._web.getEspionageReports()
-                for planet, espionage in notArrivedEspionages.items():
-                    report = self._didEspionageArrive(espionage, displayedReports)
-                    if  report:
-                        report.probesSent = espionage.fleet['espionageProbe']
-                        del notArrivedEspionages[planet]
-                        
-                        planet.simulation = ResourceSimulation(report.resources, report.buildings)
-                        planet.espionageHistory.append(report)
-                        self._planetDb.write(planet)
-                    elif self._web.serverTime() > espionage.arrivalTime + timedelta(minutes=5):
-                        # probably due to buggy espionage report (containing only N;) or translation errors.
-                        del notArrivedEspionages[planet]
-                        self.targetPlanets.remove(planet)
-                        self._eventMgr.activityMsg("Espionage report from %s never arrived. Deleting planet." % espionage.targetPlanet)
-
-
-            
-            # generate rentability table
-            rentabilities = [] # list of the form (planet,rentability,sourcePlanet)
-            for planet in self.targetPlanets:
-                sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
-                flightTime = sourcePlanet.coords.flightTimeTo(planet.coords)
-                if planet.espionageHistory:
-                    if not planet.simulation:
-                        planet.simulation = ResourceSimulation(planet.espionageHistory[-1].resources, planet.espionageHistory[-1].buildings)
-                    resources  = planet.simulation.simulatedResources
-                    rentability = resources.rentability(flightTime.seconds,self.config.rentabilityFormula)
-                    if not planet.espionageHistory[-1].isUndefended():
-                        rentability = -rentability
-                else: 
-                    rentability = 0
-                rentabilities.append((planet,rentability,sourcePlanet))
-            rentabilities.sort(key=lambda x:x[1], reverse=True) # sorty by rentability
-            self._eventMgr.simulationsUpdate(rentabilities)
-
-            if (serverTime.hour == 22 and serverTime.minute >= 30) or serverTime.hour == 23 or (serverTime.hour == 0 and not rushMode):
-                self._eventMgr.statusMsg("Pre-midnight pause")
-                sleep(4)
-                continue
-            # update lists of own planets with no ships
-            for planet,time in planetsWithoutShips.items():
-                if serverTime - time > timedelta(minutes=10):
-                    del planetsWithoutShips[planet]
-            for planet,time in planetsWithoutProbes.items():
-                if serverTime - time > timedelta(minutes=2):
-                    del planetsWithoutProbes[planet]
-                                
-            try:
-                # check for missing and expired reports and add them to spy queue
-                allSpied = True
-                for planet in self.targetPlanets[:]:
-                    if not planet.espionageHistory  \
-                    or planet.espionageHistory[-1].hasExpired(serverTime)  \
-                    or not planet.espionageHistory[-1].hasAllNeededInfo():
-                        allSpied = False
-                        if planet not in planetsToSpy and planet not in notArrivedEspionages.keys():
-                            if planet.espionageHistory and not planet.espionageHistory[-1].hasAllNeededInfo(): # re-spy
-                                if len(planet.espionageHistory) >= 2 and planet.espionageHistory[-2].hasAllNeededInfo():
-                                    # rare case, when planet changed owner during the day and wasn't detected as no longer inactive
-                                    self.targetPlanets.remove(planet)
-                                elif rushMode: 
-                                    planetsToSpy.append(planet)                                    
-                                else:
-                                    planetsToSpy.insert(0,planet)
-                            else:                             
-                                planetsToSpy.append(planet)
- 
-                if rushMode or (allSpied and not planetsToSpy): # attack if there are no unespied planets remaining
-                    finalPlanet = None
-                    # search target:
-                    for planet, rentability,sourcePlanet in rentabilities:
-                        if planet in notArrivedEspionages or rentability <= 0 or sourcePlanet in planetsWithoutShips:
-                            continue
-                        finalPlanet = planet
-                        break
-
-
-                    if not finalPlanet:
-                        if planetsWithoutShips:
-                            self._eventMgr.activityMsg("No planet has attacking ships. Waiting...")
-                            sleep(10)
-                        else:
-                            self._eventMgr.simulationsUpdate(rentabilities)
-                            raise BotFatalError("There are no undefended planets in range.")
-                        
-                    else:#if (rushMode and finalPlanet in self.newInactivePlanets) or not rushMode:
-                        # ATTACK
-                        if finalPlanet.espionageHistory[-1].getAge(self._web.serverTime()).seconds < 600:                            
-                            try:
-                                
-                                self._attackPlanet(sourcePlanet, finalPlanet, self.attackingShip,not rushMode)
-                                if not rushMode: sleep(25)
-                            except NotEnoughShipsError, e1:
-                                if rushMode:
-                                    try:
-                                        self._attackPlanet(sourcePlanet, finalPlanet, self.secondaryAttackingShip)
-                                        if not rushMode: sleep(25)                            
-                                    except NotEnoughShipsError, e2:
-                                        self._eventMgr.activityMsg("No ships in planet %s to attack %s. %s and %s" %(sourcePlanet,finalPlanet,e1,e2))
-                                        planetsWithoutShips[sourcePlanet] = serverTime
-                                else:
-                                    self._eventMgr.activityMsg("No ships in planet %s to attack %s. %s" %(sourcePlanet,finalPlanet,e1))
-                                    planetsWithoutShips[sourcePlanet] = serverTime
-                            self._eventMgr.simulationsUpdate(rentabilities)                                
-                        elif finalPlanet not in planetsToSpy and finalPlanet not in notArrivedEspionages:
-                            #planet's espionage report timed out, re-spy.                        
-                            planetsToSpy.append(finalPlanet)
-
-                        
-                if planetsToSpy:
-                    # SPY
-                    finalPlanet = None
-                    # search target:
-                    for planet in planetsToSpy:
-                        sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
-                        if sourcePlanet not in planetsWithoutProbes:
-                            finalPlanet = planet
-                            break
-                        
-                    if not finalPlanet:
-                        finalPlanet = planetsToSpy[0]
-                        sourcePlanet = self._calculateNearestSourcePlanet(finalPlanet.coords)
-                    
-                    if not finalPlanet.espionageHistory:
-                        # send no. of probes equal to the average no. of probes sent until now.
-                        probes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory]
-                        if len(probes) > 10: probesToSend = int(sum(probes) / len(probes)) 
-                        else: probesToSend = self.config.probesToSend
-                        action = "Spying for the 1st time"
-                    else:
-                       
-                        probesToSend = finalPlanet.espionageHistory[-1].probesSent    
-                        if not finalPlanet.espionageHistory[-1].hasAllNeededInfo():
-                            # we need to send more probes to get the defense or buildings data
-                            action = "Re-spying with more probes"
-                            probesToSend = max(int (1.5 * probesToSend),probesToSend +2) # non-linear increase in the number of probes
-                        else:
-                            action = "Spying before the attack"
-                    samePlayerProbes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory and planet.owner == finalPlanet.owner]                                                
-                    probesToSend = max(samePlayerProbes + [probesToSend])
-                    ships = {'espionageProbe':probesToSend}
-                    
-                    espionage = Mission(Mission.Types.spy, sourcePlanet, finalPlanet, ships)
-                    try:
-                        self._web.launchMission(espionage)
-                        notArrivedEspionages[finalPlanet] = espionage                            
-                        planetsToSpy.remove(finalPlanet)
-                        self._eventMgr.activityMsg("%s %s from %s with %s" % (action,finalPlanet, sourcePlanet, ships))
-                        if not rushMode: sleep(2)                                   
-                    except NotEnoughShipsError, e:
-                        planetsWithoutProbes[sourcePlanet] = serverTime
-                        self._eventMgr.activityMsg("Not enough ships in planet %s to spy %s. %s" %(sourcePlanet,finalPlanet,e))             
-                        planetsToSpy.remove(finalPlanet)
-            except NoFreeSlotsError: 
-                self._eventMgr.statusMsg("Fleet limit hit")
-                sleep(8)
-            except FleetSendError, e: 
-                self._eventMgr.activityMsg("Error sending fleet for planet %s: %s" %(finalPlanet,e))
-                self.targetPlanets.remove(finalPlanet)
-                if finalPlanet in planetsToSpy:
-                    planetsToSpy.remove(finalPlanet)
-        
-        
-            sleep(1)            
-    
-    def _newStart(self):
-
-        # load previous planets
-        try:
-            file = open(FILE_PATHS['gamedata'], 'rb')
-            u = cPickle.Unpickler(file)
-            self.targetPlanets = u.load()
-            self.reachableSolarSystems = u.load()
-            self.lastInactiveScanTime = u.load()
-            storedWebpage = u.load()
-            storedUniverse = u.load()
-            storedUsername = u.load()
-            file.close()
-                 
-            if storedWebpage != self.config.webpage \
-            or storedUniverse != self.config.universe \
-            or storedUsername != self.config.username:
-                raise BotError() # if any of those has changed, invalidate stored espionages
-
-            self._eventMgr.activityMsg("Loading previous espionage data...") 
-        except (EOFError, IOError,BotError,ImportError,AttributeError):
-            try: file.close()            
-            except UnboundLocalError: pass
-            self.targetPlanets = []
-            self.reachableSolarSystems = []
-            self._eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
-            try:
-                path = FILE_PATHS['gamedata']
-                os.remove(path)              
-            except Exception : pass
-
+        self.loadFiles()
 
         # remove planets to avoid from target list
         for planet in self.targetPlanets[:]:
@@ -483,234 +163,279 @@ class Bot(threading.Thread):
                 if tuple not in newReachableSolarSystems:
                     newReachableSolarSystems.append(tuple)
         
-        if newReachableSolarSystems != self.reachableSolarSystems: # something changed in configuration (attack radio or attack sources)
+        if newReachableSolarSystems != self.reachableSolarSystems: # something changed in configuration (attack radius or attack sources)
             self.reachableSolarSystems = newReachableSolarSystems
             del(newReachableSolarSystems)            
             # remove planets that are not in range anymore            
             for planet in self.targetPlanets[:]:
                 if (planet.coords.galaxy,planet.coords.solarSystem) not in self.reachableSolarSystems:
                     self.targetPlanets.remove(planet)
-            self._scanMode()
+            self.scanGalaxies()
+            self.saveFiles()
 
-        self._eventMgr.activityMsg("Bot started.")
+        self.eventMgr.activityMsg("Bot started.")
 
-
+        # spy pending planets:
+        self.spyPlanets(self.targetPlanets)   
+        
+        undefendedPlanets = [p for p in self.targetPlanets if not p.getBestEspionageReport().isDefended()]
+        if not undefendedPlanets:
+            raise BotFatalError("There are no inactive and undefended planets in range. Increase range.")
+        
+        # main loop:
         while True:
-            botMode = self._calculateCurrentBotMode()
-            if botMode == 'rushMode': self._rushMode()
-            elif botMode == 'scanMode': self._scanMode()
-            elif botMode == 'normalMode': self._normalMode()
+            serverTime = self.web.serverTime()
+
+            if self.lastInactiveScanTime.date() != serverTime.date(): #and serverTime.time() >=  self.config.inactivesAppearanceTime:
+                newInactivePlanets = self.scanGalaxies()
+                if serverTime.time() < time(03,30):
+                    self.rushMode(newInactivePlanets)
+                self.spyPlanets(self.targetPlanets) 
+            elif serverTime.time() > self.config.preMidnightPauseTime:
+                self.eventMgr.statusMsg("Pre-midnight pause")                
+                mySleep(5)
+            else:
+                self.attackMode()
     
-    def _calculateCurrentBotMode(self):
-        serverTime = self._web.serverTime()        
-
-        if self.lastInactiveScanTime.day != serverTime.day:
-#            if serverTime.time() > time(00,06) and serverTime.time() < time(01,00):
-#                return 'rushMode'
-#            elif serverTime.time() > time(01,00):
-            return 'scanMode'
-        else:
-            return 'normalMode'
-
-    def _normalMode(self):
-
-        planetsWithoutShips = {}
+    def scanGalaxies(self):
+        self.eventMgr.activityMsg("Searching inactive planets in range...")
         
-        while self._calculateCurrentBotMode() == 'normalMode':
-            self._saveFiles()
-            serverTime = self._web.serverTime()
-            self._checkIfEspionageReportsArrived()
+        startTime = datetime.now()           
+        newTargetPlanets = self.web.getSolarSystems(self.reachableSolarSystems)
+        seconds = (datetime.now() - startTime).seconds
+        systems = len(self.reachableSolarSystems)
+        
+        self._planetDb.writeMany(newTargetPlanets)
+        newTargetPlanets = [p for p in newTargetPlanets if 'inactive' in p.ownerStatus and p.owner not in self.config.playersToAvoid and p.alliance not in self.config.alliancesToAvoid]
+        oldTargetPlanetsByCoords = dict([(str(p.coords),p) for p in self.targetPlanets])
+        
+        newInactives = []
+        for newPlanet in newTargetPlanets:
+            oldPlanet = oldTargetPlanetsByCoords.get(str(newPlanet.coords))
+            if oldPlanet:
+                newPlanet.espionageHistory = oldPlanet.espionageHistory
+                newPlanet.simulation = oldPlanet.simulation
+            else:
+                if __debug__: print >>sys.stderr, "New inactive planet found: " + str(newPlanet)
+                newInactives.append(newPlanet)
+
+        self.targetPlanets = newTargetPlanets
+        self.lastInactiveScanTime = self.web.serverTime()
+        self.saveFiles()        
+        self.eventMgr.activityMsg("Inactive search finished. %s inactives (%s new) found in %s solar sytems (%s secs. per solar system)." % (len(self.targetPlanets),len(newInactives),systems,seconds/float(systems)))        
+        return newInactives
+
+    def attackMode(self):   
+        self.eventMgr.activityMsg("Changing to attack mode." )
+        planetsWithoutShips = {}
+        notArrivedAttacks = []
+        
+        while self.web.serverTime().time() < self.config.preMidnightPauseTime:
             
-            rentabilities = self._generateRentabilityTable()
-            self._eventMgr.simulationsUpdate(rentabilities)
+            self._checkThreadQueue()            
+            serverTime = self.web.serverTime()
+            self.checkIfEspionageReportsArrived()
+            
+            
+            rentabilities = self.generateRentabilityTable(self.targetPlanets)
+            self.eventMgr.simulationsUpdate(rentabilities)
             
             # update lists of own planets with no ships
-            for planet,time in planetsWithoutShips.items():
-                if serverTime - time > timedelta(minutes=5):
+            for planet,checkedTime in planetsWithoutShips.items():
+                if serverTime - checkedTime > timedelta(minutes=5):
                     del planetsWithoutShips[planet]
-                                
+                    
+            # update list of flying attacks that have not yet arrived to target planet
+            for attack in notArrivedAttacks[:]:
+                if serverTime >= attack.arrivalTime:
+                    notArrivedAttacks.remove(attack)
+
+            try: selectedAttack = (x for x in rentabilities if x.targetPlanet not in self._notArrivedEspionages and x.rentability > 0 and x.sourcePlanet not in planetsWithoutShips).next()
+            except StopIteration:
+                self.eventMgr.statusMsg("Not enough ships")
+                mySleep(10)
+                continue
+            
             try:
+                targetPlanet,sourcePlanet = selectedAttack.targetPlanet, selectedAttack.sourcePlanet
 
-                possibleTargets = [(planet,rentability,sourcePlanet) for planet,rentability,sourcePlanet in rentabilities if planet not in self._notArrivedEspionages and rentability > 0 and sourcePlanet not in planetsWithoutShips]
-                if not possibleTargets:
-                    self._eventMgr.activityMsg("No target planets available. Probably no planet enough attacking ships. Waiting...")
-                    sleep(10)
-                else:
-                    targetPlanet,rentability,sourcePlanet = possibleTargets[0]
-
-                    try:                    
-                        if targetPlanet.espionageHistory[-1].getAge(self._web.serverTime()).seconds < 600:
-                            self._attackPlanet(sourcePlanet, targetPlanet, self.attackingShip)
-                            self._eventMgr.simulationsUpdate(rentabilities)                                  
-                            sleep(30)
-                        elif targetPlanet not in self._notArrivedEspionages:                        #planet's espionage report timed out, re-spy.
-                            self._spyPlanet(sourcePlanet,targetPlanet)
-                    except NotEnoughShipsError, e:
-                        planetsWithoutShips[sourcePlanet] = serverTime
-                        self._eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet,targetPlanet,e))
+                try:                    
+                    if targetPlanet.espionageHistory[-1].getAge(serverTime).seconds < 600 or targetPlanet in [attack.targetPlanet for attack in notArrivedAttacks]:
+                        sentMission = self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip,False)
+                        notArrivedAttacks.append(sentMission)
+                        mySleep(25)
+                    elif targetPlanet not in self._notArrivedEspionages:    #planet's espionage report timed out, re-spy.
+                        self._spyPlanet(sourcePlanet,targetPlanet,False)
+                except NotEnoughShipsError, e:
+                    planetsWithoutShips[sourcePlanet] = serverTime
+                    self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet,targetPlanet,e))
                         
             except NoFreeSlotsError: 
-                self._eventMgr.statusMsg("Fleet limit hit")
-                sleep(8)
+                self.eventMgr.statusMsg("Fleet limit hit")
+                mySleep(8)
             except FleetSendError, e: 
-                self._eventMgr.activityMsg("Error sending fleet for planet %s: %s" %(targetPlanet,e))
+                self.eventMgr.activityMsg("Error sending mission to planet %s. Reason: %s" %(targetPlanet,e))
                 self.targetPlanets.remove(targetPlanet)
         
-            sleep(1)            
+            mySleep(1)            
             
-    def _rushScanMode(self):
-
-        planetsWithoutShips = {}
-        
-        while self._calculateCurrentBotMode() == 'normalMode':
-            self._saveFiles()
-            serverTime = self._web.serverTime()
-            self._checkIfEspionageReportsArrived()
+    def rushMode(self,newInactivePlanets):
+        self.eventMgr.activityMsg("Changing to rush mode." )
+        planetsWithoutShips = {}        
+        rentabilityTreshold = self.generateRentabilityTable(self.targetPlanets)[0].rentability
+        self.spyPlanets(newInactivePlanets,EspionageReport.DetailLevels.resources)
+        rentabilities =  self.generateRentabilityTable(newInactivePlanets,False)        
+        newInactivePlanets = [x.targetPlanet for x in rentabilities if x.rentability > rentabilityTreshold]
+        self.spyPlanets(newInactivePlanets,EspionageReport.DetailLevels.defense)
+        newInactivePlanets = [( self.calculateNearestSourcePlanet(p.coords),p) for p in newInactivePlanets]
+                    
+        while True:
+            serverTime = self.web.serverTime()            
+            self._checkThreadQueue()
+            rentabilities = self.generateRentabilityTable([x.targetPlanet for x in newInactivePlanets])
+            self.eventMgr.simulationsUpdate(rentabilities)
             
-            rentabilities = self._generateRentabilityTable()
-            self._eventMgr.simulationsUpdate(rentabilities)
-            
+            newInactivePlanets = [(x.sourcePlanet,x.targetPlanet) for x in rentabilities if x.rentability > rentabilityTreshold]               
+            if not newInactivePlanets:
+                break
+                        
             # update lists of own planets with no ships
-            for planet,time in planetsWithoutShips.items():
-                if serverTime - time > timedelta(minutes=5):
-                    del planetsWithoutShips[planet]
-                                
+            for planet,checkedTime in planetsWithoutShips.items():
+                if serverTime - checkedTime > timedelta(minutes=5):
+                    del planetsWithoutShips[planet] 
+                    
+            try: selectedAttack = (x for x in rentabilities if x.sourcePlanet not in planetsWithoutShips).next()
+            except StopIteration:
+                self.eventMgr.statusMsg("Not enough ships")
+                mySleep(1)
+                continue
+
+            targetPlanet,sourcePlanet = selectedAttack.targetPlanet, selectedAttack.sourcePlanet
             try:
-
-                possibleTargets = [(planet,rentability,sourcePlanet) for planet,rentability,sourcePlanet in rentabilities if planet not in self._notArrivedEspionages and rentability > 0 and sourcePlanet not in planetsWithoutShips]
-                if not possibleTargets:
-                    self._eventMgr.activityMsg("No target planets available. Probably no planet enough attacking ships. Waiting...")
-                    sleep(10)
-                else:
-                    targetPlanet,rentability,sourcePlanet = possibleTargets[0]
-
-                    try:                    
-                        if targetPlanet.espionageHistory[-1].getAge(self._web.serverTime()).seconds < 600:
-                            self._attackPlanet(sourcePlanet, targetPlanet, self.attackingShip)
-                            self._eventMgr.simulationsUpdate(rentabilities)                                  
-                            sleep(30)
-                        elif targetPlanet not in self._notArrivedEspionages:                        #planet's espionage report timed out, re-spy.
-                            self._spyPlanet(sourcePlanet,targetPlanet)
-                    except NotEnoughShipsError, e:
-                        planetsWithoutShips[sourcePlanet] = serverTime
-                        self._eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet,targetPlanet,e))
+                self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip,False)
+            except NotEnoughShipsError, e1:
+                try:
+                    self.attackPlanet(sourcePlanet, targetPlanet, self.secondaryAttackingShip,False)
+                    self.eventMgr.simulationsUpdate(rentabilities)                                  
+                except NotEnoughShipsError, e2:
+                    planetsWithoutShips[sourcePlanet] = serverTime
+                    self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet,targetPlanet,e2))
                         
             except NoFreeSlotsError: 
-                self._eventMgr.statusMsg("Fleet limit hit")
-                sleep(8)
+                self.eventMgr.statusMsg("Fleet limit hit")
             except FleetSendError, e: 
-                self._eventMgr.activityMsg("Error sending fleet for planet %s: %s" %(targetPlanet,e))
+                self.eventMgr.activityMsg("Error sending mission to planet %s.Reason: %s" %(targetPlanet,e))
                 self.targetPlanets.remove(targetPlanet)
-        
+                newInactivePlanets.remove((sourcePlanet,targetPlanet))
+                
 
-
-    def _scanMode(self):
-        systemsInRange = {} # dictionary of lists of tuples
-        for tuple in self.reachableSolarSystems:
-            nearestPlanet = self._calculateNearestSourcePlanet(tuple)
-            systemsInRange.setdefault(nearestPlanet,[]).append(tuple)
-
-
-        self._newInactivePlanets = []
-        self._eventMgr.activityMsg("Performing inactives scan.")
-
-        
-        currentSourcePlanetIter = cycle(systemsInRange)
-        sourcePlanet = currentSourcePlanetIter.next()
+    
+    def spyPlanets(self, planetsToSpy, upToDetailLevel = EspionageReport.DetailLevels.buildings):
+ 
+        remainingPlanets = [(self.calculateNearestSourcePlanet(p.coords),p) for p in planetsToSpy]
+        remainingPlanets.sort(key=lambda x:x[1].coords) # sort by target coords
+        remainingPlanets.sort(key=lambda x:x[0]) # sort by source planet        
         
         while True:
-            serverTime = self._web.serverTime()
-            self._checkIfEspionageReportsArrived()
-                        
-            remainingPlanets = [p for p in self.targetPlanets if not p.espionageHistory or not p.espionageHistory[-1].hasAllNeededInfo() or p.espionageHistory[-1].hasExpired(serverTime)]                
+            self._checkThreadQueue()
+            self.eventMgr.simulationsUpdate(self.generateRentabilityTable(planetsToSpy))
+            self.checkIfEspionageReportsArrived()
+
+            serverTime = self.web.serverTime()                        
+            
+            for source,target in remainingPlanets[:]:
+                if target.espionageHistory and target.getBestEspionageReport().hasAllNeededInfo(upToDetailLevel) and not target.espionageHistory[-1].hasExpired(serverTime):
+                    remainingPlanets.remove((source,target))
+    
             if not remainingPlanets:
                 break
             
-            
-            try:
+            possibleTargets = [x for x in remainingPlanets if x[1] not in self._notArrivedEspionages]
+            if not possibleTargets:
+                mySleep(1)
+                continue
 
-                    self._spyPlanet(sourcePlanet,targetPlanet)
-            except NotEnoughShipsError, e:
-                sourcePlanet = currentSourcePlanetIter.next()
-                #self._eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet,targetPlanet,e))
-                        
-            except NoFreeSlotsError: 
-                self._eventMgr.statusMsg("Fleet limit hit")
-                sleep(8)
-            except FleetSendError, e: 
-                self._eventMgr.activityMsg("Error sending fleet for planet %s: %s" %(targetPlanet,e))
-                self.targetPlanets.remove(targetPlanet)                
+            sourcePlanet,targetPlanet = possibleTargets[0]
 
-        
-                
-        try:        
-
-                
-                for dummy in range(5):
-                    galaxy, solarSystem = targetSolarSystemsIter.next()
-                    foundPlanets = self._scanSolarSystem(galaxy, solarSystem)
-                    
-                    
-
-
-        except StopIteration: pass
-        
-        undefendedPlanets = [p for p in self.targetPlanets if p.isUndefended()]
-        if not undefendedPlanets:
-            raise BotFatalError("There are no inactive and undefended planets in range.")
-        self.lastInactiveScanTime = self._web.serverTime()
-        self._eventMgr.activityMsg("Inactives scan finished.")                                                                
-
-
-    def _spyPlanet(self,sourcePlanet,targetPlanet,probesToSend = None):
-        
-        if not probesToSend:
-            if not targetPlanet.espionageHistory:
-                action = "Spying for the 1st time"            
+            msg = "Spying"
+            if upToDetailLevel == EspionageReport.DetailLevels.resources:
+                probesToSend = 1
+            elif not targetPlanet.espionageHistory:
+                msg = "Spying for the 1st time"            
                 # send no. of probes equal to the average no. of probes sent until now.
-                probes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory]
+                probes = [planet.getBestEspionageReport().probesSent for planet in self.targetPlanets if planet.espionageHistory]
                 if len(probes) > 10: probesToSend = int(sum(probes) / len(probes)) 
                 else: probesToSend = self.config.probesToSend
             else:
-                action = "Spying"                           
-                probesToSend = targetPlanet.espionageHistory[-1].probesSent    
-                if not targetPlanet.espionageHistory[-1].hasAllNeededInfo():
+    
+                probesToSend = targetPlanet.getBestEspionageReport().probesSent    
+                if not targetPlanet.getBestEspionageReport().hasAllNeededInfo(upToDetailLevel):
                     # we need to send more probes to get the defense or buildings data
-                    action = "Re-spying with more probes"
+                    msg = "Re-spying with more probes"
                     probesToSend = max(int (1.5 * probesToSend),probesToSend +2) # non-linear increase in the number of probes
     
-            samePlayerProbes = [planet.espionageHistory[-1].probesSent for planet in self.targetPlanets if planet.espionageHistory and planet.owner == targetPlanet.owner]
+            samePlayerProbes = [planet.getBestEspionageReport().probesSent for planet in self.targetPlanets if planet.espionageHistory and planet.owner == targetPlanet.owner]
             probesToSend = max(samePlayerProbes + [probesToSend])
+            
+            try:
+                self._spyPlanet(sourcePlanet,targetPlanet,True,msg,probesToSend)
+            except NotEnoughShipsError, e:
+                self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet,targetPlanet,e))
+                # move to the end all planets with this source planet
+                for source,planet in remainingPlanets[:]:
+                    if source == sourcePlanet:
+                        remainingPlanets.remove((source,planet))
+                        remainingPlanets.append((source,planet))
+                mySleep(1)
+            except NoFreeSlotsError: 
+                self.eventMgr.statusMsg("Fleet limit hit")
+                mySleep(3)
+            except FleetSendError, e: 
+                self.eventMgr.activityMsg("Error sending mission to planet %s.Reason: %s" %(targetPlanet,e))
+                planetsToSpy.remove(targetPlanet)                
+                remainingPlanets.remove((sourcePlanet,targetPlanet))
+
+    def _spyPlanet(self,sourcePlanet,targetPlanet,useReservedSlots=False,msg = "Spying",probesToSend = 1):
+        if useReservedSlots:
+            slotsToReserve = 0
+        else:
+            slotsToReserve = self.config.slotsToReserve        
+    
 
         ships = {'espionageProbe':probesToSend}
         
-        espionage = Mission(Mission.Types.spy, sourcePlanet, targetPlanet, ships)
+        mission = Mission(Mission.Types.spy, sourcePlanet, targetPlanet, ships)
 
-        self._web.launchMission(espionage)
-        self._notArrivedEspionages[targetPlanet] = espionage
-        self._eventMgr.activityMsg("%s %s from %s with %s" % (action,targetPlanet, sourcePlanet, ships))
-        sleep(2)                                   
+        self.web.launchMission(mission,True,slotsToReserve)
+        self._notArrivedEspionages[targetPlanet] = mission
+        self.eventMgr.activityMsg("%s %s from %s with %s" % (msg,targetPlanet, sourcePlanet, ships))
+        mySleep(2)       
+        return mission                            
         
     
-    def _attackPlanet(self,sourcePlanet,targetPlanet,attackingShip,abortIfNoShips = True):
+    def attackPlanet(self,sourcePlanet,targetPlanet,attackingShip,abortIfNoShips = True):
         resourcesToSteal = targetPlanet.simulation.simulatedResources.half()        
-        ships = int((resourcesToSteal.total() + 5000) / attackingShip.capacity)
+        producedMeanwhile = targetPlanet.simulation.calculateProduction(sourcePlanet.coords.flightTimeTo(targetPlanet.coords))
+        ships = math.ceil((resourcesToSteal + producedMeanwhile).total() / attackingShip.capacity)
         fleet = { attackingShip.name : ships }
         mission = Mission(Mission.Types.attack, sourcePlanet, targetPlanet, fleet)
-        self._web.launchMission(mission,abortIfNoShips,self.config.slotsToReserve)        
-        self._eventMgr.activityMsg( "ATTACKING %s from %s with %s" % (targetPlanet, sourcePlanet,fleet))
+        self.web.launchMission(mission,abortIfNoShips,self.config.slotsToReserve)        
+        self.eventMgr.activityMsg( "ATTACKING %s from %s with %s" % (targetPlanet, sourcePlanet,fleet))
         shipsSent = mission.fleet[attackingShip.name]
         if shipsSent < ships:
             factor = shipsSent / float(ships)
             targetPlanet.simulation.simulatedResources -= resourcesToSteal * factor
-            self._eventMgr.activityMsg("There were not enough ships for the previous attack. Needed %s but sent only %s" % (fleet,mission.fleet))
+            self.eventMgr.activityMsg("There were not enough ships for the previous attack. Needed %s but sent only %s" % (fleet,mission.fleet))
         else:
             targetPlanet.simulation.simulatedResources -= resourcesToSteal       
-        sleep(30)                                 
+        self.saveFiles()            
+        mySleep(25)
+        return mission
         
-    def _checkIfEspionageReportsArrived(self):
-        if len(self._notArrivedEspionages) > 0:
-            displayedReports = self._web.getEspionageReports()
+    def checkIfEspionageReportsArrived(self):
+        arrivedReports = []
+        if self._notArrivedEspionages:
+            displayedReports = self.web.getEspionageReports()
             for planet, espionage in self._notArrivedEspionages.items():
                 report = self._didEspionageArrive(espionage, displayedReports)
                 if  report:
@@ -719,59 +444,36 @@ class Bot(threading.Thread):
                     
                     planet.simulation = ResourceSimulation(report.resources, report.buildings)
                     planet.espionageHistory.append(report)
+                    arrivedReports.append(report)
                     self._planetDb.write(planet)
-                elif self._web.serverTime() > espionage.arrivalTime + timedelta(minutes=1):
+                    self.saveFiles()                    
+                elif self.web.serverTime() > espionage.arrivalTime + timedelta(minutes=1):
                     # probably due to buggy espionage report (containing only N;) or translation errors.
                     del self._notArrivedEspionages[planet]
                     self.targetPlanets.remove(planet)
-                    self._eventMgr.activityMsg("Espionage report from %s never arrived. Deleting planet." % espionage.targetPlanet)
+                    self.eventMgr.activityMsg("Espionage report from %s never arrived. Deleting planet." % espionage.targetPlanet)
+                    self.saveFiles()                    
+        return arrivedReports
                     
-    def _generateRentabilityTable(self):
+    def generateRentabilityTable(self,planetList,negativeIfDefended = True):
         rentabilities = []
-        for planet in self.targetPlanets:
-            sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
+        for planet in planetList:
+            sourcePlanet = self.calculateNearestSourcePlanet(planet.coords)
             flightTime = sourcePlanet.coords.flightTimeTo(planet.coords)
             if planet.espionageHistory:
                 resources  = planet.simulation.simulatedResources
                 rentability = resources.rentability(flightTime.seconds,self.config.rentabilityFormula)
-                if not planet.espionageHistory[-1].isUndefended():
+                if negativeIfDefended and planet.getBestEspionageReport().isDefended():
                     rentability = -rentability
             else: 
                 rentability = 0
-            rentabilities.append((planet,rentability,sourcePlanet))
-        rentabilities.sort(key=lambda x:x[1], reverse=True) # sorty by rentability        
+            item = Struct(sourcePlanet=sourcePlanet,targetPlanet=planet,rentability=rentability)
+            rentabilities.append(item)
+        rentabilities.sort(key=lambda x:x.rentability, reverse=True)
         return rentabilities
     
-    def _scanSolarSystem(self,galaxy,solarSystem): # inactive planets search
-       
-        newSolarSystem = self._web.getSolarSystem(galaxy, solarSystem)
-        oldSolarSystem = {}
-        for planet in self.targetPlanets[:]:
-            if planet.coords.galaxy == galaxy and planet.coords.solarSystem == solarSystem:
-                self.targetPlanets.remove(planet)
-                oldSolarSystem[str(planet.coords)] = planet
-        
-        foundPlanets = []
-        for coordsStr,newPlanet in newSolarSystem.items():
-            if not 'inactive' in newPlanet.ownerStatus or newPlanet.owner in self.config.playersToAvoid or newPlanet.alliance in self.config.alliancesToAvoid:
-                continue
-            self.targetPlanets.append(newPlanet)
-            oldPlanet = oldSolarSystem.get(coordsStr)
-            if oldPlanet:
-                newPlanet.espionageHistory = oldPlanet.espionageHistory
-                newPlanet.simulation = oldPlanet.simulation
-            else:
-                if __debug__: print >>sys.stderr, "New inactive planet found: " + str(newPlanet)
-                self.newInactivePlanets.append(newPlanet)
-                foundPlanets.append(newPlanet)                
-            
-        self._planetDb.writeMany(newSolarSystem.values())
-        return foundPlanets
     
-    def _calculateNearestSourcePlanet(self,coords):
-        if isinstance(coords,tuple):
-            galaxy, solarSystem = coords
-            coords = Coords(galaxy,solarSystem,1)
+    def calculateNearestSourcePlanet(self,coords):
         minDistance = sys.maxint
         for sourcePlanet in self.sourcePlanets:
             distance = sourcePlanet.coords.distanceTo(coords)
@@ -787,7 +489,7 @@ class Bot(threading.Thread):
         reports = [report for report in displayedReports if report.coords == espionage.targetPlanet.coords and report.date >= espionage.launchTime]
         reports.sort(key=lambda x:x.date, reverse=True)
         if reports:
-            self._web.deleteMessage(reports[0])
+            self.web.deleteMessage(reports[0])
             return reports[0]
         else: 
             return None
@@ -808,7 +510,48 @@ class Bot(threading.Thread):
                         print "Bot resumed."                        
                         break
         except Empty: pass         
-    
+
+           
+    def saveFiles(self):
+        path = FILE_PATHS['gamedata']
+        try:
+            shutil.move(path,path + ".bak")
+        except IOError: pass
+        
+        file = open(path, 'wb')
+        pickler = cPickle.Pickler(file,2)
+        for i in [self.targetPlanets,self.reachableSolarSystems,self.lastInactiveScanTime,
+                  self.config.webpage,self.config.universe,self.config.username]:
+                  pickler.dump(i)
+        file.close()
+        
+    def loadFiles(self):
+        try:
+            file = open(FILE_PATHS['gamedata'], 'rb')
+            u = cPickle.Unpickler(file)
+            self.targetPlanets = u.load()
+            self.reachableSolarSystems = u.load()
+            self.lastInactiveScanTime = u.load()
+            storedWebpage = u.load()
+            storedUniverse = u.load()
+            storedUsername = u.load()
+            file.close()
+                 
+            if storedWebpage != self.config.webpage \
+            or storedUniverse != self.config.universe:
+                raise BotError() # if any of those has changed, invalidate stored espionages
+
+        except (EOFError, IOError,BotError,ImportError,AttributeError):
+            try: file.close()            
+            except UnboundLocalError: pass
+            self.targetPlanets = []
+            self.reachableSolarSystems = []
+            self.eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
+            try:
+                path = FILE_PATHS['gamedata']
+                os.remove(path)              
+            except Exception : pass
+   
 
     
 if __name__ == "__main__":
@@ -846,9 +589,3 @@ if __name__ == "__main__":
     else:
         from gui import guiMain
         guiMain(options.autostart)
-
-#
-#class SolarSystemScanThread(threading.Thread):
-#        def __init__(self,galaxy,solarSystem):
-#            
-#        def run(self):

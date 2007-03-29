@@ -91,6 +91,17 @@ class Coords(object):
     def __ne__(self, otherCoords):
         return not self.__eq__(otherCoords)
     
+    def __lt__(self,otherCoords):
+        if self.galaxy < otherCoords.galaxy:
+            return True
+        elif self.galaxy == otherCoords.galaxy:
+            if self.solarSystem < otherCoords.solarSystem:
+                return True
+            elif self.solarSystem == otherCoords.solarSystem:
+                if self.planet < otherCoords.planet:
+                    return True
+        return False
+    
     def distanceTo(self, coords):
         
         distance = 0
@@ -104,7 +115,7 @@ class Coords(object):
             distance = 5
         return distance
     
-    def flightTimeTo(self, coords, speed=26000, speedPercentage=100):
+    def flightTimeTo(self, coords, speed=20000, speedPercentage=100):
         seconds = 350000.0/speedPercentage * math.sqrt(self.distanceTo(coords) * 10.0 / float(speed)) + 10.0
         return timedelta(seconds=int(seconds))
 
@@ -166,10 +177,18 @@ class EnemyPlanet (Planet):
         self.espionageHistory = []
         self.simulation = None
                 
+    def getBestEspionageReport(self):
+        if not self.espionageHistory:
+            return None
+        
+        best = self.espionageHistory[0]
+        for report in self.espionageHistory:
+            if report.getDetailLevel() > best.getDetailLevel():
+                best = report
+        return best
+
     def toStringList(self):
         return [str(self.coords), self.name, self.owner, self.alliance]
-    
-
 
         
 class GameMessage(object):
@@ -177,6 +196,9 @@ class GameMessage(object):
         self.code = code
 
 class EspionageReport(GameMessage):
+    class DetailLevels(Enum):
+        resources, fleet, defense, buildings, research = range(5)
+            
     def __init__(self, coords, planetName, date, resources, code, fleet=None, defense=None, buildings=None, research=None):
         GameMessage.__init__(self, code)
         self.coords = coords
@@ -193,7 +215,7 @@ class EspionageReport(GameMessage):
     def __repr__(self):
         return "%s %s %s %s %s %s %s %s" % (self.planetName, self.coords, self.date, self.resources, self.fleet, self.defense, self.buildings, self.research)
     
-    def hasFleet(self): # actually is has or might have fleet
+    def hasFleet(self): 
         return self.fleet == None or len(self.fleet) > 0
     
     def hasDefense(self):
@@ -202,6 +224,17 @@ class EspionageReport(GameMessage):
     def getAge(self, serverTime):
         return serverTime - self.date
     
+    def getDetailLevel(self):
+        if self.research != None:
+            return self.DetailLevels.research
+        if self.buildings != None:
+            return self.DetailLevels.buildings
+        if self.defense != None:
+            return self.DetailLevels.defense
+        if self.fleet != None:
+            return self.DetailLevels.fleet
+        return self.DetailLevels.resources
+        
     def hasExpired(self, serverTime):
         age = self.getAge(serverTime)
         if self.hasNonMissileDefense():
@@ -218,13 +251,20 @@ class EspionageReport(GameMessage):
             if  'antiBallisticMissile' not in defense  and 'interplanetaryMissile' not in defense:
                 return True
         return False
-    def hasAllNeededInfo(self):
-        if self.defense == None or (self.isUndefended() and self.buildings == None): 
-            return False
-        return True
+    
+    def hasAllNeededInfo(self,detailLevel = DetailLevels.buildings):
+        reportDetail = self.getDetailLevel()
+        if detailLevel >= self.DetailLevels.fleet:
+            if  reportDetail  == self.DetailLevels.fleet:
+                if self.hasFleet():
+                    return True
+            elif reportDetail == self.DetailLevels.defense:
+                if self.hasNonMissileDefense():
+                    return True
+        return self.getDetailLevel() >= detailLevel
         
-    def isUndefended(self):
-        return not self.hasFleet() and not self.hasNonMissileDefense()
+    def isDefended(self):
+        return self.hasFleet() or self.hasNonMissileDefense()
     
     def hasInfoAbout(self, info):
         if info not in ["fleet", "defense", "buildings", "research"]:
@@ -265,7 +305,7 @@ class Mission(object):
     arrivalTime = property(_arrivalTime)         
     def _returnTime(self):
         return self.launchTime + self.flightTime * 2
-    returnTime = property(_arrivalTime)         
+    returnTime = property(_returnTime)         
         
     def __repr__(self):
         return "%s to %s with %s" % (self.Types.toStr(self.missionType).title() , self.targetPlanet, self.fleet)

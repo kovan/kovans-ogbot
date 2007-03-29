@@ -15,7 +15,6 @@
 #
 import threading
 import locale
-import time
 import re
 import os
 import urllib
@@ -27,10 +26,11 @@ import copy
 import sys
 import httplib
 import warnings
+from Queue import *
 from datetime import datetime,time
-from mechanize import *
-from ClientForm import HTMLForm, ParseResponse, ControlNotFoundError;
-from BeautifulSoup import *
+from time import strptime
+from cStringIO import *
+from ClientForm import HTMLForm, ParseFile, ControlNotFoundError;
 from CommonClasses import *
 from Constants import *
 from GameEntities import *
@@ -60,22 +60,14 @@ class WebAdapter(object):
             msg = datetime.now().strftime("%X %x ") + msg
             self.dispatch("activityMsg",msg)
         
-    def __init__(self, config, allTranslations,checkThreadMethod,gui = None):
+    def __init__(self, config, allTranslations,gui = None):
         self.server = ''
-        self.lastFetch = ''
+        self.lastFetchedUrl = ''
         self.serverCharset = ''        
-        self.browser = Browser()
         self.config = config
-        self._checkThreadMethod = checkThreadMethod
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
-        self.browser.set_handle_refresh(True, 0, False) # HTTPRefreshProcessor(0,False)         
-        self.browser.set_handle_robots(False) # do not obey website's anti-bot indications
-        self.browser.addheaders = [('User-agent', self.config.userAgent)]
-        socket.setdefaulttimeout(10.0)
-                                         
-        if self.config.proxy:
-            self.browser.set_proxies({"http":"http://"+self.config.proxy})
+
         if config.webpage.endswith('.ba') or config.webpage.endswith('.com.hr'):
             self.webpage = "http://"+ config.webpage +"/portal/?lang=yu&frameset=1"
         else:
@@ -83,20 +75,31 @@ class WebAdapter(object):
         
         if not self.loadState():
             self.session = '000000000000'
-        
 
-        page = self._fetchValidResponse(self.webpage,True)
-        # check configured language equals wb language
+        #setup urllib2:
+        socket.setdefaulttimeout(10.0)
+
+        if self.config.proxy:
+            proxy_handler = urllib2.ProxyHandler({"http":"http://"+self.config.proxy})
+            opener = urllib2.build_opener(proxy_handler)
+        else:
+            opener = urllib2.build_opener()
+            
+        urllib2.install_opener(opener)
+        opener.addheaders = [('User-agent', self.config.userAgent)]            
+        
+        cachedResponse = StringIO(self._fetchValidResponse(self.webpage,True).read())
+        # check configured language equals ogame server language
         regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"',re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
-        self.serverLanguage =  regexpLanguage.findall(page.read())[0]
+        self.serverLanguage =  regexpLanguage.findall(cachedResponse.getvalue())[0]
         try: self.translations = allTranslations[self.serverLanguage]
         except KeyError:
             raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage )
         self.translationsByLocalText = dict([ (value,key) for key,value in self.translations.items() ])
         self.generateRegexps(self.translations)        
         # retrieve server based on universe number        
-        page.seek(0)                        
-        form = ParseResponse(page, backwards_compat=False)[0]        
+        cachedResponse.seek(0)                        
+        form = ParseFile(cachedResponse,self.lastFetchedUrl, backwards_compat=False)[0]        
         select = form.find_control(name = "Uni")
         translation = self.translations['universe']
         if self.serverLanguage == "tw":
@@ -137,7 +140,8 @@ class WebAdapter(object):
             'maxSlots':re.compile(r"%s([0-9]+)" %  translations['maxFleets'].replace('.','\. '),re.I), 
             'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE|re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
-            'charset':re.compile(r'content="text/html; charset=(.*?)"',re.I)
+            'charset':re.compile(r'content="text/html; charset=(.*?)"',re.I),
+            'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="\d+" >(\d+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">([\w .]+?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>')
         }
         
         
@@ -156,34 +160,31 @@ class WebAdapter(object):
     def _fetchPhp(self, php, **params):
         params['session'] = self.session
         url = "http://%s/game/%s?%s" % (self.server, php, urllib.urlencode(params))
-        self.lastFetch = url
         return self._fetchValidResponse(url)
     
     def _fetchForm(self, form):
-        self.lastFetch = str(form)
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
-        if __debug__: 
-            print >>sys.stderr, "         Fetching " + self.lastFetch
+
 
         valid = False
         while not valid:
             valid = True
             try:
-                # MAIN PLACE TO CHECK CHECK FOR INTER-THREAD QUEUE MESSAGES:
-                #-----------------------------------------------------------
-                self._checkThreadMethod()
-                #-----------------------------------------------------------
-                response = self.browser.open(request)
-                p = response.read()
-
+                response = urllib2.urlopen(request)
+                self.lastFetchedUrl = response.geturl()
+                if __debug__: 
+                    print >>sys.stderr, "         Fetched " + self.lastFetchedUrl
+                cachedResponse = StringIO(response.read())
+                p = cachedResponse.getvalue()
+                cachedResponse.seek(0)
                 # store last 20 pages fetched in the debug directory:
                 files = os.listdir('debug')
                 if len(files) >= 20: #never allow more than 20 files
                     files.sort()
                     os.remove('debug/'+files[0])
-                try: php = '_'+re.findall("/(\w+\.php)",self.lastFetch)[0]
+                try: php = '_'+re.findall("/(\w+\.php)",self.lastFetchedUrl)[0]
                 except IndexError: php = ''
                 date = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
                 file = open("debug/%s%s.html" %(date,php), 'w')
@@ -191,12 +192,11 @@ class WebAdapter(object):
                 file.close()
                 
                 
-                response.seek(0)
                 if skipValidityCheck:
-                    return response                
+                    return cachedResponse                
                 elif self.translations['youAttemptedToLogIn'] in p:         
                     raise BotFatalError("Invalid username and/or password.")
-                elif not p or self.translations['concurrentPetitionsError'] in p:
+                elif not p or 'errorcode=8' in self.lastFetchedUrl:
                     valid = False
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
 
@@ -224,15 +224,14 @@ class WebAdapter(object):
                     valid = False
                 else: raise e
             if not valid: 
-                sleep(5)
-        return response
+                mySleep(5)
+        return cachedResponse
     
     def doLogin(self):
         if self.serverTimeDelta and self.serverTime().hour == 3 and self.serverTime().minute == 0: # don't connect immediately after 3am server reset
-            sleep(40)                
-        self.lastFetch = self.webpage
+            mySleep(40)                
         page = self._fetchValidResponse(self.webpage)
-        form = ParseResponse(page, backwards_compat=False)[0]
+        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[0]
         form["Uni"]   = [self.server]
         form["login"] = self.config.username
         form["pass"]  = self.config.password
@@ -263,41 +262,6 @@ class WebAdapter(object):
         self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
         return myPlanets
     
-    def getSolarSystems(self, solarSystems, deuteriumSourcePlanet = None):
-        pass
-        
-    def getSolarSystem(self, galaxy, solarSystem, deuteriumSourcePlanet = None):
-        planets = {}         
-
-        if deuteriumSourcePlanet:
-            self._fetchPhp('overview.php', cp=deuteriumSourcePlanet.code)
-        page = self._fetchPhp('galaxy.php',galaxy=galaxy,system=solarSystem).read()
-        
-        try:
-            html = BeautifulSoup(page)              
-            galaxyTable = html.findAll('table', width="569")[0]
-            rowCount = 0
-            for row in galaxyTable.findAll('tr', recursive=False)[2:16]:
-                try:
-                    rowCount += 1
-                    columns = row.findAll('th')
-                    
-                    name        = str(columns[2].string).strip()
-                    name        = re.sub(r'&nbsp;.*', '', name) # remove planet idle time from name
-                    owner       = str(columns[5].a.span.string).strip()
-                    ownerStatus = str(columns[5].a.span['class'])
-                    if columns[6].a != None: # player has alliance
-                        alliance = str(columns[6].a.string).strip()
-                    else: alliance = ''
-                    # Absolutely ALL EnemyPlanet objects of the bot are created here
-                    planet = EnemyPlanet(Coords(galaxy, solarSystem, rowCount), owner, ownerStatus, name, alliance)
-                    planets[str(planet.coords)] = planet
-                except AttributeError: # no planet in that position
-                    continue 
-        
-        except IndexError:
-            raise BotError("Probably there is not enough deuterium in current planet.")
-        return planets
         
     def getEspionageReports(self):
         page = self._fetchPhp('messages.php').read()
@@ -345,7 +309,7 @@ class WebAdapter(object):
 #        if not ships:
 #            return
 #        page = self._fetchPhp( 'buildings.php', mode='Flotte', cp=sourceplanet.code )
-#        form = ParseResponse( page, backwards_compat=False )[-1]
+#        form = ParseFile( page,self.lastFetchedUrl, backwards_compat=False )[-1]
 #        for shipType, cuantity in ships.items():
 #            try:
 #                controlName = "fmenge[%s]" % INGAME_TYPES_BY_NAME[shipType].code[-3:]
@@ -370,7 +334,7 @@ class WebAdapter(object):
         
         
         availableFleet = self.getAvailableFleet(None,pageText)
-        form = ParseResponse(page, backwards_compat=False)[-1]        
+        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[-1]        
         
         for shipType, requested in mission.fleet.items():
             available = availableFleet.get(shipType,0)
@@ -386,7 +350,7 @@ class WebAdapter(object):
         # 2nd step: select destination and speed
         page = self._fetchForm(form)
         
-        forms = ParseResponse(page, backwards_compat=False)
+        forms = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)
         if not forms or 'flotten3.php' not in forms[0].action:
             raise NoFreeSlotsError()
         form = forms[0]
@@ -398,7 +362,7 @@ class WebAdapter(object):
         form['speed']      = [str(mission.speedPercentage / 10)]
         # 3rd step:  select mission and resources to carry
         page = self._fetchForm(form)
-        form = ParseResponse(page, backwards_compat=False)[0]
+        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[0]
         form['order']      = [str(mission.missionType)]
         resources = mission.resources
         form['resource1'] = str(resources.metal)
@@ -480,13 +444,13 @@ class WebAdapter(object):
     
     def deleteMessage(self, message):
         page = self._fetchPhp('messages.php')
-        form = ParseResponse(page, backwards_compat=False)[0]
+        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[0]
         checkBoxName = "delmes" + message.code
         try:
             form[checkBoxName]      = [None] # actually this marks the checbox as checked (!!)
             form["deletemessages"] = ["deletemarked"]
         except ControlNotFoundError:
-            pass
+            pass 
         self._fetchForm(form)
         
     def getInvestigationLevels(self):
@@ -495,6 +459,32 @@ class WebAdapter(object):
         for fullName, level in self.REGEXPS['techLevels'].findall(page):
             levels[self.translationsByLocalText[fullName]] = level
         return levels
+    
+    def getSolarSystems(self, solarSystems, deuteriumSourcePlanet = None):
+
+        threads = []
+        inputQueue = Queue()
+        for galaxy,solarSystem in solarSystems:
+            params = {'session':self.session, 'galaxy':galaxy,'system':solarSystem }
+            url = "http://%s/game/galaxy.php?%s" % (self.server, urllib.urlencode(params))        
+            inputQueue.put(url)
+            
+        for dummy in range(50):
+            thread = ScanThread(inputQueue,self.REGEXPS)
+            threads.append(thread)            
+            thread.start()
+
+            
+        for thread in threads:
+            thread.join()
+        
+        planetsFound = []
+        for thread in threads:
+            if thread.exception:
+                raise thread.exception
+            planetsFound += thread.planetsFound
+        return planetsFound
+        
 
     def saveState(self):
         file = open(FILE_PATHS['webstate'], 'wb')
@@ -518,53 +508,69 @@ class WebAdapter(object):
         return True   
     
 class ScanThread(threading.Thread):
-    def __init__(self,browser,queue,solarSystems):
-        self._browser = browser
-        self._queue = queue
-        self._solarSystems = solarSystems
+    ''' Scans solar systems from inputQueue'''
+    def __init__(self,inputQueue,regexps):
+        threading.Thread.__init__(self, name="GalaxyScanThread")
+        self._inputQueue = inputQueue
+        self.REGEXPS = regexps
+        self.planetsFound = []
+        self.exception = None
+        
     def run(self):
-        for solarSystem,galaxy in self.targets:
-            pass
-        
-        planets = {}         
+        socket.setdefaulttimeout(7)   
 
-        page = self._fetchPhp('galaxy.php',galaxy=galaxy,system=solarSystem).read()
-        
-        try:
-            html = BeautifulSoup(page)              
-            galaxyTable = html.findAll('table', width="569")[0]
-            rowCount = 0
-            for row in galaxyTable.findAll('tr', recursive=False)[2:16]:
-                try:
-                    rowCount += 1
-                    columns = row.findAll('th')
-                    
-                    name        = str(columns[2].string).strip()
-                    name        = re.sub(r'&nbsp;.*', '', name) # remove planet idle time from name
-                    owner       = str(columns[5].a.span.string).strip()
-                    ownerStatus = str(columns[5].a.span['class'])
-                    if columns[6].a != None: # player has alliance
-                        alliance = str(columns[6].a.string).strip()
-                    else: alliance = ''
+        error = False
+        while True:
+            try:
+                if not error:
+                    url = self._inputQueue.get_nowait()
+                
+                response = urllib2.urlopen(url)
+                page = response.read()
+                
+                if 'span class="error"' in page:
+                    raise BotError("Probably there is not enough deuterium in current planet.")
+                elif 'error' in  response.geturl():
+                    error = True
+                    continue
+
+                if __debug__: 
+                    print >>sys.stderr,"         Fetched " + url                
+
+
+                page = page.replace("\n","")
+                galaxy      = re.findall('input type="text" name="galaxy" value="(\d+)"', page)[0]
+                solarSystem = re.findall('input type="text" name="system" value="(\d+)"', page)[0]
+                
+
+                for number,name,ownerStatus,owner,alliance in self.REGEXPS['solarSystem'].findall(page):
                     # Absolutely ALL EnemyPlanet objects of the bot are created here
-                    planet = EnemyPlanet(Coords(galaxy, solarSystem, rowCount), owner, ownerStatus, name, alliance)
-                    planets[str(planet.coords)] = planet
-                except AttributeError: # no planet in that position
-                    continue 
+                    planet = EnemyPlanet(Coords(galaxy, solarSystem, number), owner, ownerStatus, name, alliance)
+                    self.planetsFound.append(planet)
+                error = False
+            except Empty:
+                break
+            except BotError,e:
+                self.exception = e
+                break
+            except Exception,e:
+                error = True
+                if __debug__: 
+                    print >>sys.stderr,e
+
         
-        except IndexError:
-            raise BotError("Probably there is not enough deuterium in current planet.")
-        return planets        
+        
+
 
 
 def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:52                        
     ''' parses a time string formatted in OGame's most usual format and 
     converts it to a datetime object'''
-    strTime = "%s %s" % (datetime.now().year, strTime)
+    
     format = "%Y " + format
-            
-    goodLocale = locale.getlocale() 
-    locale.setlocale(locale.LC_ALL, 'C')   
-    tuple = time.strptime(strTime, format) 
-    locale.setlocale(locale.LC_ALL, goodLocale) 
+    strTime = str(datetime.now().year) + " " +strTime
+    oldLocale = locale.getlocale(locale.LC_TIME)
+    locale.setlocale(locale.LC_TIME, ('en_US','UTF8'))
+    tuple = strptime(strTime, format) 
+    locale.setlocale(locale.LC_TIME, oldLocale)
     return datetime(*tuple[0:6])

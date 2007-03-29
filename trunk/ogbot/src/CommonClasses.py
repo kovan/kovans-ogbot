@@ -20,13 +20,13 @@ import shelve, bsddb,anydbm,dbhash,dumbdbm
 import copy
 import cPickle
 import logging
-import time
 import ConfigParser
-from datetime import datetime
 import sys
 import math
 import os.path
 import random
+from time import strptime,sleep
+from datetime import *
 
 
 
@@ -63,7 +63,7 @@ class PlanetDb(object):
         self._fileName = fileName
         self._openMode = 'c'
         
-    def _open(self, writeback=False):
+    def _open(self, writeback=True):
         self._db = shelve.open(self._fileName, self._openMode, 2, writeback)
         
     def write(self, planet):
@@ -105,7 +105,7 @@ class PlanetDb(object):
 class BaseEventManager(object):
         ''' Displays events in console, logs them to a file or tells the gui about them'''
         def logAndPrint(self, msg):
-            msg = datetime.now().strftime("%X %x ") + msg
+            msg = datetime.now().strftime("%c ") + msg
             print msg
             logging.info(msg)    
         def dispatch(self, methodName, *args):
@@ -128,14 +128,16 @@ class Configuration(dict):
         self['attackRadius'] = 10
         self['slotsToReserve'] = 0
         self['attackingShip'] = 'smallCargo'
-        self['sourcePlanets'] = []
-        self['playersToAvoid'] = []       
+        self['sourcePlanets'] = ''
+        self['playersToAvoid'] = ''       
         self['probesToSend'] = 1
-        self['alliancesToAvoid'] = []       
+        self['alliancesToAvoid'] = ''       
         self['systemsPerGalaxy'] = 499
         self['proxy'] = ''
         self['userAgent'] = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)'
         self['rentabilityFormula'] = '(metal + 1.5 * crystal + 3 * deuterium) / flightTime'
+        self['preMidnightPauseTime'] = '22:30:00'
+        self['inactivesAppearanceTime'] = '0:06:00'        
         
     def __getattr__(self, attrName):
         return self[attrName]
@@ -148,24 +150,20 @@ class Configuration(dict):
         for section in self.configParser.sections():
             self.update(self.configParser.items(section))
         
-        self['webpage'] = self['webpage'].replace("http://", "")
-        self['proxy'] = self['proxy'].replace("http://", "")        
-        
+        for time in ('preMidnightPauseTime','inactivesAppearanceTime'):
+            self[time] = self._parseTime(self[time])
+
+        for url in ('webpage','proxy'):
+            self[url] = self[url].replace("http://", "")
+
+        for listName in ('playersToAvoid','alliancesToAvoid','sourcePlanets'):
+            self[listName] = self._parseList(self[listName])
+
         from GameEntities import Coords
-        sourcePlanets = []
-        if self.configParser.has_option('options', 'sourcePlanets'):
-            if '[]' not in self['sourcePlanets']:
-                for coordsStr in self['sourcePlanets'].split(','):
-                    coords = Coords(coordsStr)
-                    sourcePlanets.append(coords)
-        self['sourcePlanets'] = sourcePlanets
-
-
-
-        if isinstance(self['playersToAvoid'],str):
-            self['playersToAvoid'] = self._parseList(self['playersToAvoid'])
-        if isinstance(self['alliancesToAvoid'],str):            
-            self['alliancesToAvoid'] = self._parseList(self['alliancesToAvoid'])        
+        for coordsStr in self['sourcePlanets'][:]:
+            self['sourcePlanets'].remove(coordsStr)
+            self['sourcePlanets'].append(Coords(coordsStr))
+        
 
         try:
             if not self.username or not self.password or not self.webpage or not self.universe:
@@ -173,8 +171,8 @@ class Configuration(dict):
         except Exception:
                 raise BotError("Missing username, password, universe or webpage.")            
         
-        from Constants import INGAME_TYPES_BY_NAME
-        if self['attackingShip'] not in INGAME_TYPES_BY_NAME.keys():
+        
+        if self['attackingShip'] not in ("smallCargo","largeCargo"):
             raise BotError("Invalid attacking ship type.")
         
         from GameEntities import Resources
@@ -193,6 +191,9 @@ class Configuration(dict):
             item = item.strip('''[] ,'"''')
             if item : list.append(item)
         return list
+
+    def _parseTime(self,timeStr):
+        return time(*strptime(timeStr,"%H:%M:%S")[3:6])
         
     def save(self):      
         if not self.configParser.has_section('options'):
@@ -240,16 +241,28 @@ class ResourceSimulation(object):
         
     def _calculateResources(self):
         productionTime = datetime.now() - self._resourcesSimulationTime
-        productionHours = productionTime.seconds / 3600.0
-        from GameEntities import Resources
+        return self._baseResources + self.calculateProduction(productionTime)
+            
+    simulatedResources = property(_calculateResources, _setResources)         
+    
+    def calculateProduction(self,timeInterval):
+        productionHours = timeInterval.seconds / 3600.0
+        from GameEntities import Resources        
         produced = Resources()
         produced.metal      = 30 * self._metalMine      * 1.1 ** self._metalMine      * productionHours
         produced.crystal   = 20 * self._crystalMine   * 1.1 ** self._crystalMine   * productionHours
         produced.deuterium = 10 * self._deuteriumSynthesizer * 1.1 ** self._deuteriumSynthesizer * productionHours * (-0.002 * 60 + 1.28) # 60 is the temperature of a planet in position 7
-        return self._baseResources + produced
-            
-    simulatedResources = property(_calculateResources, _setResources)         
+        return produced
+ 
+ 
+class PlanetList(object):       
+    def __init__(self,planets):
+        self.list = list(planets)
     
+    
+
+class Struct(object):
+    def __init__(self, **entries): self.__dict__.update(entries)    
         
 class Enum(object):
     @classmethod
@@ -257,10 +270,9 @@ class Enum(object):
         return [i for i in self.__dict__ if getattr(self, i) == type][0]    
     
 
-def sleep(seconds):
-    
+def mySleep(seconds):
     for dummy in range(0, random.randrange(seconds, seconds+4)):
-        time.sleep(1)
+        sleep(1)
         
 def addCommas(number):
     return re.sub(r"(\d{3}\B)", r"\1,", str(number)[::-1])[::-1]

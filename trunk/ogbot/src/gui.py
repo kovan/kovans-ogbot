@@ -54,7 +54,10 @@ class OptionsDialog(baseclass,formclass):
         baseclass.__init__(self)        
         self.setupUi(self)
         
-
+        self.attackingShipButtonGroup = QButtonGroup()
+        self.attackingShipButtonGroup.addButton(self.smallCargoRadioButton)
+        self.attackingShipButtonGroup.addButton(self.largeCargoRadioButton)        
+        
         self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent']
         self.spinBoxes = ['universe','attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy']
         self.textEdits = ['playersToAvoid','alliancesToAvoid']
@@ -79,7 +82,6 @@ class OptionsDialog(baseclass,formclass):
 
         
         self.enableOrDisablePlanetList(False)
-        self.attackingShipComboBox.addItems([str(shiptype) for shiptype in INGAME_TYPES if isinstance(shiptype,Ship)])
         self.loadOptions()
         
     def loadOptions(self):
@@ -90,10 +92,10 @@ class OptionsDialog(baseclass,formclass):
             except BotError, e: 
                 QMessageBox.critical(self,"Error in configuration",str(e))
 
-        index = self.attackingShipComboBox.findText(self.config.attackingShip)
-        self.attackingShipComboBox.setCurrentIndex(index)
+
+        radioButton = getattr(self, self.config.attackingShip + "RadioButton")
+        radioButton.setChecked(True)
         
-               
         for i in self.lineEdits:
             control = getattr(self,i + "LineEdit")
             control.setText(self.config[i])
@@ -128,7 +130,7 @@ class OptionsDialog(baseclass,formclass):
         else: sourcePlanets = []
 
         self.config['sourcePlanets'] = sourcePlanets
-        self.config['attackingShip'] = str(self.attackingShipComboBox.currentText().toAscii())
+        self.config['attackingShip'] = str(self.attackingShipButtonGroup.checkedButton().text())
         
 
         for i in self.lineEdits:
@@ -341,7 +343,7 @@ class MainWindow(baseclass,formclass):
                 reportCount = str(len(planet.espionageHistory))
                 if reportCount == '0' : reportCount = '-'
                 if filterText.lower() in columnValue.lower():
-                    item = QTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, reportCount])
+                    item = MyTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, reportCount])
                     self.planetsTree.addTopLevelItem(item)
            
     def _planetDb_updateReportsTree(self,planetTreeSelectedItem):
@@ -386,8 +388,8 @@ class MainWindow(baseclass,formclass):
             if var == "Yes " + i:
                 items = []
                 for type, cuantity in  getattr(report,i).items():
-                    items.append(QTreeWidgetItem([type,str(cuantity)]))
-            else: items = [QTreeWidgetItem([var])]
+                    items.append(MyTreeWidgetItem([type,str(cuantity)]))
+            else: items = [MyTreeWidgetItem([var])]
             tree.addTopLevelItems(items)
 
     def showAllReports(self):
@@ -427,31 +429,28 @@ class MainWindow(baseclass,formclass):
     def connected(self):
         self.setConnectionOK()        
         self.launchBrowserButton.setEnabled(True)
-    def simulationsUpdate(self,rentabilities):
+    def simulationsUpdate(self,rentabilitiesTable):
         self.setConnectionOK()
 
         self.botActivityTree.clear() 
         maxRentability = 0
-        for rentability in rentabilities:
-            if isinstance(rentability,tuple) and rentability[1] > maxRentability:
-                maxRentability = rentability[1] 
+        for item in rentabilitiesTable:
+            if item.rentability > maxRentability:
+                maxRentability = item.rentability
                 
-        for planet in rentabilities:
-            if isinstance(planet,tuple):
-                planet,rentability,sourcePlanet = planet
-            else: rentability,sourcePlanet = 0,'?'
+        for item in rentabilitiesTable:
 
-            if not planet.espionageHistory: 
+            if not item.targetPlanet.espionageHistory: 
                 simulatedResources = 'Not spied'
                 defendedStr = 'Not spied'
                 minesStr = 'Not spied'
             else:
-                simulatedResources = planet.simulation.simulatedResources
+                simulatedResources = item.targetPlanet.simulation.simulatedResources
                 
-                report = planet.espionageHistory[-1]
+                report = item.targetPlanet.getBestEspionageReport()
                 if  report.defense == None:
                     defendedStr = '?'
-                elif  report.isUndefended():
+                elif not report.isDefended():
                     defendedStr = 'No'
                 else:
                     defendedStr = 'Yes'
@@ -461,12 +460,12 @@ class MainWindow(baseclass,formclass):
                 else:
                     minesStr = "M: %s, C: %s D: %s" % (report.buildings.get('metalMine',0),report.buildings.get('crystalMine',0),report.buildings.get('deuteriumSynthesizer',0))
                      
-            item = QTreeWidgetItem(["%.2f" % rentability,str(planet.coords),planet.name,planet.owner,planet.alliance,str(simulatedResources),defendedStr,minesStr,str(sourcePlanet)])
-            if rentability > 0:
-                value = int (rentability *  255 / maxRentability)
+            treeItem = MyTreeWidgetItem(["%.2f" % item.rentability,str(item.targetPlanet.coords),item.targetPlanet.name,item.targetPlanet.owner,item.targetPlanet.alliance,str(simulatedResources),defendedStr,minesStr,str(item.sourcePlanet)])
+            if item.rentability > 0:
+                value = int (item.rentability *  255 / maxRentability)
                 backColor = QColor(255-value,255,255-value)            
-                item.setBackgroundColor(0,backColor)
-            self.botActivityTree.addTopLevelItem(item)        
+                treeItem.setBackgroundColor(0,backColor)
+            self.botActivityTree.addTopLevelItem(treeItem)        
             
             
     def activityMsg(self,msg):            
@@ -481,8 +480,8 @@ class MyTreeWidgetItem(QTreeWidgetItem):
     # subclassed just to implement sorting by numbers instead of by strings
     def __lt__(self,other):
         sortCol = self.treeWidget().sortColumn()
-        myNumber, ok1 = self.text(sortCol).toInt()
-        otherNumber, ok2 = other.text(sortCol).toInt()
+        myNumber, ok1 = self.text(sortCol).toDouble()
+        otherNumber, ok2 = other.text(sortCol).toDouble()
         if not ok1 or not ok2:
             return self.text(sortCol) < other.text(sortCol)
         else:
