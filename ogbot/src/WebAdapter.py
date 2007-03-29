@@ -570,7 +570,7 @@ def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:
     format = "%Y " + format
     strTime = str(datetime.now().year) + " " +strTime
     oldLocale = locale.getlocale(locale.LC_TIME)
-    locale.setlocale(locale.LC_TIME, ('C','UTF8'))
+    locale.setlocale(locale.LC_TIME, 'C')
     tuple = strptime(strTime, format) 
     locale.setlocale(locale.LC_TIME, oldLocale)
     return datetime(*tuple[0:6])
