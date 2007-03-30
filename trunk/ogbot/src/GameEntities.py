@@ -238,9 +238,9 @@ class EspionageReport(GameMessage):
     def hasExpired(self, serverTime):
         age = self.getAge(serverTime)
         if self.hasNonMissileDefense():
-            return age.days >= 5
+            return age.days >= 7
         elif self.hasFleet():
-            return age.days >= 2
+            return age.days >= 4
         else: 
             return False
     

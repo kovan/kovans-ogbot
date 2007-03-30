@@ -15,6 +15,7 @@
 #
 
 import sys
+import locale
 import os
 import os.path
 import shelve
@@ -196,6 +197,7 @@ class MainWindow(baseclass,formclass):
         self.setupUi(self) # parent ui setup
         self.msgQueue = Queue()
         self.bot = None
+        self.botThread = None
         
         QObject.connect(qApp,SIGNAL("lastWindowClosed ()"),self.stopClicked)
         QObject.connect(self.aboutButton,SIGNAL("clicked()"),self.showAbout)
@@ -262,10 +264,12 @@ class MainWindow(baseclass,formclass):
  
     def startClicked(self):
         if self.startButton.text() == "Start":
-            if self.bot and self.bot.isAlive():
+            if self.botThread and self.botThread.isAlive():
                 self.bot.join()
             self.bot = Bot(self)
-            self.bot.start()
+            self.botThread = threading.Thread(None,self.bot.run,"BotThread")
+            self.botThread.start()
+            
             self.setBotStatusRunning()
             self.startButton.setText("Pause")
             self.stopButton.setEnabled(True)
@@ -492,6 +496,7 @@ class MyTreeWidgetItem(QTreeWidgetItem):
 
 def guiMain(autostart = False):
     app = QApplication(sys.argv)
+    locale.setlocale(locale.LC_ALL,'C')
     QApplication.setStyle(QStyleFactory.create("plastique"))
     window = MainWindow()
     window.show()
