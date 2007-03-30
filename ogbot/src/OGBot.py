@@ -165,14 +165,13 @@ class Bot(object):
                     newReachableSolarSystems.append(tuple)
         
         if newReachableSolarSystems != self.reachableSolarSystems: # something changed in configuration (attack radius or attack sources)
-            rangeChanged = True
             self.reachableSolarSystems = newReachableSolarSystems
             del(newReachableSolarSystems)            
             # remove planets that are not in range anymore            
             for planet in self.inactivePlanets[:]:
                 if (planet.coords.galaxy,planet.coords.solarSystem) not in self.reachableSolarSystems:
                     self.inactivePlanets.remove(planet)
-
+            self.scanGalaxies()
             self.saveFiles()  
 
         self.eventMgr.activityMsg("Bot started.")
@@ -185,10 +184,10 @@ class Bot(object):
             self._checkThreadQueue() 
             serverTime = self.web.serverTime()
 
-            if self.lastInactiveScanTime.date() != serverTime.date() and serverTime.time() >=  self.config.inactivesAppearanceTime or rangeChanged:
+            if self.lastInactiveScanTime.date() != serverTime.date() and serverTime.time() >=  self.config.inactivesAppearanceTime:
                 oldInactivesList = self.inactivePlanets
                 newInactives = self.scanGalaxies()
-                if True:#serverTime.time() < time(03,30):
+                if serverTime.time() < time(03,30):
                     self.rushMode(newInactives,oldInactivesList)
                 self.spyPlanets(self.inactivePlanets) 
             else:
