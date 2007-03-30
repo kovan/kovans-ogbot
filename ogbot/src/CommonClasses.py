@@ -255,9 +255,9 @@ class ResourceSimulation(object):
         return produced
  
  
-class PlanetList(object):       
-    def __init__(self,planets):
-        self.list = list(planets)
+class PlanetList(dict):       
+    def __init__(self):
+        pass
     
     
 

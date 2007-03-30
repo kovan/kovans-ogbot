@@ -13,8 +13,8 @@
 #      *                                                                       *
 #      *************************************************************************
 #
-import threading
 import locale
+import threading
 import re
 import os
 import urllib
@@ -110,6 +110,7 @@ class WebAdapter(object):
 
 
     def generateRegexps(self,translations):
+
         reportTmp  = r'%s (?P<planetName>.*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
         reportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
         reportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
@@ -138,7 +139,7 @@ class WebAdapter(object):
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
             'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"',re.I), 
             'maxSlots':re.compile(r"%s([0-9]+)" %  translations['maxFleets'].replace('.','\. '),re.I), 
-            'techLevels':re.compile(r">(?P<techName>\w+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.LOCALE|re.I), 
+            'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
             'charset':re.compile(r'content="text/html; charset=(.*?)"',re.I),
             'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="\d+" >(\d+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">([\w .]+?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>')
@@ -442,21 +443,25 @@ class WebAdapter(object):
             fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity.replace('.',''))
         return fleet
     
-    def deleteMessage(self, message):
+    def deleteMessages(self, messages):
         page = self._fetchPhp('messages.php')
         form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[0]
-        checkBoxName = "delmes" + message.code
-        try:
-            form[checkBoxName]      = [None] # actually this marks the checbox as checked (!!)
-            form["deletemessages"] = ["deletemarked"]
-        except ControlNotFoundError:
-            pass 
+        for message in messages:
+            checkBoxName = "delmes" + message.code
+            try:
+                form[checkBoxName]      = [None] # actually this marks the checbox as checked (!!)
+                form["deletemessages"] = ["deletemarked"]
+            except ControlNotFoundError:
+                if __debug__:
+                    print >> sys.stderr, "Could not delete message " + str(message)
+            
         self._fetchForm(form)
         
-    def getInvestigationLevels(self):
+    def getResearchLevels(self):
         page = self._fetchPhp('buildings.php', mode='Forschung').read()
+
         levels = {}
-        for fullName, level in self.REGEXPS['techLevels'].findall(page):
+        for fullName, level in self.REGEXPS['researchLevels'].findall(page):
             levels[self.translationsByLocalText[fullName]] = level
         return levels
     
@@ -569,16 +574,5 @@ def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:
     
     format = "%Y " + format
     strTime = str(datetime.now().year) + " " +strTime
-    oldLocale = locale.getlocale(locale.LC_TIME)
-    locale.setlocale(locale.LC_TIME, 'C')
-    
-    #workaround for python bug #1290505
-    import _strptime
-    _strptime._cache_lock.acquire()
-    _strptime._TimeRE_cache = _strptime.TimeRE()
-    _strptime._regex_cache = {}
-    _strptime._cache_lock.release()    
-    
     tuple = strptime(strTime, format) 
-    locale.setlocale(locale.LC_TIME, oldLocale)
     return datetime(*tuple[0:6])
