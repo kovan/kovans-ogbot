@@ -171,6 +171,7 @@ class WebAdapter(object):
 
         valid = False
         while not valid:
+
             valid = True
             try:
                 response = urllib2.urlopen(request)
@@ -298,6 +299,11 @@ class WebAdapter(object):
                         
                 setattr(report, i, dict)
                 
+            
+            if report.getDetailLevel() >= EspionageReport.DetailLevels.defense and report.isDefended():
+                file = open("debug/reports/%s %s.html" %(planetName,coords),'w')
+                file.write(rawMessage)
+                file.close()
             reports.append(report)
             
         return reports
@@ -398,14 +404,14 @@ class WebAdapter(object):
         mission.distance =  int(resultPage[self.translations['distance']].replace('.',''))
         mission.consumption = int(resultPage[self.translations['consumption']].replace('.',''))
             
-        # check simulation formulas are working correctly:
-        assert mission.distance == mission.sourcePlanet.coords.distanceTo(mission.targetPlanet.coords)
-        flightTime = mission.sourcePlanet.coords.flightTimeTo(mission.targetPlanet.coords, int(resultPage[self.translations['speed']].replace('.','')))
-        margin = timedelta(seconds = 3)
-        assert mission.flightTime > flightTime - margin and mission.flightTime < flightTime + margin
-        # check mission was sent as expected:
-        assert str(mission.sourcePlanet.coords) in resultPage[self.translations['start']]
-        assert str(mission.targetPlanet.coords) in resultPage[self.translations['target']] 
+#        # check simulation formulas are working correctly:
+#        assert mission.distance == mission.sourcePlanet.coords.distanceTo(mission.targetPlanet.coords)
+#        flightTime = mission.sourcePlanet.coords.flightTimeTo(mission.targetPlanet.coords, int(resultPage[self.translations['speed']].replace('.','')))
+#        margin = timedelta(seconds = 3)
+#        assert mission.flightTime > flightTime - margin and mission.flightTime < flightTime + margin
+#        # check mission was sent as expected:
+#        assert str(mission.sourcePlanet.coords) in resultPage[self.translations['start']]
+#        assert str(mission.targetPlanet.coords) in resultPage[self.translations['target']] 
         
         # check the requested fleet was sent intact:
         sentFleet = {}
@@ -462,11 +468,16 @@ class WebAdapter(object):
 
         levels = {}
         for fullName, level in self.REGEXPS['researchLevels'].findall(page):
-            levels[self.translationsByLocalText[fullName]] = level
+            levels[self.translationsByLocalText[fullName]] = int(level)
         return levels
     
+    def goToPlanet(self,planet):
+        self._fetchPhp('overview.php', cp=planet.code)
+        
     def getSolarSystems(self, solarSystems, deuteriumSourcePlanet = None):
 
+        if deuteriumSourcePlanet:
+            self.goToPlanet(deuteriumSourcePlanet)
         threads = []
         inputQueue = Queue()
         for galaxy,solarSystem in solarSystems:
@@ -474,7 +485,7 @@ class WebAdapter(object):
             url = "http://%s/game/galaxy.php?%s" % (self.server, urllib.urlencode(params))        
             inputQueue.put(url)
             
-        for dummy in range(50):
+        for dummy in range(80):
             thread = ScanThread(inputQueue,self.REGEXPS)
             threads.append(thread)            
             thread.start()

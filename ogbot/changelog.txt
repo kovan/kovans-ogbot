@@ -2,6 +2,7 @@ v2.2
 -----------------------
  March, ?. 2007     
 -----------------------
+- Espionage reports of defended planets are not deleted
 - Before attaks only one probe is sent.
 - Much faster inactive planets search.
 - Reserved slots are no longer filled with senseless espionages.

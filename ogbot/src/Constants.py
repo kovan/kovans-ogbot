@@ -21,6 +21,7 @@ FILE_PATHS = {
     'webstate' : 'botdata/webadapter.state.dat', 
     'planetdb' :  'botdata/planets.db', 
     'gamedata' : 'botdata/gamedata.dat',     
+    'newinactives': 'botdata/newinactives.dat',
     'log' : 'log/ogbot.log', 
 }
 
