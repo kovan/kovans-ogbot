@@ -14,6 +14,7 @@
 #      *************************************************************************
 #
 
+
 import math
 import re
 from datetime import timedelta
@@ -115,12 +116,13 @@ class Coords(object):
             distance = 5
         return distance
     
-    def flightTimeTo(self, coords, speed=20000, speedPercentage=100):
+    def flightTimeTo(self, coords, speed, speedPercentage=100):
         seconds = 350000.0/speedPercentage * math.sqrt(self.distanceTo(coords) * 10.0 / float(speed)) + 10.0
         return timedelta(seconds=int(seconds))
 
 
 class Resources(object):
+    compiledFormula = None
     def __init__(self, metal=0, crystal=0, deuterium=0):
         self.metal = int(metal)
         self.crystal = int(crystal)
@@ -144,15 +146,15 @@ class Resources(object):
         return Resources(self.metal - toSub.metal, self.crystal - toSub.crystal, self.deuterium - toSub.deuterium) 
     def __mul__(self, toMul):
         return Resources(self.metal * toMul, self.crystal * toMul, self.deuterium * toMul) 
-    def rentability(self, flightTime, formula = ''):
-        if not formula:
-            return float((self.metal + 1.5 * self.crystal + 3 * self.deuterium) / flightTime )
-        else:
-            formula = formula.replace('metal','self.metal').replace('crystal','self.crystal').replace('deuterium','self.deuterium').replace('flightTime','float(flightTime)')
-            return float(eval(formula))
-
-
-        
+    def rentability(self, flightTime,rentabilityFormula):
+        if not Resources.compiledFormula:
+            for var in ['metal','crystal','deuterium']:
+                rentabilityFormula = rentabilityFormula.replace(var,'self.' + var)
+            rentabilityFormula = rentabilityFormula.replace('flightTime','float(flightTime)')        
+            Resources.compiledFormula = compile(rentabilityFormula,'<string>','eval')     
+                   
+        flightTime = flightTime.seconds
+        return  eval(Resources.compiledFormula)
    
     
 class Planet(object):
@@ -169,6 +171,7 @@ class OwnPlanet(Planet):
 
 
 class EnemyPlanet (Planet):
+    compiledFormula = None
     def __init__(self, coords, owner="", ownerstatus="", name="", alliance=""):
         super(EnemyPlanet, self).__init__(coords, name)
         self.owner = owner
@@ -183,9 +186,27 @@ class EnemyPlanet (Planet):
         
         best = self.espionageHistory[0]
         for report in self.espionageHistory:
-            if report.getDetailLevel() > best.getDetailLevel():
+            if report.getDetailLevel() > best.getDetailLevel() and report.date >= best.date:
                 best = report
         return best
+
+    def rentability(self, fromCoords,speed, rentabilityFormula,negativeIfDefended = True):
+        if not EnemyPlanet.compiledFormula:
+            for var in ['metal','crystal','deuterium']:
+                rentabilityFormula = rentabilityFormula.replace(var,'self.simulation.simulatedResources.' + var)
+            rentabilityFormula = rentabilityFormula.replace('flightTime','float(flightTime)')        
+            EnemyPlanet.compiledFormula = compile(rentabilityFormula,'<string>','eval')     
+                        
+        if not self.simulation:
+            return 0
+        
+        flightTime = self.coords.flightTimeTo(fromCoords,speed).seconds # used inside formula
+        rentability = eval( EnemyPlanet.compiledFormula)
+        
+        if negativeIfDefended and self.getBestEspionageReport().isDefended():
+            return -rentability
+        else:
+            return  rentability
 
     def toStringList(self):
         return [str(self.coords), self.name, self.owner, self.alliance]
@@ -294,11 +315,11 @@ class Mission(object):
         self.resources = resources
         self.speedPercentage = speedPercentage
 
-        # these will be automatically filled once the mission is sent
+        # these will be automatically corrected (if needed) once the mission is sent
         self.distance = 0
         self.consumption = 0
         self.launchTime = None # type datetime
-        self.flightTime = None # type timedelta
+        self.flightTime = None
         
     def _arrivalTime(self):
         return self.launchTime + self.flightTime

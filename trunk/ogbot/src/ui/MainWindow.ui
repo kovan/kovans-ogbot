@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>719</width>
-    <height>542</height>
+    <height>622</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -379,7 +379,7 @@
          <x>0</x>
          <y>0</y>
          <width>701</width>
-         <height>443</height>
+         <height>523</height>
         </rect>
        </property>
        <attribute name="label" >
@@ -565,6 +565,13 @@
                </spacer>
               </item>
               <item>
+               <widget class="QPushButton" name="viewActivityButton" >
+                <property name="text" >
+                 <string>View bot activity</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QPushButton" name="launchBrowserButton" >
                 <property name="enabled" >
                  <bool>false</bool>
@@ -655,6 +662,11 @@
               <column>
                <property name="text" >
                 <string>Source planet</string>
+               </property>
+              </column>
+              <column>
+               <property name="text" >
+                <string>Last spied</string>
                </property>
               </column>
              </widget>

@@ -26,7 +26,7 @@ from Queue import *
 
 import PyQt4
 from PyQt4 import uic
-from PyQt4.QtCore import QTimer,QObject, SIGNAL, SLOT, QProcess, Qt,QDir
+from PyQt4.QtCore import QTimer,QObject, SIGNAL, SLOT, QProcess, Qt,QDir,QUrl
 from PyQt4.QtGui import *
 import sip
 sys.path.append('src/ui')
@@ -46,6 +46,21 @@ class AboutDialog(baseclass,formclass):
         baseclass.__init__(self)        
         self.setupUi(self)
 
+
+formclass, baseclass = uic.loadUiType("src/ui/Activity.ui")
+class ActivityWindow(baseclass,formclass): 
+    def __init__(self):
+        baseclass.__init__(self)        
+        self.setupUi(self)
+
+        self.timer = QTimer()
+        QObject.connect(self.timer,SIGNAL("timeout()"),self.update)
+        self.timer.start(500)                
+
+    
+    def update(self):
+        file = (file for file in os.listdir('debug')).next()
+        self.textBrowser.setSource(QUrl('debug/'+file))
 
         
 formclass, baseclass = uic.loadUiType("src/ui/Options.ui")
@@ -211,6 +226,7 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.reportsTree,SIGNAL("currentItemChanged (QTreeWidgetItem*,QTreeWidgetItem*)"),self._planetDb_updateReportDetailsTrees)                
         QObject.connect(self.reloadDbButton,SIGNAL("clicked()"),self._planetDb_filter)                        
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
+        QObject.connect(self.viewActivityButton,SIGNAL("clicked()"),self.viewActivityClicked)        
         
         self.splitter.setSizes([230,111,0])
         self.setStatusBar(None)
@@ -244,7 +260,7 @@ class MainWindow(baseclass,formclass):
             self.showOptions()
 
         self.setWindowTitle("%s uni%s %s" %(self.windowTitle(),config.universe,config.webpage))
-        self._planetDb_filter()
+        
     
     def _dispatchBotMessages(self):
         ''' An inter-thread message is an array whose first element is the event handler method and the rest
@@ -265,7 +281,7 @@ class MainWindow(baseclass,formclass):
     def startClicked(self):
         if self.startButton.text() == "Start":
             if self.botThread and self.botThread.isAlive():
-                self.bot.join()
+                self.botThread.join()
             self.bot = Bot(self)
             self.botThread = threading.Thread(None,self.bot.run,"BotThread")
             self.botThread.start()
@@ -328,6 +344,17 @@ class MainWindow(baseclass,formclass):
         self.planetFilterLineEdit.setText(coordsStr)
         self._planetDb_filter()
         self.toolBox.setCurrentWidget(self.planetDbPage)
+        
+    def viewActivityClicked(self):
+        window = ActivityWindow()
+        window.exec_()
+        
+    def contextMenuEvent(self,event):
+        menu = QMenu(self)
+        action = QAction("Attack now",self)
+        menu.addAction(action)
+        menu.exec_(event.globalPos())
+             
         
     def _planetDb_filter(self):    
         filterText    = str(self.planetFilterLineEdit.text())
@@ -448,10 +475,12 @@ class MainWindow(baseclass,formclass):
                 simulatedResources = 'Not spied'
                 defendedStr = 'Not spied'
                 minesStr = 'Not spied'
+                lastSpiedStr = 'Not spied'
             else:
                 simulatedResources = item.targetPlanet.simulation.simulatedResources
-                
+
                 report = item.targetPlanet.getBestEspionageReport()
+                lastSpiedStr = str(report.date)                
                 if  report.defense == None:
                     defendedStr = '?'
                 elif not report.isDefended():
@@ -464,7 +493,11 @@ class MainWindow(baseclass,formclass):
                 else:
                     minesStr = "M: %s, C: %s D: %s" % (report.buildings.get('metalMine',0),report.buildings.get('crystalMine',0),report.buildings.get('deuteriumSynthesizer',0))
                      
-            treeItem = MyTreeWidgetItem(["%.2f" % item.rentability,str(item.targetPlanet.coords),item.targetPlanet.name,item.targetPlanet.owner,item.targetPlanet.alliance,str(simulatedResources),defendedStr,minesStr,str(item.sourcePlanet)])
+                 
+            treeItem = MyTreeWidgetItem(["%.2f" % item.rentability,str(item.targetPlanet.coords),item.targetPlanet.name,item.targetPlanet.owner,item.targetPlanet.alliance,str(simulatedResources),defendedStr,minesStr,str(item.sourcePlanet),lastSpiedStr])
+            if item.targetPlanet.espionageHistory:
+                treeItem.setToolTip(6,str(report.fleet) + str(report.defense))
+                treeItem.setToolTip(7,str(report.buildings) + str(report.research))
             if item.rentability > 0:
                 value = int (item.rentability *  255 / maxRentability)
                 backColor = QColor(255-value,255,255-value)            
