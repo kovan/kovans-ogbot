@@ -192,7 +192,7 @@ class Bot(object):
         self.updateSourcePlanetsDict()
         self.eventMgr.activityMsg("Bot started.")
 
-        
+
         
 
         # main loop:
@@ -208,16 +208,16 @@ class Bot(object):
                 self.spyPlanets(self.inactivePlanets,EspionageReport.DetailLevels.buildings) 
             else:
                 
-                self.spyPlanets(self.inactivePlanets,EspionageReport.DetailLevels.buildings)    # spy pending planets:
-                undefendedPlanets = [p for p in self.inactivePlanets if not p.getBestEspionageReport().isDefended()]
-                if not undefendedPlanets:
-                    raise BotFatalError("There are no inactive and undefended planets in range. Increase range.")
-                
-                
-                if serverTime.time() > self.config.preMidnightPauseTime and serverTime.time() < self.config.inactivesAppearanceTime:
+                if serverTime.time() > self.config.preMidnightPauseTime or serverTime.time() < self.config.inactivesAppearanceTime:
                     self.eventMgr.statusMsg("Pre-midnight pause")                
                     mySleep(5)
                 else:
+                    self.spyPlanets(self.inactivePlanets,EspionageReport.DetailLevels.buildings)    # spy pending planets:
+                    undefendedPlanets = [p for p in self.inactivePlanets if not p.getBestEspionageReport().isDefended()]
+                    if not undefendedPlanets:
+                        raise BotFatalError("There are no inactive and undefended planets in range. Increase range.")
+                    
+                                                
                     self.attackMode()
     
     def scanGalaxies(self):
@@ -479,7 +479,8 @@ class Bot(object):
         ships = math.ceil((resourcesToSteal + producedMeanwhile).total() / attackingShip.capacity)
         fleet = { attackingShip.name : ships }
         mission = Mission(Mission.Types.attack, sourcePlanet, targetPlanet, fleet)
-        self.web.launchMission(mission,abortIfNoShips,self.config.slotsToReserve)        
+        self.web.launchMission(mission,abortIfNoShips,self.config.slotsToReserve)
+        targetPlanet.attackHistory.append(mission)
         self.eventMgr.activityMsg( "ATTACKING %s from %s with %s" % (targetPlanet, sourcePlanet,fleet))
         shipsSent = mission.fleet[attackingShip.name]
         if shipsSent < ships:
@@ -535,14 +536,19 @@ class Bot(object):
     
     def updateSourcePlanetsDict(self):
         for targetPlanet in self.inactivePlanets:
-            minDistance = sys.maxint
-            for sourcePlanet in self.sourcePlanets:
-                distance = sourcePlanet.coords.distanceTo(targetPlanet.coords)
-                if distance < minDistance:
-                    nearestSourcePlanet = sourcePlanet
-                    minDistance = distance
-            self.sourcePlanetsDict[targetPlanet] = nearestSourcePlanet
+            self.sourcePlanetsDict[targetPlanet] = self._calculateNearestSourcePlanet(targetPlanet.coords)
   
+    def _calculateNearestSourcePlanet(self,coords):
+        tmpSourcePlanets = self.sourcePlanets
+        minDistance = sys.maxint
+        random.shuffle(tmpSourcePlanets)
+        for sourcePlanet in tmpSourcePlanets:
+            distance = sourcePlanet.coords.distanceTo(coords)
+            if distance < minDistance:
+                nearestSourcePlanet = sourcePlanet
+                minDistance = distance        
+        return nearestSourcePlanet
+    
     def _calculateSteal(self,resourcesToSteal,attackingFleet):
         pass
         
@@ -562,7 +568,7 @@ class Bot(object):
                         break
         except Empty: pass         
 
-           
+          
     def saveFiles(self):
         path = FILE_PATHS['gamedata']
         try:
@@ -600,7 +606,37 @@ class Bot(object):
             self.eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
             try: os.remove(FILE_PATHS['gamedata'])              
             except Exception : pass
-   
+            
+# -- non-farming code: ---
+
+    def fleetSearch(self):
+        self._connect()
+
+        points = dict([(player,points)  for player,alliance,points in self.web.getStats('flt')])
+        
+        list = []
+        for planet in self._planetDb.readAll():
+            player = planet.owner
+            if player in points:
+                sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
+                if sourcePlanet.name != "Phatt Island":
+                    continue
+                flightTime = sourcePlanet.coords.flightTimeTo(planet.coords,25000)
+                item = points[player],planet,player,planet.alliance,flightTime,sourcePlanet.name,points[player]/float(flightTime.seconds)
+                list.append(item)
+            
+        list.sort(key=lambda x:x[6],reverse=True)
+        file = open('output/fleetsearch.html','w')
+        file.write('<table>')
+        file.write('<th>Fleet points</th><th>Planet</th><th>Owner</th><th>Alliance</th><th>Flight time (aprox.)</th><th>Source planet</th><th>Rentability index</th>')        
+        for line in list:
+            file.write('<tr>')
+            for item in line:
+                file.write('<td>%s</td>' % item)
+            file.write('</tr>')           
+        file.write('</table>')
+        file.close()
+        print "DONE"
 
     
 if __name__ == "__main__":
@@ -609,6 +645,7 @@ if __name__ == "__main__":
     parser.add_option("-c", "--console", action="store_true", help="Run in console mode'")
     parser.add_option("-a", "--autostart", action="store_true", help="Auto start bot, no need to click Start button")
     parser.add_option("-w", "--workdir", help="Specify working directory (useful to run various bots at once). If not specified defaults to 'files'")    
+    parser.add_option("-f", "--fleetsearch", action="store_true", help="Find planets of people in the fleet ranking and then exit bot.")    
     (options, args) = parser.parse_args()
     
     if options.workdir:
@@ -622,7 +659,7 @@ if __name__ == "__main__":
         try: os.makedirs (os.path.dirname(path))
         except OSError, e: pass
 
-    for dir in ('debug','debug/reports'):
+    for dir in ('debug','output/reports'):
         try: os.makedirs (dir)
         except OSError, e: pass
             
@@ -632,9 +669,12 @@ if __name__ == "__main__":
     handler.setFormatter(logging.Formatter('%(message)s'))
     logging.getLogger().addHandler(handler)
 
-    if options.console:
+    if options.fleetsearch:
+        bot = Bot()
+        bot.fleetSearch()
+    elif options.console:
         bot = Bot()
         bot.run()
     else:
         from gui import guiMain
-        guiMain(options.autostart)
+        guiMain(options)

@@ -527,13 +527,13 @@ class MyTreeWidgetItem(QTreeWidgetItem):
 
         
 
-def guiMain(autostart = False):
+def guiMain(options):
     app = QApplication(sys.argv)
     locale.setlocale(locale.LC_ALL,'C')
     QApplication.setStyle(QStyleFactory.create("plastique"))
     window = MainWindow()
     window.show()
-    if autostart:
+    if options.autostart:
         window.startClicked()
     app.exec_()
     

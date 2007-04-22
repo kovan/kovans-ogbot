@@ -66,40 +66,44 @@ class PlanetDb(object):
         self._openMode = 'c'
         
         
-    def _open(self, writeback=True):
-        self._db = shelve.open(self._fileName, self._openMode, 2, writeback)
-        
+    def _open(self):
+        PlanetDb._lock.acquire()                
+        self.db = shelve.open(self._fileName, self._openMode, 2, True)
+    def _close(self):
+        self.db.close()
+        PlanetDb._lock.release()      
+                  
     def write(self, planet):
-        PlanetDb._lock.acquire()        
         self._open()
-        self._db[str(planet.coords)] = planet
-        self._db.close()
-        PlanetDb._lock.release()        
+        self.db[str(planet.coords)] = planet
+        self._close()
     
     def writeMany(self, planetList):   
-        PlanetDb._lock.acquire()        
-        self._open(True)
+        self._open()
         for planet in planetList:
-            self._db[str(planet.coords)] = planet              
-        self._db.close()
-        PlanetDb._lock.release()        
+            self.db[str(planet.coords)] = planet              
+        self._close()
         
     def read(self, coordsStr):
-        PlanetDb._lock.acquire()        
         self._open()         
-        planet = self._db.get(coordsStr)
-        self._db.close()  
-        PlanetDb._lock.release()          
+        planet = self.db.get(coordsStr)
+        self._close()          
         return planet
     
     def readAll(self):
-        PlanetDb._lock.acquire()        
         self._open()    
-        list = self._db.values()    
-        self._db.close()         
-        PlanetDb._lock.release()        
+        list = self.db.values()    
+        self._close()         
         return list
     
+    def search(self,predicate):
+        list = []
+        self._open()    
+        for planet in self.db.itervalues():
+            if predicate(planet):
+                list.append(planet)
+        self._close()         
+        return list    
     
 class BaseEventManager(object):
         ''' Displays events in console, logs them to a file or tells the gui about them'''
