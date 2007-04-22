@@ -306,7 +306,8 @@ class Mission(object):
         transport = 3    
         deploy    = 4
         spy        = 6
-        # colonize, recycle, 
+        recycle = 8
+        # colonize
     
     def __init__(self, missionType, sourcePlanet, targetPlanet, fleet, resources=Resources(), speedPercentage=100):
         self.missionType = missionType              

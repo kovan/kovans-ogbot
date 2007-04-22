@@ -349,7 +349,7 @@ class WebAdapter(object):
                 raise NotEnoughShipsError(availableFleet,{shipType:requested},available)
             
             shipCode = INGAME_TYPES_BY_NAME[shipType].code            
-            form[shipCode] = str(cuantity)
+            form[shipCode] = str(requested)
             
         if self.getFreeSlots(pageText) <= int(slotsToReserve):
             raise NoFreeSlotsError()
@@ -370,7 +370,12 @@ class WebAdapter(object):
         # 3rd step:  select mission and resources to carry
         page = self._fetchForm(form)
         form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[0]
-        form['order']      = [str(mission.missionType)]
+        try:
+            form['order']      = [str(mission.missionType)]
+        except ControlNotFoundError:
+            self.launchMission(mission, abortIfNotEnough, slotsToReserve)
+            return
+        
         resources = mission.resources
         form['resource1'] = str(resources.metal)
         form['resource2'] = str(resources.crystal)
