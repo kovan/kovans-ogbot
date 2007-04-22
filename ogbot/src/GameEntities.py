@@ -178,6 +178,7 @@ class EnemyPlanet (Planet):
         self.alliance = alliance
         self.ownerStatus = ownerstatus
         self.espionageHistory = []
+        self.attackHistory = []
         self.simulation = None
                 
     def getBestEspionageReport(self):

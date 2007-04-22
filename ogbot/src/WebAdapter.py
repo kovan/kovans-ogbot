@@ -301,7 +301,7 @@ class WebAdapter(object):
                 
             
             if report.getDetailLevel() >= EspionageReport.DetailLevels.defense and report.isDefended():
-                file = open("debug/reports/%s %s.html" %(planetName,coords),'w')
+                file = open("output/reports/%s %s.html" %(planetName,coords),'w')
                 file.write(rawMessage)
                 file.close()
             reports.append(report)
@@ -501,7 +501,21 @@ class WebAdapter(object):
             planetsFound += thread.planetsFound
         return planetsFound
         
-
+    def getStats(self,type): # type can be: pts for points, flt for fleets or res for research
+        list = []
+        page = self._fetchPhp('stat.php',start=1)
+        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[-1]
+        
+        for i in range(1,1401,100):
+            form['type'] = [type]
+            form['start'] = [str(i)]
+            page = self._fetchForm(form).read()
+            regexp = r"<th>([^<]+)</th>.*?allytag=([^'&]+).*?<th>([0-9.]+)</th>"
+            for player, alliance, points in re.findall(regexp,page,re.DOTALL):
+                list.append((player,alliance.replace('+',' '),int(points.replace('.',''))))
+        
+        return list
+    
     def saveState(self):
         file = open(FILE_PATHS['webstate'], 'wb')
         pickler = cPickle.Pickler(file,2)        
