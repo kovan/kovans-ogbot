@@ -612,23 +612,24 @@ class Bot(object):
     def fleetSearch(self):
         self._connect()
 
-        points = dict([(player,points)  for player,alliance,points in self.web.getStats('flt')])
+        players = dict([(player,(position,points))  for position,(player,alliance,points) in enumerate(self.web.getStats('flt'))])
         
         list = []
         for planet in self._planetDb.readAll():
             player = planet.owner
-            if player in points:
+            if player in players:
                 sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
-                if sourcePlanet.name != "Phatt Island":
+                if sourcePlanet.name != "Phatt Island" or planet.ownerStatus != 'normal':
                     continue
                 flightTime = sourcePlanet.coords.flightTimeTo(planet.coords,25000)
-                item = points[player],planet,player,planet.alliance,flightTime,sourcePlanet.name,points[player]/float(flightTime.seconds)
+                position, points = players[player]
+                item = position,points,planet.coords,planet.name,player,planet.alliance,sourcePlanet.name,points/float(flightTime.seconds)
                 list.append(item)
             
-        list.sort(key=lambda x:x[6],reverse=True)
+        list.sort(key=lambda x:x[7],reverse=True)
         file = open('output/fleetsearch.html','w')
         file.write('<table>')
-        file.write('<th>Fleet points</th><th>Planet</th><th>Owner</th><th>Alliance</th><th>Flight time (aprox.)</th><th>Source planet</th><th>Rentability index</th>')        
+        file.write('<th>Position</th><th>Points</th><th>Coords</th><th>Planet</th><th>Owner</th><th>Alliance</th><th>Source planet</th><th>Rentability index</th>')        
         for line in list:
             file.write('<tr>')
             for item in line:

@@ -245,6 +245,7 @@ class WebAdapter(object):
             raise BotFatalError(page)
         self._eventMgr.loggedIn(self.config.username, self.session)
         self.saveState()
+        mySleep(10)
 
     def getMyPlanets(self):
         page = self._fetchPhp('overview.php').read()

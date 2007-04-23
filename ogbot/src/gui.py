@@ -349,13 +349,18 @@ class MainWindow(baseclass,formclass):
         window = ActivityWindow()
         window.exec_()
         
-    def contextMenuEvent(self,event):
-        menu = QMenu(self)
-        action = QAction("Attack now",self)
-        menu.addAction(action)
-        menu.exec_(event.globalPos())
-             
-        
+#    def contextMenuEvent(self,event):
+#        menu = QMenu(self)
+#        action = QAction("Attack now",self)
+#        menu.addAction(action)
+#        menu.exec_(event.globalPos())
+#             
+#       void on_tableWidget_itemClicked ( QTableWidgetItem * item){
+#         QMenu menu(tableWidget);
+#         QAction *action=menu.addAction("Delete Row");
+#         QObject::connect(action, SIGNAL(triggered()), this , SLOT(custom_function()));
+#         menu.exec(QCursor::pos());
+#        }        
     def _planetDb_filter(self):    
         filterText    = str(self.planetFilterLineEdit.text())
         columnToFilter = str(self.planetFilterComboBox.currentText())
