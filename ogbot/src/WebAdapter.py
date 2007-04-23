@@ -302,7 +302,7 @@ class WebAdapter(object):
                 
             
             if report.getDetailLevel() >= EspionageReport.DetailLevels.defense and report.isDefended():
-                file = open("output/reports/%s %s.html" %(planetName,coords),'w')
+                file = open("output/reports/%s.%s.%s.%s.html" %(planetName,coords.galaxy,coords.solarSystem,coords.planet),'w')
                 file.write(rawMessage)
                 file.close()
             reports.append(report)
