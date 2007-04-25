@@ -226,7 +226,9 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.reportsTree,SIGNAL("currentItemChanged (QTreeWidgetItem*,QTreeWidgetItem*)"),self._planetDb_updateReportDetailsTrees)                
         QObject.connect(self.reloadDbButton,SIGNAL("clicked()"),self._planetDb_filter)                        
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
-        QObject.connect(self.viewActivityButton,SIGNAL("clicked()"),self.viewActivityClicked)        
+        QObject.connect(self.viewActivityButton,SIGNAL("clicked()"),self.viewActivityClicked)       
+        QObject.connect(self.botActivityTree,SIGNAL("customContextMenuRequested (QPoint)"),self.botActivityTreeRightClicked)
+
         
         self.splitter.setSizes([230,111,0])
         self.setStatusBar(None)
@@ -348,19 +350,25 @@ class MainWindow(baseclass,formclass):
     def viewActivityClicked(self):
         window = ActivityWindow()
         window.exec_()
-        
-#    def contextMenuEvent(self,event):
-#        menu = QMenu(self)
-#        action = QAction("Attack now",self)
-#        menu.addAction(action)
-#        menu.exec_(event.globalPos())
-#             
-#       void on_tableWidget_itemClicked ( QTableWidgetItem * item){
-#         QMenu menu(tableWidget);
-#         QAction *action=menu.addAction("Delete Row");
-#         QObject::connect(action, SIGNAL(triggered()), this , SLOT(custom_function()));
-#         menu.exec(QCursor::pos());
-#        }        
+
+    def botActivityTreeRightClicked (self,point):
+         menu = QMenu(self.botActivityTree)
+         action=menu.addAction("Attack now")
+         QObject.connect(action, SIGNAL("triggered()"), self.forceAttackPlanet)
+         action=menu.addAction("Spy now")
+         QObject.connect(action, SIGNAL("triggered()"), self.forceSpyPlanet)
+         menu.exec_(QCursor.pos())
+    
+    def forceAttackPlanet(self):
+        if self.bot:
+            selectedCoordsStr = str(self.botActivityTree.currentItem().text(1))
+            self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.attack,selectedCoordsStr))
+    def forceSpyPlanet(self):
+        if self.bot:
+            selectedCoordsStr = str(self.botActivityTree.currentItem().text(1))
+            self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.spy,selectedCoordsStr))
+    
+
     def _planetDb_filter(self):    
         filterText    = str(self.planetFilterLineEdit.text())
         columnToFilter = str(self.planetFilterComboBox.currentText())

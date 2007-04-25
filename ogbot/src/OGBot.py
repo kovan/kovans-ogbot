@@ -125,7 +125,7 @@ class Bot(object):
          
     def _connect(self):
         self.eventMgr.activityMsg("Connecting...")        
-        self.web = WebAdapter(self.config, self.allTranslations, self.gui)
+        self.web = WebAdapter(self.config, self.allTranslations,self._checkThreadQueue, self.gui)
         self.myPlanets = self.web.getMyPlanets()
         self.web.goToPlanet(self.myPlanets[0])
         self.researchLevels = self.web.getResearchLevels()
@@ -193,11 +193,11 @@ class Bot(object):
         self.eventMgr.activityMsg("Bot started.")
 
 
-        
+        self.inactivePlanetsByCoords = dict([(str(p.coords),p) for p in self.inactivePlanets])
 
         # main loop:
         while True:
-            self._checkThreadQueue() 
+
             serverTime = self.web.serverTime()
 
             if self.lastInactiveScanTime.date() != serverTime.date() and serverTime.time() >=  self.config.inactivesAppearanceTime:
@@ -219,6 +219,7 @@ class Bot(object):
                     
                                                 
                     self.attackMode()
+            self._checkThreadQueue()                     
     
     def scanGalaxies(self):
         self.eventMgr.activityMsg("Searching inactive planets in range...")
@@ -235,10 +236,10 @@ class Bot(object):
         self._planetDb.writeMany(allInactives)
         allInactives = [p for p in allInactives if 'inactive' in p.ownerStatus and p.owner not in self.config.playersToAvoid and p.alliance not in self.config.alliancesToAvoid]
     
-        oldInactivePlanetsByCoords = dict([(str(p.coords),p) for p in self.inactivePlanets])                
+            
         newInactives = PlanetList()
         for newPlanet in allInactives:
-            oldPlanet = oldInactivePlanetsByCoords.get(str(newPlanet.coords))
+            oldPlanet = self.inactivePlanetsByCoords.get(str(newPlanet.coords))
             if oldPlanet:
                 newPlanet.espionageHistory = oldPlanet.espionageHistory
                 newPlanet.simulation = oldPlanet.simulation
@@ -247,7 +248,8 @@ class Bot(object):
                 newInactives.append(newPlanet)
 
         self.lastInactiveScanTime = self.web.serverTime()
-        self.inactivePlanets = allInactives        
+        self.inactivePlanets = allInactives
+        self.inactivePlanetsByCoords = dict([(str(p.coords),p) for p in self.inactivePlanets])              
         self.updateSourcePlanetsDict()
 
         self.eventMgr.activityMsg("Inactive search finished. %s inactives (%s new) found in %s solar sytems (%s secs. per solar system)." % (len(allInactives),len(newInactives),systems,seconds/float(systems)))
@@ -263,14 +265,13 @@ class Bot(object):
         notArrivedAttacks = []
         
         while self.web.serverTime().time() < self.config.preMidnightPauseTime:
-            
+            serverTime = self.web.serverTime()            
+            rentabilities = self.generateRentabilityTable(self.inactivePlanets)
+            self.eventMgr.simulationsUpdate(rentabilities)
             self._checkThreadQueue()            
-            serverTime = self.web.serverTime()
             self.checkIfEspionageReportsArrived()
             
             
-            rentabilities = self.generateRentabilityTable(self.inactivePlanets)
-            self.eventMgr.simulationsUpdate(rentabilities)
             
             # update lists of own planets with no ships
             for planet,checkedTime in planetsWithoutShips.items():
@@ -298,7 +299,7 @@ class Bot(object):
                         sentMission = self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip)
                         notArrivedAttacks.append(sentMission)
                     elif targetPlanet not in self._notArrivedEspionages:    #planet's espionage report timed out, re-spy.
-                        self._spyPlanet(sourcePlanet,targetPlanet)
+                        self._spyPlanet(sourcePlanet,targetPlanet,False,"Spying", 1)
                 except NotEnoughShipsError, e1:
                     
                     
@@ -328,7 +329,6 @@ class Bot(object):
     def rushMode(self,newInactives,oldInactivesList = []):
         self.eventMgr.activityMsg("Changing to rush mode." )
         planetsWithoutShips = {}   
-        oldInactives = PlanetList(oldInactivesList)
 
         rentabilityTreshold = self.generateRentabilityTable(self.inactivePlanets)[0].rentability
         
@@ -397,8 +397,9 @@ class Bot(object):
         remainingPlanets.sort(key=lambda x:x[0]) # sort by source planet        
         
         while True:
-            self._checkThreadQueue()
+   
             self.eventMgr.simulationsUpdate(self.generateRentabilityTable(planetsToSpy))
+            self._checkThreadQueue()            
             self.checkIfEspionageReportsArrived()
 
             serverTime = self.web.serverTime()                        
@@ -457,11 +458,14 @@ class Bot(object):
                 except ValueError: pass
                 remainingPlanets.remove((sourcePlanet,targetPlanet))
 
-    def _spyPlanet(self,sourcePlanet,targetPlanet,useReservedSlots=False,msg = "Spying",probesToSend = 1):
+    def _spyPlanet(self,sourcePlanet,targetPlanet,useReservedSlots=False,msg = "Spying",probesToSend = None):
         if useReservedSlots:
             slotsToReserve = 0
         else:
             slotsToReserve = self.config.slotsToReserve        
+            
+        if not probesToSend:
+            probesToSend = int(self.config.probesToSend)
     
         ships = {'espionageProbe':probesToSend}
         mission = Mission(Mission.Types.spy, sourcePlanet, targetPlanet, ships)
@@ -553,20 +557,37 @@ class Bot(object):
         pass
         
     def _checkThreadQueue(self):
-        try:
-            msg = self.msgQueue.get(False)
+        state = 'running'
+        while True:
+            try:
+                msg = self.msgQueue.get(state == 'paused')
+            except Empty: 
+                break
+                  
             if   msg.type == GuiToBotMsg.stop:
                 raise ManuallyTerminated()
             elif msg.type == GuiToBotMsg.pause:
                 print "Bot paused."
-                while True: # we are in paused mode
-                    msg = self.msgQueue.get()
-                    if   msg.type == GuiToBotMsg.stop:
-                        raise ManuallyTerminated()
-                    elif msg.type == GuiToBotMsg.resume:
-                        print "Bot resumed."                        
-                        break
-        except Empty: pass         
+                state = 'paused'
+            elif msg.type == GuiToBotMsg.resume:
+                print "Bot resumed."                              
+                state = 'running'
+            elif msg.type == GuiToBotMsg.attack:
+                rentabilities = self.generateRentabilityTable(self.inactivePlanets)
+                self.eventMgr.simulationsUpdate(rentabilities)                
+                targetPlanet = self.inactivePlanetsByCoords[msg.param]
+                try: self.attackPlanet(self.sourcePlanetsDict[targetPlanet], targetPlanet, self.attackingShip, False)
+                except FleetSendError, e: 
+                    self.eventMgr.activityMsg("Error sending mission to planet %s. Reason: %s" %(targetPlanet,e))                
+            elif msg.type == GuiToBotMsg.spy:      
+                self.checkIfEspionageReportsArrived()                          
+                rentabilities = self.generateRentabilityTable(self.inactivePlanets)
+                self.eventMgr.simulationsUpdate(rentabilities)                
+                targetPlanet = self.inactivePlanetsByCoords[msg.param]
+                try: self._spyPlanet(self.sourcePlanetsDict[targetPlanet], targetPlanet, True)
+                except FleetSendError, e: 
+                    self.eventMgr.activityMsg("Error sending mission to planet %s. Reason: %s" %(targetPlanet,e))                  
+  
 
           
     def saveFiles(self):
@@ -617,19 +638,19 @@ class Bot(object):
         list = []
         for planet in self._planetDb.readAll():
             player = planet.owner
-            if player in players:
+            if player in players and (planet.ownerStatus == 'normal' or 'inactive' in planet.ownerStatus):
                 sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
-                if sourcePlanet.name != "Phatt Island" or planet.ownerStatus != 'normal':
+                if sourcePlanet.name != "Phatt Island":
                     continue
-                flightTime = sourcePlanet.coords.flightTimeTo(planet.coords,25000)
                 position, points = players[player]
-                item = position,points,planet.coords,planet.name,player,planet.alliance,sourcePlanet.name,points/float(flightTime.seconds)
+                item = position,points,planet,planet.owner,planet.ownerStatus,planet.alliance,sourcePlanet
                 list.append(item)
-            
-        list.sort(key=lambda x:x[7],reverse=True)
+                
+         
+        list.sort(key=lambda x:x[1]/float(x[6].coords.flightTimeTo(x[2].coords,25000).seconds)   ,reverse=True)
         file = open('output/fleetsearch.html','w')
         file.write('<table>')
-        file.write('<th>Position</th><th>Points</th><th>Coords</th><th>Planet</th><th>Owner</th><th>Alliance</th><th>Source planet</th><th>Rentability index</th>')        
+        file.write('<th>Position</th><th>Points</th><th>Planet</th><th>Owner</th><th>Owner status</th><th>Alliance</th><th>Source planet</th>')        
         for line in list:
             file.write('<tr>')
             for item in line:

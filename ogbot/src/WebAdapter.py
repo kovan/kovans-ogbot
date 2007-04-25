@@ -60,11 +60,12 @@ class WebAdapter(object):
             msg = datetime.now().strftime("%X %x ") + msg
             self.dispatch("activityMsg",msg)
         
-    def __init__(self, config, allTranslations,gui = None):
+    def __init__(self, config, allTranslations,checkThreadMsgsMethod,gui = None):
         self.server = ''
         self.lastFetchedUrl = ''
         self.serverCharset = ''        
         self.config = config
+        self.checkThreadMsgsMethod = checkThreadMsgsMethod
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
 
@@ -167,8 +168,7 @@ class WebAdapter(object):
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
-
-
+        
         valid = False
         while not valid:
 
