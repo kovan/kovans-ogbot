@@ -34,8 +34,10 @@ from datetime import *
 class BotError(Exception): pass
 class BotFatalError (BotError): pass
 class ManuallyTerminated(BotError): pass
-class FleetSendError(BotError): pass
-class NoFreeSlotsError(FleetSendError): pass
+class FleetSendError(BotError):
+    def __str__(self): return "Unknown error"  
+class NoFreeSlotsError(FleetSendError):    
+    def __str__(self): return "No fleet slots available"
 class NotEnoughShipsError (FleetSendError):
     def __init__(self,allFleetAvailable,requested,available = None):
         self.allFleetAvailable = allFleetAvailable
@@ -54,9 +56,10 @@ class BotToGuiMsg(ThreadMsg):
         self.args = args
         
 class GuiToBotMsg(ThreadMsg):
-    stop, pause, resume = range(3)
-    def __init__(self, type):
+    stop, pause, resume, attack, spy = range(5)
+    def __init__(self, type, param = None):
         self.type = type
+        self.param = param
 
         
 class PlanetDb(object): 
