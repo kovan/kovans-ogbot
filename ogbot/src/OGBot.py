@@ -191,9 +191,9 @@ class Bot(object):
 
         self.updateSourcePlanetsDict()
         self.eventMgr.activityMsg("Bot started.")
-
-
         self.inactivePlanetsByCoords = dict([(str(p.coords),p) for p in self.inactivePlanets])
+        rentabilities = self.generateRentabilityTable(self.inactivePlanets)
+        self.eventMgr.simulationsUpdate(rentabilities)                
 
         # main loop:
         while True:
