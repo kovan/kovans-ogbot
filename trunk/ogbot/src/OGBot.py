@@ -187,6 +187,7 @@ class Bot(object):
             for planet in self.inactivePlanets[:]:
                 if (planet.coords.galaxy,planet.coords.solarSystem) not in self.reachableSolarSystems:
                     self.inactivePlanets.remove(planet)
+            self.inactivePlanetsByCoords = dict([(str(p.coords),p) for p in self.inactivePlanets])                    
             self.scanGalaxies()
 
         self.updateSourcePlanetsDict()
@@ -210,7 +211,7 @@ class Bot(object):
                 
                 if serverTime.time() > self.config.preMidnightPauseTime or serverTime.time() < self.config.inactivesAppearanceTime:
                     self.eventMgr.statusMsg("Pre-midnight pause")                
-                    mySleep(5)
+                    sleep(1)
                 else:
                     self.spyPlanets(self.inactivePlanets,EspionageReport.DetailLevels.buildings)    # spy pending planets:
                     undefendedPlanets = [p for p in self.inactivePlanets if not p.getBestEspionageReport().isDefended()]
@@ -265,11 +266,12 @@ class Bot(object):
         notArrivedAttacks = []
         
         while self.web.serverTime().time() < self.config.preMidnightPauseTime:
-            serverTime = self.web.serverTime()            
+            serverTime = self.web.serverTime()      
+            self.checkIfEspionageReportsArrived()                  
             rentabilities = self.generateRentabilityTable(self.inactivePlanets)
             self.eventMgr.simulationsUpdate(rentabilities)
             self._checkThreadQueue()            
-            self.checkIfEspionageReportsArrived()
+
             
             
             
