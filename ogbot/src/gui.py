@@ -226,7 +226,7 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.reportsTree,SIGNAL("currentItemChanged (QTreeWidgetItem*,QTreeWidgetItem*)"),self._planetDb_updateReportDetailsTrees)                
         QObject.connect(self.reloadDbButton,SIGNAL("clicked()"),self._planetDb_filter)                        
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
-        QObject.connect(self.viewActivityButton,SIGNAL("clicked()"),self.viewActivityClicked)       
+        #QObject.connect(self.viewActivityButton,SIGNAL("clicked()"),self.viewActivityClicked)       
         QObject.connect(self.botActivityTree,SIGNAL("customContextMenuRequested (QPoint)"),self.botActivityTreeRightClicked)
 
         
@@ -347,9 +347,9 @@ class MainWindow(baseclass,formclass):
         self._planetDb_filter()
         self.toolBox.setCurrentWidget(self.planetDbPage)
         
-    def viewActivityClicked(self):
-        window = ActivityWindow()
-        window.exec_()
+#    def viewActivityClicked(self):
+#        window = ActivityWindow()
+#        window.exec_()
 
     def botActivityTreeRightClicked (self,point):
          menu = QMenu(self.botActivityTree)

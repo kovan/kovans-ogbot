@@ -565,13 +565,6 @@
                </spacer>
               </item>
               <item>
-               <widget class="QPushButton" name="viewActivityButton" >
-                <property name="text" >
-                 <string>View bot activity</string>
-                </property>
-               </widget>
-              </item>
-              <item>
                <widget class="QPushButton" name="launchBrowserButton" >
                 <property name="enabled" >
                  <bool>false</bool>

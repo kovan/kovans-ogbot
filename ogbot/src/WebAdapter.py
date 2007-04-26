@@ -112,7 +112,7 @@ class WebAdapter(object):
 
     def generateRegexps(self,translations):
 
-        reportTmp  = r'%s (?P<planetName>.*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
+        reportTmp  = r'%s (?P<planetName>[^<]*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
         reportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
         reportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
         reportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9.]+)</td>\n'
@@ -244,7 +244,10 @@ class WebAdapter(object):
         except IndexError:
             raise BotFatalError(page)
         self._eventMgr.loggedIn(self.config.username, self.session)
+        page = self._fetchPhp('index.php',lgn=1)                
+        page = self._fetchPhp('overview.php',lgn=1)               
         self.saveState()
+
         mySleep(10)
 
     def getMyPlanets(self):

@@ -34,8 +34,7 @@ from datetime import *
 class BotError(Exception): pass
 class BotFatalError (BotError): pass
 class ManuallyTerminated(BotError): pass
-class FleetSendError(BotError):
-    def __str__(self): return "Unknown error"  
+class FleetSendError(BotError): pass
 class NoFreeSlotsError(FleetSendError):    
     def __str__(self): return "No fleet slots available"
 class NotEnoughShipsError (FleetSendError):
@@ -192,8 +191,8 @@ class Configuration(dict):
         except Exception, e:
             raise BotError("Invalid rentability formula: " + str(e))
         
-        if 'ogame.com.es' in self.webpage and self.universe == 42:
-            raise BotError("Bot doesn't work in that universe.")
+#        if 'ogame.com.es' in self.webpage and self.universe == '42':
+#            raise BotError("Bot doesn't work in that universe.")
             
     def _parseList(self,listStr):
         list = []
