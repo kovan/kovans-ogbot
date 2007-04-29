@@ -38,6 +38,7 @@ import itertools
 import random
 import warnings
 import math
+import pprint
 from datetime import *
 from optparse import OptionParser
 from itertools import * 
@@ -635,28 +636,48 @@ class Bot(object):
     def fleetSearch(self):
         self._connect()
 
-        players = dict([(player,(position,points))  for position,(player,alliance,points) in enumerate(self.web.getStats('flt'))])
-        
-        list = []
+        players = {}
+        for position,(player,alliance,points) in enumerate(self.web.getStats('flt')):
+            players[player] = position,alliance,points,[]
+
+
         for planet in self._planetDb.readAll():
             player = planet.owner
             if player in players and (planet.ownerStatus == 'normal' or 'inactive' in planet.ownerStatus):
                 sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
-                if sourcePlanet.name != "Phatt Island":
-                    continue
-                position, points = players[player]
-                item = position,points,planet,planet.owner,planet.ownerStatus,planet.alliance,sourcePlanet
-                list.append(item)
+
+                players[player][3].append(planet)
+                players[player][3].sort(key=lambda p: p.coords)
+
+        
+        output = []
+        for player,(position,alliance,points,planets) in players.items():
+            
+                item = player,position,points,planets,alliance
+                output.append(item)
                 
          
-        list.sort(key=lambda x:x[1]/float(x[6].coords.flightTimeTo(x[2].coords,25000).seconds)   ,reverse=True)
+        #output.sort(key=lambda x:x[1]/float(x[6].coords.flightTimeTo(x[2].coords,25000).seconds)   ,reverse=True)
+        output.sort(key=lambda x:len(x[3]),reverse=True)        
         file = open('output/fleetsearch.html','w')
-        file.write('<table>')
-        file.write('<th>Position</th><th>Points</th><th>Planet</th><th>Owner</th><th>Owner status</th><th>Alliance</th><th>Source planet</th>')        
-        for line in list:
+        file.write('<table border=1>')
+        file.write('<th>Player</th><th>Pos.</th><th>Points</th><th></th><th>Planets</th>')        
+        for line in output:
             file.write('<tr>')
-            for item in line:
-                file.write('<td>%s</td>' % item)
+            for item in line[:-1]:
+                file.write('<td>')
+                
+                if isinstance(item, list):
+                    for planet in item:
+                        if planet.coords.solarSystem >= 59 and planet.coords.solarSystem <= 65:                        
+                            file.write('<td bgcolor=#F0F0F0>')
+                        else:
+                            file.write('<td>')
+                        file.write( str(planet))
+
+                        file.write('</td>')
+                else: file.write(str(item))
+                file.write('</td>')
             file.write('</tr>')           
         file.write('</table>')
         file.close()
