@@ -104,6 +104,7 @@ class Bot(object):
     def run(self):
         while True:
             try:
+                self._checkThreadQueue()
                 self._connect()              
                 self._start()
             except (KeyboardInterrupt, SystemExit, ManuallyTerminated):
