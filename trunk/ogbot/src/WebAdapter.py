@@ -511,7 +511,6 @@ class WebAdapter(object):
         return planetsFound
         
     def getStats(self,type): # type can be: pts for points, flt for fleets or res for research
-        list = []
         page = self._fetchPhp('stat.php',start=1)
         form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[-1]
         
@@ -519,11 +518,11 @@ class WebAdapter(object):
             form['type'] = [type]
             form['start'] = [str(i)]
             page = self._fetchForm(form).read()
-            regexp = r"<th>([^<]+)</th>.*?allytag=([^'&]+).*?<th>([0-9.]+)</th>"
-            for player, alliance, points in re.findall(regexp,page,re.DOTALL):
-                list.append((player,alliance.replace('+',' '),int(points.replace('.',''))))
+            regexp = r"<th>(?:<font color='87CEEB'>)?([^<]+)(?:</font>)?</th>.*?<th>([0-9.]+)</th>"
+            for player, points in re.findall(regexp,page,re.DOTALL):
+                yield player,int(points.replace('.',''))
         
-        return list
+
     
     def saveState(self):
         file = open(FILE_PATHS['webstate'], 'wb')

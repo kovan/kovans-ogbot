@@ -45,7 +45,7 @@ class Coords(object):
         moon = 3
     
     PLANETS_PER_SYSTEM = 15
-    REGEXP_COORDS    = re.compile(r"([1-9]{1,2}):([0-9]{1,3}):([0-9]{1,2})")
+    REGEXP_COORDS    = re.compile(r"([0-9]{1,2}):([0-9]{1,3}):([0-9]{1,2})")
     
     def __init__(self, galaxyOrStr, solarSystem=0, planet=0, coordsType=Types.planet):
         ''' 
