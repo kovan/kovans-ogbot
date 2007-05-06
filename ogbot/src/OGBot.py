@@ -128,7 +128,6 @@ class Bot(object):
         self.eventMgr.activityMsg("Connecting...")        
         self.web = WebAdapter(self.config, self.allTranslations,self._checkThreadQueue, self.gui)
         self.myPlanets = self.web.getMyPlanets()
-        self.web.goToPlanet(self.myPlanets[0])
         self.researchLevels = self.web.getResearchLevels()
         
         largeCargos = INGAME_TYPES_BY_NAME['largeCargo']
@@ -301,6 +300,7 @@ class Bot(object):
                     if targetPlanet.espionageHistory[-1].getAge(serverTime).seconds < 900 or targetPlanet in [attack.targetPlanet for attack in notArrivedAttacks]:
                         sentMission = self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip)
                         notArrivedAttacks.append(sentMission)
+                        mySleep(20)
                     elif targetPlanet not in self._notArrivedEspionages:    #planet's espionage report timed out, re-spy.
                         self._spyPlanet(sourcePlanet,targetPlanet,False,"Spying", 1)
                 except NotEnoughShipsError, e1:
@@ -430,7 +430,9 @@ class Bot(object):
                 if not targetPlanet.espionageHistory:
                     # send no. of probes equal to the average no. of probes sent until now.
                     probes = [planet.getBestEspionageReport().probesSent for planet in self.inactivePlanets if planet.espionageHistory]
-                    probesToSend = max (int(sum(probes) / len(probes)), int(self.config.probesToSend))
+                    if probes:
+                        probesToSend = max (int(sum(probes) / len(probes)), int(self.config.probesToSend))
+                    else: probes = 1
                     msg = "Spying for the 1st time"                            
                 else:
                     probesToSend = targetPlanet.getBestEspionageReport().probesSent    
@@ -497,7 +499,7 @@ class Bot(object):
         else:
             targetPlanet.simulation.simulatedResources -= resourcesToSteal       
         self.saveFiles()              
-        mySleep(20)
+
         return mission
         
     def checkIfEspionageReportsArrived(self):
@@ -575,11 +577,16 @@ class Bot(object):
             elif msg.type == GuiToBotMsg.resume:
                 print "Bot resumed."                              
                 state = 'running'
-            elif msg.type == GuiToBotMsg.attack:
+            elif msg.type == GuiToBotMsg.attackLargeCargo or msg.type == GuiToBotMsg.attackSmallCargo:
                 rentabilities = self.generateRentabilityTable(self.inactivePlanets)
                 self.eventMgr.simulationsUpdate(rentabilities)                
                 targetPlanet = self.inactivePlanetsByCoords[msg.param]
-                try: self.attackPlanet(self.sourcePlanetsDict[targetPlanet], targetPlanet, self.attackingShip, False)
+                if msg.type == GuiToBotMsg.attackSmallCargo:
+                    attackingShip = INGAME_TYPES_BY_NAME['smallCargo']
+                else:
+                    attackingShip = INGAME_TYPES_BY_NAME['largeCargo']
+                try: self.attackPlanet(self.sourcePlanetsDict[targetPlanet], targetPlanet, attackingShip, False)
+                
                 except FleetSendError, e: 
                     self.eventMgr.activityMsg("Error sending mission to planet %s. Reason: %s" %(targetPlanet,e))                
             elif msg.type == GuiToBotMsg.spy:      
@@ -630,58 +637,9 @@ class Bot(object):
             self.eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
             try: os.remove(FILE_PATHS['gamedata'])              
             except Exception : pass
-            
-# -- non-farming code: ---
-
-    def fleetSearch(self):
-        self._connect()
-
-        players = {}
-        for position,(player,alliance,points) in enumerate(self.web.getStats('flt')):
-            players[player] = position,alliance,points,[]
-
-
-        for planet in self._planetDb.readAll():
-            player = planet.owner
-            if player in players and (planet.ownerStatus == 'normal' or 'inactive' in planet.ownerStatus):
-                sourcePlanet = self._calculateNearestSourcePlanet(planet.coords)
-
-                players[player][3].append(planet)
-                players[player][3].sort(key=lambda p: p.coords)
-
-        
-        output = []
-        for player,(position,alliance,points,planets) in players.items():
-            
-                item = player,position,points,planets,alliance
-                output.append(item)
-                
-         
-        #output.sort(key=lambda x:x[1]/float(x[6].coords.flightTimeTo(x[2].coords,25000).seconds)   ,reverse=True)
-        output.sort(key=lambda x:len(x[3]),reverse=True)        
-        file = open('output/fleetsearch.html','w')
-        file.write('<table border=1>')
-        file.write('<th>Player</th><th>Pos.</th><th>Points</th><th></th><th>Planets</th>')        
-        for line in output:
-            file.write('<tr>')
-            for item in line[:-1]:
-                file.write('<td>')
-                
-                if isinstance(item, list):
-                    for planet in item:
-                        if planet.coords.solarSystem >= 59 and planet.coords.solarSystem <= 65:                        
-                            file.write('<td bgcolor=#F0F0F0>')
-                        else:
-                            file.write('<td>')
-                        file.write( str(planet))
-
-                        file.write('</td>')
-                else: file.write(str(item))
-                file.write('</td>')
-            file.write('</tr>')           
-        file.write('</table>')
-        file.close()
-        print "DONE"
+     
+    def runPlugin(self,plugin):
+	execfile("plugins/%s.py" % plugin)
 
     
 if __name__ == "__main__":
@@ -690,7 +648,7 @@ if __name__ == "__main__":
     parser.add_option("-c", "--console", action="store_true", help="Run in console mode'")
     parser.add_option("-a", "--autostart", action="store_true", help="Auto start bot, no need to click Start button")
     parser.add_option("-w", "--workdir", help="Specify working directory (useful to run various bots at once). If not specified defaults to 'files'")    
-    parser.add_option("-f", "--fleetsearch", action="store_true", help="Find planets of people in the fleet ranking and then exit bot.")    
+    parser.add_option("-p", "--plugin", help="Run the specified plugin from the plugins folder, and exit.")    
     (options, args) = parser.parse_args()
     
     if options.workdir:
@@ -704,7 +662,7 @@ if __name__ == "__main__":
         try: os.makedirs (os.path.dirname(path))
         except OSError, e: pass
 
-    for dir in ('debug','output/reports'):
+    for dir in ('plugins','debug','output/reports'):
         try: os.makedirs (dir)
         except OSError, e: pass
             
@@ -714,12 +672,13 @@ if __name__ == "__main__":
     handler.setFormatter(logging.Formatter('%(message)s'))
     logging.getLogger().addHandler(handler)
 
-    if options.fleetsearch:
+    if options.plugin:
         bot = Bot()
-        bot.fleetSearch()
+	bot.runPlugin(options.plugin)
     elif options.console:
         bot = Bot()
         bot.run()
     else:
         from gui import guiMain
         guiMain(options)
+	

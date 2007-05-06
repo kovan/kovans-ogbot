@@ -55,7 +55,7 @@ class BotToGuiMsg(ThreadMsg):
         self.args = args
         
 class GuiToBotMsg(ThreadMsg):
-    stop, pause, resume, attack, spy = range(5)
+    stop, pause, resume, attackLargeCargo,attackSmallCargo, spy = range(6)
     def __init__(self, type, param = None):
         self.type = type
         self.param = param

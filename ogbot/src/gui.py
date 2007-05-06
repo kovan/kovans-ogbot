@@ -353,21 +353,29 @@ class MainWindow(baseclass,formclass):
 
     def botActivityTreeRightClicked (self,point):
          menu = QMenu(self.botActivityTree)
-         action=menu.addAction("Attack now")
-         QObject.connect(action, SIGNAL("triggered()"), self.forceAttackPlanet)
+         action=menu.addAction("Attack now with small cargos")
+         QObject.connect(action, SIGNAL("triggered()"), self.forceAttackPlanetSmallCargos)
+         action=menu.addAction("Attack now with large cargos")
+         QObject.connect(action, SIGNAL("triggered()"), self.forceAttackPlanetLargeCargos)         
          action=menu.addAction("Spy now")
          QObject.connect(action, SIGNAL("triggered()"), self.forceSpyPlanet)
          menu.exec_(QCursor.pos())
     
-    def forceAttackPlanet(self):
+    def forceAttackPlanetSmallCargos(self):
         if self.bot:
             selectedCoordsStr = str(self.botActivityTree.currentItem().text(1))
-            self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.attack,selectedCoordsStr))
+            self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.attackSmallCargo,selectedCoordsStr))
+            
+    def forceAttackPlanetLargeCargos(self):
+        if self.bot:
+            selectedCoordsStr = str(self.botActivityTree.currentItem().text(1))
+            self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.attackLargeCargo,selectedCoordsStr))
+            
     def forceSpyPlanet(self):
         if self.bot:
             selectedCoordsStr = str(self.botActivityTree.currentItem().text(1))
             self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.spy,selectedCoordsStr))
-    
+            
 
     def _planetDb_filter(self):    
         filterText    = str(self.planetFilterLineEdit.text())
