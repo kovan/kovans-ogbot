@@ -1,9 +1,10 @@
-#Mon May 07 00:06:50 CEST 2007
+#Mon May 07 19:33:54 CEST 2007
 eclipse.preferences.version=1
 encoding//languages/chinese.ini=GB2312
 encoding//languages/french.ini=ISO-8859-1
 encoding//languages/polish.ini=ISO-8859-2
 encoding//plugins/fleetsearch.py=ISO-8859-1
+encoding//plugins/scangalaxy.py=ISO-8859-1
 encoding//src/CommonClasses.py=ISO-8859-1
 encoding//src/Constants.py=ISO-8859-1
 encoding//src/GameEntities.py=ISO-8859-1
