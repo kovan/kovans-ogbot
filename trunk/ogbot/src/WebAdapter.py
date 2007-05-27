@@ -68,12 +68,17 @@ class WebAdapter(object):
         self.checkThreadMsgsMethod = checkThreadMsgsMethod
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
-
-        if config.webpage.endswith('.ba') or config.webpage.endswith('.com.hr'):
-            self.webpage = "http://"+ config.webpage +"/portal/?lang=yu&frameset=1"
-        else:
-            self.webpage = "http://"+ config.webpage +"/portal/?frameset=1"
         
+        self.webpage = "http://"+ config.webpage 
+        if config.webpage.endswith('.org'): # added to deal with new ogame.org frontpage
+            self.universeComboName = "universe"
+        else:
+            self.universeComboName = "Uni"
+            self.webpage += "/portal/?frameset=1"
+            
+            if config.webpage.endswith('.ba') or config.webpage.endswith('.com.hr'):
+                self.webpage += "&lang=yu"
+
         if not self.loadState():
             self.session = '000000000000'
 
@@ -101,7 +106,7 @@ class WebAdapter(object):
         # retrieve server based on universe number        
         cachedResponse.seek(0)                        
         form = ParseFile(cachedResponse, self.lastFetchedUrl, backwards_compat=False)[0]        
-        select = form.find_control(name = "Uni")
+        select = form.find_control(name = self.universeComboName)
         translation = self.translations['universe']
         if self.serverLanguage == "tw":
             translation = translation.decode('gb2312').encode('utf-8')
@@ -234,7 +239,8 @@ class WebAdapter(object):
             mySleep(40)                
         page = self._fetchValidResponse(self.webpage)
         form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
-        form["Uni"]   = [self.server]
+        form[self.universeComboName] = [self.server]
+            
         form["login"] = self.config.username
         form["pass"]  = self.config.password
         form.action = "http://"+self.server+"/game/reg/login2.php"
