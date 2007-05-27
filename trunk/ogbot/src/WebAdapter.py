@@ -27,7 +27,7 @@ import sys
 import httplib
 import warnings
 from Queue import *
-from datetime import datetime,time
+from datetime import datetime, time
 from time import strptime
 from cStringIO import *
 from ClientForm import HTMLForm, ParseFile, ControlNotFoundError;
@@ -54,13 +54,13 @@ class WebAdapter(object):
             msg = 'Logged in with user %s.' % username
             self.logAndPrint(msg)
             msg = datetime.now().strftime("%X %x ") + msg
-            self.dispatch("activityMsg",msg)            
-        def activityMsg(self,msg):
+            self.dispatch("activityMsg", msg)            
+        def activityMsg(self, msg):
             self.logAndPrint(msg)
             msg = datetime.now().strftime("%X %x ") + msg
-            self.dispatch("activityMsg",msg)
+            self.dispatch("activityMsg", msg)
         
-    def __init__(self, config, allTranslations,checkThreadMsgsMethod,gui = None):
+    def __init__(self, config, allTranslations, checkThreadMsgsMethod, gui = None):
         self.server = ''
         self.lastFetchedUrl = ''
         self.serverCharset = ''        
@@ -89,18 +89,18 @@ class WebAdapter(object):
         urllib2.install_opener(opener)
         opener.addheaders = [('User-agent', self.config.userAgent)]            
         
-        cachedResponse = StringIO(self._fetchValidResponse(self.webpage,True).read())
+        cachedResponse = StringIO(self._fetchValidResponse(self.webpage, True).read())
         # check configured language equals ogame server language
-        regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"',re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
+        regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"', re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
         self.serverLanguage =  regexpLanguage.findall(cachedResponse.getvalue())[0]
         try: self.translations = allTranslations[self.serverLanguage]
         except KeyError:
-            raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage )
-        self.translationsByLocalText = dict([ (value,key) for key,value in self.translations.items() ])
+            raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage)
+        self.translationsByLocalText = dict([ (value, key) for key, value in self.translations.items() ])
         self.generateRegexps(self.translations)        
         # retrieve server based on universe number        
         cachedResponse.seek(0)                        
-        form = ParseFile(cachedResponse,self.lastFetchedUrl, backwards_compat=False)[0]        
+        form = ParseFile(cachedResponse, self.lastFetchedUrl, backwards_compat=False)[0]        
         select = form.find_control(name = "Uni")
         translation = self.translations['universe']
         if self.serverLanguage == "tw":
@@ -110,7 +110,7 @@ class WebAdapter(object):
         self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
 
 
-    def generateRegexps(self,translations):
+    def generateRegexps(self, translations):
 
         reportTmp  = r'%s (?P<planetName>[^<]*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
         reportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
@@ -126,8 +126,8 @@ class WebAdapter(object):
         self.REGEXPS = \
         {
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
-            'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>',re.I), 
-            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>',re.I), 
+            'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>', re.I), 
+            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>', re.I), 
             'report': 
             {
                 'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
@@ -135,14 +135,14 @@ class WebAdapter(object):
                 'defense':  re.compile(reportTmp2 % translations['defense'], re.DOTALL|re.I), 
                 'buildings':re.compile(reportTmp2 % translations['buildings'], re.DOTALL|re.I), 
                 'research': re.compile(reportTmp2 % translations['research'], re.DOTALL|re.I), 
-                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9.]+)</td>",re.DOTALL|re.I)
+                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9.]+)</td>", re.DOTALL|re.I)
             }, 
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
-            'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"',re.I), 
-            'maxSlots':re.compile(r"%s([0-9]+)" %  translations['maxFleets'].replace('.','\. '),re.I), 
+            'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"', re.I), 
+            'maxSlots':re.compile(r"%s([0-9]+)" %  translations['maxFleets'].replace('.', '\. '), re.I), 
             'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a> \(%s (?P<level>\d+)\)" %  translations['level'], re.I), 
-            'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>",re.I), 
-            'charset':re.compile(r'content="text/html; charset=(.*?)"',re.I),
+            'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
+            'charset':re.compile(r'content="text/html; charset=(.*?)"', re.I), 
             'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="\d+" >(\d+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">([\w .]+?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>')
         }
         
@@ -186,11 +186,11 @@ class WebAdapter(object):
                 if len(files) >= 20: #never allow more than 20 files
                     files.sort()
                     os.remove('debug/'+files[0])
-                try: php = '_'+re.findall("/(\w+\.php)",self.lastFetchedUrl)[0]
+                try: php = '_'+re.findall("/(\w+\.php)", self.lastFetchedUrl)[0]
                 except IndexError: php = ''
                 date = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
-                file = open("debug/%s%s.html" %(date,php), 'w')
-                file.write(p.replace('<script','<noscript').replace('</script>','</noscript>').replace('http-equiv="refresh"','http-equiv="kovan-rulez"'))
+                file = open("debug/%s%s.html" %(date, php), 'w')
+                file.write(p.replace('<script', '<noscript').replace('</script>', '</noscript>').replace('http-equiv="refresh"', 'http-equiv="kovan-rulez"'))
                 file.close()
                 
                 
@@ -233,7 +233,7 @@ class WebAdapter(object):
         if self.serverTimeDelta and self.serverTime().hour == 3 and self.serverTime().minute == 0: # don't connect immediately after 3am server reset
             mySleep(40)                
         page = self._fetchValidResponse(self.webpage)
-        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[0]
+        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
         form["Uni"]   = [self.server]
         form["login"] = self.config.username
         form["pass"]  = self.config.password
@@ -244,8 +244,8 @@ class WebAdapter(object):
         except IndexError:
             raise BotFatalError(page)
         self._eventMgr.loggedIn(self.config.username, self.session)
-        page = self._fetchPhp('index.php',lgn=1)                
-        page = self._fetchPhp('overview.php',lgn=1)               
+        page = self._fetchPhp('index.php', lgn=1)                
+        page = self._fetchPhp('overview.php', lgn=1)               
         self.saveState()
 
         mySleep(10)
@@ -289,7 +289,7 @@ class WebAdapter(object):
             planetName = m.group('planetName')
             coords = Coords(m.group('coords'))
             date = parseTime(m.group('date'), "%m-%d %H:%M:%S")
-            resources = Resources(m.group('metal').replace('.',''), m.group('crystal').replace('.',''), m.group('deuterium').replace('.',''))
+            resources = Resources(m.group('metal').replace('.', ''), m.group('crystal').replace('.', ''), m.group('deuterium').replace('.', ''))
 
             report = EspionageReport(coords, planetName, date, resources, code)
             
@@ -299,13 +299,13 @@ class WebAdapter(object):
                 if match:
                     dict, text = {}, match.group(1)
                     for fullName, cuantity in self.REGEXPS['report']['details'].findall(text):
-                        dict[self.translationsByLocalText[fullName.strip()]] = int(cuantity.replace('.',''))
+                        dict[self.translationsByLocalText[fullName.strip()]] = int(cuantity.replace('.', ''))
                         
                 setattr(report, i, dict)
                 
             
             if report.getDetailLevel() >= EspionageReport.DetailLevels.defense and report.isDefended():
-                file = open("output/reports/%s.%s.%s.%s.html" %(planetName,coords.galaxy,coords.solarSystem,coords.planet),'w')
+                file = open("output/reports/%s.%s.%s.%s.html" %(planetName, coords.galaxy, coords.solarSystem, coords.planet), 'w')
                 file.write(rawMessage)
                 file.close()
             reports.append(report)
@@ -332,7 +332,7 @@ class WebAdapter(object):
     def buildBuildings(self, building, planet):
         self._fetchPhp('b_building.php', bau=building.code, cp=planet.code)
         
-    def launchMission(self, mission,abortIfNotEnough = True,slotsToReserve = 0):
+    def launchMission(self, mission, abortIfNotEnough = True, slotsToReserve = 0):
 
         # assure cuantities are integers
         for shipType, cuantity in mission.fleet.items(): 
@@ -344,13 +344,13 @@ class WebAdapter(object):
         page.seek(0)            
         
         
-        availableFleet = self.getAvailableFleet(None,pageText)
-        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[-1]        
+        availableFleet = self.getAvailableFleet(None, pageText)
+        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]        
         
         for shipType, requested in mission.fleet.items():
-            available = availableFleet.get(shipType,0)
+            available = availableFleet.get(shipType, 0)
             if available == 0 or (abortIfNotEnough and available  < requested):
-                raise NotEnoughShipsError(availableFleet,{shipType:requested},available)
+                raise NotEnoughShipsError(availableFleet, {shipType:requested}, available)
             
             shipCode = INGAME_TYPES_BY_NAME[shipType].code            
             form[shipCode] = str(requested)
@@ -361,7 +361,7 @@ class WebAdapter(object):
         # 2nd step: select destination and speed
         page = self._fetchForm(form)
         
-        forms = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)
+        forms = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)
         if not forms or 'flotten3.php' not in forms[0].action:
             raise NoFreeSlotsError()
         form = forms[0]
@@ -373,7 +373,7 @@ class WebAdapter(object):
         form['speed']      = [str(mission.speedPercentage / 10)]
         # 3rd step:  select mission and resources to carry
         page = self._fetchForm(form)
-        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[0]
+        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
         try:
             form['order']      = [str(mission.missionType)]
         except ControlNotFoundError:
@@ -397,7 +397,7 @@ class WebAdapter(object):
             if   self.translations['fleetLimitReached'] in errors:
                 raise NoFreeSlotsError()
             elif self.translations['noShipSelected'] in errors:
-                raise NotEnoughShipsError(availableFleet,mission.fleet)
+                raise NotEnoughShipsError(availableFleet, mission.fleet)
             else: 
                 raise FleetSendError(errors)
 
@@ -410,8 +410,8 @@ class WebAdapter(object):
         returnTime = parseTime(resultPage[self.translations['returnTime']])
         mission.flightTime = returnTime - arrivalTime
         mission.launchTime = arrivalTime - mission.flightTime
-        mission.distance =  int(resultPage[self.translations['distance']].replace('.',''))
-        mission.consumption = int(resultPage[self.translations['consumption']].replace('.',''))
+        mission.distance =  int(resultPage[self.translations['distance']].replace('.', ''))
+        mission.consumption = int(resultPage[self.translations['consumption']].replace('.', ''))
             
 #        # check simulation formulas are working correctly:
 #        assert mission.distance == mission.sourcePlanet.coords.distanceTo(mission.targetPlanet.coords)
@@ -429,14 +429,14 @@ class WebAdapter(object):
             if name is None:
                 continue
             if name in INGAME_TYPES_BY_NAME.keys():
-                sentFleet[name] = int(value.replace('.',''))
+                sentFleet[name] = int(value.replace('.', ''))
 
         if mission.fleet != sentFleet:
-            warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % ( mission.fleet, sentFleet))
+            warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % (mission.fleet, sentFleet))
             mission.fleet = sentFleet
         
     
-    def getFreeSlots(self,alreadyFetchedPage = None):
+    def getFreeSlots(self, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
             page = self._fetchPhp('flotten1.php', mode='Flotte').read()
@@ -449,18 +449,18 @@ class WebAdapter(object):
         maxFleets = int(self.REGEXPS['maxSlots'].search(page).group(1))
         return maxFleets - usedSlots
     
-    def getAvailableFleet(self, planet,alreadyFetchedPage = None):    
+    def getAvailableFleet(self, planet, alreadyFetchedPage = None):    
         page = alreadyFetchedPage
         if not page:
             page = self._fetchPhp('flotten1.php', mode='Flotte', cp=planet.code).read()
         fleet = {}
         for code, cuantity in self.REGEXPS['availableFleet'].findall(page):
-            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity.replace('.',''))
+            fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity.replace('.', ''))
         return fleet
     
     def deleteMessages(self, messages):
         page = self._fetchPhp('messages.php')
-        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[0]
+        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
         for message in messages:
             checkBoxName = "delmes" + message.code
             try:
@@ -480,53 +480,53 @@ class WebAdapter(object):
             levels[self.translationsByLocalText[fullName]] = int(level)
         return levels
     
-    def goToPlanet(self,planet):
+    def goToPlanet(self, planet):
         self._fetchPhp('overview.php', cp=planet.code)
         
-    def getSolarSystems(self, solarSystems, deuteriumSourcePlanet = None):
+    def getSolarSystems(self, solarSystems, deuteriumSourcePlanet = None): # solarsytems is an iterable of tuples
 
         if deuteriumSourcePlanet:
             self.goToPlanet(deuteriumSourcePlanet)
         threads = []
         inputQueue = Queue()
-        for galaxy,solarSystem in solarSystems:
-            params = {'session':self.session, 'galaxy':galaxy,'system':solarSystem }
+        outputQueue = Queue()
+        for galaxy, solarSystem in solarSystems:
+            params = {'session':self.session, 'galaxy':galaxy, 'system':solarSystem }
             url = "http://%s/game/galaxy.php?%s" % (self.server, urllib.urlencode(params))        
             inputQueue.put(url)
             
         for dummy in range(80):
-            thread = ScanThread(inputQueue,self.REGEXPS)
+            thread = ScanThread(inputQueue, outputQueue, self.REGEXPS)
             threads.append(thread)            
             thread.start()
 
-            
-        for thread in threads:
-            thread.join()
+        while filter(threading.Thread.isAlive, threads):
+            try:
+                output = outputQueue.get_nowait()
+                yield output
+	    except Empty: pass
         
-        planetsFound = []
         for thread in threads:
             if thread.exception:
                 raise thread.exception
-            planetsFound += thread.planetsFound
-        return planetsFound
         
-    def getStats(self,type): # type can be: pts for points, flt for fleets or res for research
-        page = self._fetchPhp('stat.php',start=1)
-        form = ParseFile(page,self.lastFetchedUrl, backwards_compat=False)[-1]
+    def getStats(self, type): # type can be: pts for points, flt for fleets or res for research
+        page = self._fetchPhp('stat.php', start=1)
+        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]
         
-        for i in range(1,1401,100):
+        for i in range(1, 1401, 100):
             form['type'] = [type]
             form['start'] = [str(i)]
             page = self._fetchForm(form).read()
             regexp = r"<th>(?:<font color='87CEEB'>)?([^<]+)(?:</font>)?</th>.*?<th>([0-9.]+)</th>"
-            for player, points in re.findall(regexp,page,re.DOTALL):
-                yield player,int(points.replace('.',''))
+            for player, points in re.findall(regexp, page, re.DOTALL):
+                yield player, int(points.replace('.', ''))
         
 
     
     def saveState(self):
         file = open(FILE_PATHS['webstate'], 'wb')
-        pickler = cPickle.Pickler(file,2)        
+        pickler = cPickle.Pickler(file, 2)        
         pickler.dump(self.server)         
         pickler.dump(self.session)
         file.close()
@@ -547,11 +547,11 @@ class WebAdapter(object):
     
 class ScanThread(threading.Thread):
     ''' Scans solar systems from inputQueue'''
-    def __init__(self,inputQueue,regexps):
+    def __init__(self, inputQueue, outputQueue, regexps):
         threading.Thread.__init__(self, name="GalaxyScanThread")
         self._inputQueue = inputQueue
+	self._outputQueue = outputQueue
         self.REGEXPS = regexps
-        self.planetsFound = []
         self.exception = None
         
     def run(self):
@@ -573,28 +573,29 @@ class ScanThread(threading.Thread):
                     continue
 
                 if __debug__: 
-                    print >>sys.stderr,"         Fetched " + url                
+                    print >>sys.stderr, "         Fetched " + url                
 
-
-                page = page.replace("\n","")
+		htmlSource = page
+                page = page.replace("\n", "")
                 galaxy      = re.findall('input type="text" name="galaxy" value="(\d+)"', page)[0]
                 solarSystem = re.findall('input type="text" name="system" value="(\d+)"', page)[0]
                 
-
-                for number,name,ownerStatus,owner,alliance in self.REGEXPS['solarSystem'].findall(page):
+		foundPlanets = []
+                for number, name, ownerStatus, owner, alliance in self.REGEXPS['solarSystem'].findall(page):
                     # Absolutely ALL EnemyPlanet objects of the bot are created here
                     planet = EnemyPlanet(Coords(galaxy, solarSystem, number), owner, ownerStatus, name, alliance)
-                    self.planetsFound.append(planet)
+                    foundPlanets.append(planet)
+		self._outputQueue.put((galaxy, solarSystem, foundPlanets, htmlSource))
                 error = False
             except Empty:
                 break
-            except BotError,e:
+            except BotError, e:
                 self.exception = e
                 break
-            except Exception,e:
+            except Exception, e:
                 error = True
                 if __debug__: 
-                    print >>sys.stderr,e
+                    print >>sys.stderr, e
 
         
         
