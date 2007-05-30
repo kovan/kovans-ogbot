@@ -634,7 +634,12 @@ class Bot(object):
             if storedWebpage != self.config.webpage \
             or storedUniverse != self.config.universe:
                 raise BotError() # if any of those has changed, invalidate stored espionages
-
+            
+            # fix to reset old versions's botdata:
+            if self.inactivePlanets:
+                planet = self.inactivePlanets[0]
+                dummy = planet.attackHistory
+            
         except (EOFError, IOError, BotError, ImportError, AttributeError):
             try: file.close()            
             except UnboundLocalError: pass
