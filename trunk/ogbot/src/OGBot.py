@@ -426,7 +426,7 @@ class Bot(object):
 
             sourcePlanet, targetPlanet = possibleTargets[0]
             msg = "Spying"
-            
+            probesToSend = 0            
             if upToDetailLevel == None:
                 probesToSend = int(self.config.probesToSend)
             elif upToDetailLevel == EspionageReport.DetailLevels.resources:
@@ -447,6 +447,7 @@ class Bot(object):
                         probesToSend = max(int (1.5 * probesToSend), probesToSend +2) # non-linear increase in the number of probes
         
                 samePlayerProbes = [planet.getBestEspionageReport().probesSent for planet in self.inactivePlanets if planet.espionageHistory and planet.owner == targetPlanet.owner]
+
                 probesToSend = max(samePlayerProbes + [probesToSend])
             
             try:

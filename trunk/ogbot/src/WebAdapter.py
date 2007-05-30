@@ -70,7 +70,7 @@ class WebAdapter(object):
         self.serverTimeDelta = None
         
         self.webpage = "http://"+ config.webpage 
-        if config.webpage.endswith('.org'): # added to deal with new ogame.org frontpage
+        if config.webpage.endswith('.org') or config.webpage.endswith('.com.es'): # added to deal with new ogame.org frontpage
             self.universeComboName = "universe"
         else:
             self.universeComboName = "Uni"
@@ -501,7 +501,7 @@ class WebAdapter(object):
             url = "http://%s/game/galaxy.php?%s" % (self.server, urllib.urlencode(params))        
             inputQueue.put(url)
             
-        for dummy in range(80):
+        for dummy in range(20):
             thread = ScanThread(inputQueue, outputQueue, self.REGEXPS)
             threads.append(thread)            
             thread.start()
