@@ -24,9 +24,16 @@ A: There is a user who wrote about it in the [http://groups.google.com/group/kov
 
 A: Go to the issues tab and open a new issue in the [http://code.google.com/p/kovans-ogbot/issues/list issues tab], then follow the instructions. Before that, make sure the error is not already posted. If it is, you can click the star near it to be notified of changes and comments. 
 
+===Q: Will I get banned if I use this bot?===
+
+A: Maybe. OGame admins are always finding new ways to detect it. However most people doesn't get banned. 
+Some polish GOs ban just after detecting suspicious (not proven) activity. In these cases promising you don't use any bot and all that activity is just because you play a lot might get you unbanned.
+
 ===Q: I have Commander mode. Will the bot still work?===
 
 A: Yes. But you have to disable message grouping in OGame options.
+
+
 
 ===Q: How do I reset the bot?===
 
@@ -39,6 +46,10 @@ A: Deactivate IP check in OGame options.
 ===Q: Can I choose which browser does the "Launch web browser" button use?===
 
 A: You have to set the BROWSER environment variable to the command of the browser you want to use. A list of possible values and further instructions can be found here: http://docs.python.org/lib/module-webbrowser.html
+
+===Q: I've heard this bot has a virus. Is it true?===
+
+A: Someone uploaded a modified version of the bot in the Google Groups, which had a virus or trojan. However the official version never had nor will have any. That's why the bot should always be downloaded only from the official downloads section of this page.
 
 ===Q: How can I choose the language?===
 
