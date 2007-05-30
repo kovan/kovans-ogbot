@@ -47,22 +47,7 @@ class AboutDialog(baseclass,formclass):
         self.setupUi(self)
 
 
-formclass, baseclass = uic.loadUiType("src/ui/Activity.ui")
-class ActivityWindow(baseclass,formclass): 
-    def __init__(self):
-        baseclass.__init__(self)        
-        self.setupUi(self)
 
-        self.timer = QTimer()
-        QObject.connect(self.timer,SIGNAL("timeout()"),self.update)
-        self.timer.start(500)                
-
-    
-    def update(self):
-        file = (file for file in os.listdir('debug')).next()
-        self.textBrowser.setSource(QUrl('debug/'+file))
-
-        
 formclass, baseclass = uic.loadUiType("src/ui/Options.ui")
 class OptionsDialog(baseclass,formclass): 
     
