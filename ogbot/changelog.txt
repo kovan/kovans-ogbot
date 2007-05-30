@@ -1,12 +1,12 @@
 v2.2
 -----------------------
- March, ?. 2007     
+ May, 30. 2007     
 -----------------------
-- Espionage reports of defended planets are not deleted
+** Too many changes to mention, some of them are: **
+
 - Before attaks only one probe is sent.
 - Much faster inactive planets search.
 - Reserved slots are no longer filled with senseless espionages.
-- If espionage probes crash, planet is marked as defended.
 - Attacks and espionages from planets with no probes or cargos are deactivated for a while.
 - Rush mode at midnight (attack new inactive planets as they are found if they are very rentable).
 - Option to stop attacks before midnight, in order to free slots for rush mode.

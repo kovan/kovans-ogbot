@@ -70,14 +70,10 @@ class WebAdapter(object):
         self.serverTimeDelta = None
         
         self.webpage = "http://"+ config.webpage 
-        if config.webpage.endswith('.org') or config.webpage.endswith('.com.es'): # added to deal with new ogame.org frontpage
-            self.universeComboName = "universe"
-        else:
-            self.universeComboName = "Uni"
-            self.webpage += "/portal/?frameset=1"
+        self.universeComboName = "universe"
             
-            if config.webpage.endswith('.ba') or config.webpage.endswith('.com.hr'):
-                self.webpage += "&lang=yu"
+        if config.webpage.endswith('.ba') or config.webpage.endswith('.com.hr'):
+            self.webpage += "&lang=yu"
 
         if not self.loadState():
             self.session = '000000000000'
@@ -173,6 +169,7 @@ class WebAdapter(object):
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
+        self.checkThreadMsgsMethod()
         
         valid = False
         while not valid:
