@@ -254,7 +254,7 @@ class WebAdapter(object):
         mySleep(10)
 
     def getMyPlanets(self):
-        page = self._fetchPhp('overview.php').read()
+        page = self._fetchPhp('overview.php',lgn=1).read()
         
         myPlanets = []
         for code, name, galaxy, ss, pos in self.REGEXPS['myPlanets'].findall(page):
