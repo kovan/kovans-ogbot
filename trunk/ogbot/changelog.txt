@@ -4,6 +4,8 @@ v2.2
 -----------------------
 ** Too many changes to mention, some of them are: **
 
+- Harder to detect.
+- A lot less espionages are neccesary.
 - Before attaks only one probe is sent.
 - Much faster inactive planets search.
 - Reserved slots are no longer filled with senseless espionages.
@@ -12,7 +14,7 @@ v2.2
 - Option to stop attacks before midnight, in order to free slots for rush mode.
 - Daily inactives scan is now done ASAP each day.
 - Any available cargo type is sent if the selected type of attacking fleet is not available.
-- Source planet is shown in the main window.
+- Source planet and last espionage time are now shown in the main window.
 - Fixed issue 103.
 - Internal algorithms rewritten.
 - Minor changes and fixes.

@@ -254,6 +254,7 @@ class WebAdapter(object):
         mySleep(10)
 
     def getMyPlanets(self):
+        page = self._fetchPhp('index.php', lgn=1)                
         page = self._fetchPhp('overview.php',lgn=1).read()
         
         myPlanets = []
