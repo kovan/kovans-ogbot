@@ -489,7 +489,7 @@
      </property>
      <widget class="QWidget" name="tab" >
       <attribute name="title" >
-       <string>Options</string>
+       <string>Page 1</string>
       </attribute>
       <widget class="QGroupBox" name="groupBox_3" >
        <property name="geometry" >
@@ -760,7 +760,7 @@
      </widget>
      <widget class="QWidget" name="tab_2" >
       <attribute name="title" >
-       <string>Rare options</string>
+       <string>Page 2</string>
       </attribute>
       <widget class="QSpinBox" name="systemsPerGalaxySpinBox" >
        <property name="geometry" >
