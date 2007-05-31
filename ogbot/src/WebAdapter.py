@@ -169,11 +169,11 @@ class WebAdapter(object):
         return self._fetchValidResponse(form.click())
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
-        self.checkThreadMsgsMethod()
+
         
         valid = False
         while not valid:
-
+            self.checkThreadMsgsMethod()
             valid = True
             try:
                 response = urllib2.urlopen(request)
@@ -270,6 +270,7 @@ class WebAdapter(object):
         serverTime = parseTime(strTime)
         self.serverTimeDelta = serverTime - datetime.now()
         self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
+        self.myPlanets = myPlanets
         return myPlanets
     
         
@@ -477,13 +478,16 @@ class WebAdapter(object):
         self._fetchForm(form)
         
     def getResearchLevels(self):
-        page = self._fetchPhp('buildings.php', mode='Forschung').read()
-
         levels = {}
-        for fullName, level in self.REGEXPS['researchLevels'].findall(page):
-            levels[self.translationsByLocalText[fullName]] = int(level)
-        return levels
-    
+        myPlanetsIter = iter(self.myPlanets)
+        while True:
+            page = self._fetchPhp('buildings.php', mode='Forschung').read()
+            for fullName, level in self.REGEXPS['researchLevels'].findall(page):
+                levels[self.translationsByLocalText[fullName]] = int(level)
+            if 'impulseDrive' in levels:
+                break
+            self.goToPlanet(myPlanetsIter.next())
+                
     def goToPlanet(self, planet):
         self._fetchPhp('overview.php', cp=planet.code)
         
