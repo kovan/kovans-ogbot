@@ -169,8 +169,12 @@ class WebAdapter(object):
 
         
         valid = False
+        loopCount = 0
         while not valid:
             self.checkThreadMsgsMethod()
+            loopCount += 1
+            if loopCount > 4:
+               raise BotFatalError("Infinite login loop found, restarting bot (this is not a bug).")
             valid = True
             try:
                 response = urllib2.urlopen(request)
