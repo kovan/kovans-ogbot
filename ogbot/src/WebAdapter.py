@@ -70,22 +70,19 @@ class WebAdapter(object):
         self.serverTimeDelta = None
         
         self.webpage = "http://"+ config.webpage 
-        self.universeComboName = "universe"
-            
-        if config.webpage.endswith('.ba') or config.webpage.endswith('.com.hr'):
-            self.webpage += "&lang=yu"
 
         if not self.loadState():
             self.session = '000000000000'
 
         #setup urllib2:
         socket.setdefaulttimeout(10.0)
-
+        param1 = urllib2.HTTPCookieProcessor()
+        param2 = urllib2.HTTPRedirectHandler()
         if self.config.proxy:
-            proxy_handler = urllib2.ProxyHandler({"http":"http://"+self.config.proxy})
-            opener = urllib2.build_opener(proxy_handler)
+            param3 = urllib2.ProxyHandler({"http":"http://"+self.config.proxy})
+            opener = urllib2.build_opener(param1,param2,param3)
         else:
-            opener = urllib2.build_opener()
+            opener = urllib2.build_opener(param1,param2)
             
         urllib2.install_opener(opener)
         opener.addheaders = [('User-agent', self.config.userAgent)]            
@@ -102,7 +99,7 @@ class WebAdapter(object):
         # retrieve server based on universe number        
         cachedResponse.seek(0)                        
         form = ParseFile(cachedResponse, self.lastFetchedUrl, backwards_compat=False)[0]        
-        select = form.find_control(name = self.universeComboName)
+        select = form.find_control(name = "universe")
         translation = self.translations['universe']
         if self.serverLanguage == "tw":
             translation = translation.decode('gb2312').encode('utf-8')
@@ -236,8 +233,7 @@ class WebAdapter(object):
             mySleep(40)                
         page = self._fetchValidResponse(self.webpage)
         form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
-        form[self.universeComboName] = [self.server]
-            
+        form["universe"] = [self.server]
         form["login"] = self.config.username
         form["pass"]  = self.config.password
         form.action = "http://"+self.server+"/game/reg/login2.php"
@@ -487,6 +483,7 @@ class WebAdapter(object):
             if 'impulseDrive' in levels:
                 break
             self.goToPlanet(myPlanetsIter.next())
+        return levels
                 
     def goToPlanet(self, planet):
         self._fetchPhp('overview.php', cp=planet.code)

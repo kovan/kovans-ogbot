@@ -78,7 +78,7 @@
     </rect>
    </property>
    <property name="currentIndex" >
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page_3" >
     <property name="geometry" >
@@ -605,16 +605,6 @@
         </property>
        </widget>
       </widget>
-      <widget class="QTimeEdit" name="timeEdit" >
-       <property name="geometry" >
-        <rect>
-         <x>240</x>
-         <y>160</y>
-         <width>81</width>
-         <height>23</height>
-        </rect>
-       </property>
-      </widget>
       <widget class="QGroupBox" name="groupBox_2" >
        <property name="geometry" >
         <rect>
@@ -685,77 +675,6 @@
          <enum>QTextEdit::NoWrap</enum>
         </property>
        </widget>
-      </widget>
-      <widget class="QLabel" name="label_5" >
-       <property name="geometry" >
-        <rect>
-         <x>320</x>
-         <y>140</y>
-         <width>91</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text" >
-        <string>before midnight</string>
-       </property>
-      </widget>
-      <widget class="QCheckBox" name="isMoonCheckBox_2" >
-       <property name="geometry" >
-        <rect>
-         <x>250</x>
-         <y>270</y>
-         <width>71</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="text" >
-        <string>is moon</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="addPlanetLineEdit_2" >
-       <property name="geometry" >
-        <rect>
-         <x>240</x>
-         <y>240</y>
-         <width>91</width>
-         <height>25</height>
-        </rect>
-       </property>
-       <property name="inputMask" >
-        <string>\[99:999:99\]; </string>
-       </property>
-       <property name="text" >
-        <string>[1:1:1]</string>
-       </property>
-       <property name="alignment" >
-        <set>Qt::AlignHCenter</set>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_4" >
-       <property name="geometry" >
-        <rect>
-         <x>230</x>
-         <y>140</y>
-         <width>74</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text" >
-        <string>Pause atacks</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_16" >
-       <property name="geometry" >
-        <rect>
-         <x>240</x>
-         <y>220</y>
-         <width>141</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text" >
-        <string>Deuterium source:</string>
-       </property>
       </widget>
      </widget>
      <widget class="QWidget" name="tab_2" >
