@@ -196,6 +196,7 @@ class MainWindow(baseclass,formclass):
         baseclass.__init__(self)
         self.setupUi(self) # parent ui setup
         self.msgQueue = Queue()
+        self._planetDb = {}
         self.bot = None
         self.botThread = None
         

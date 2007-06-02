@@ -480,13 +480,16 @@ class WebAdapter(object):
     def getResearchLevels(self):
         levels = {}
         myPlanetsIter = iter(self.myPlanets)
+
         while True:
             page = self._fetchPhp('buildings.php', mode='Forschung').read()
             for fullName, level in self.REGEXPS['researchLevels'].findall(page):
                 levels[self.translationsByLocalText[fullName]] = int(level)
-            if 'impulseDrive' in levels:
+            if 'impulseDrive' in levels and 'combustionDrive' in levels:
                 break
-            self.goToPlanet(myPlanetsIter.next())
+            try: self.goToPlanet(myPlanetsIter.next())
+            except StopIteration:
+                raise BotFatalError("Not enough technologies researched to run the bot")
         return levels
                 
     def goToPlanet(self, planet):
