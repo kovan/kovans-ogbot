@@ -516,7 +516,8 @@ class WebAdapter(object):
             try:
                 output = outputQueue.get_nowait()
                 yield output
-	    except Empty: pass
+            except Empty: 
+                sleep(1)
         
         for thread in threads:
             if thread.exception:
@@ -567,7 +568,7 @@ class ScanThread(threading.Thread):
         self.exception = None
         
     def run(self):
-        socket.setdefaulttimeout(7)   
+        socket.setdefaulttimeout(20)   
 
         error = False
         while True:
@@ -583,21 +584,22 @@ class ScanThread(threading.Thread):
                 elif 'error' in  response.geturl():
                     error = True
                     continue
-
+                
                 if __debug__: 
                     print >>sys.stderr, "         Fetched " + url                
-
-		htmlSource = page
+                
+                htmlSource = page
                 page = page.replace("\n", "")
                 galaxy      = re.findall('input type="text" name="galaxy" value="(\d+)"', page)[0]
                 solarSystem = re.findall('input type="text" name="system" value="(\d+)"', page)[0]
-                
-		foundPlanets = []
+                        
+                foundPlanets = []
                 for number, name, ownerStatus, owner, alliance in self.REGEXPS['solarSystem'].findall(page):
-                    # Absolutely ALL EnemyPlanet objects of the bot are created here
+                # Absolutely ALL EnemyPlanet objects of the bot are created here
                     planet = EnemyPlanet(Coords(galaxy, solarSystem, number), owner, ownerStatus, name, alliance)
                     foundPlanets.append(planet)
-		self._outputQueue.put((galaxy, solarSystem, foundPlanets, htmlSource))
+                    self._outputQueue.put((galaxy, solarSystem, foundPlanets, htmlSource))
+                    
                 error = False
             except Empty:
                 break
@@ -608,9 +610,9 @@ class ScanThread(threading.Thread):
                 error = True
                 if __debug__: 
                     print >>sys.stderr, e
-
         
         
+                
 
 
 
