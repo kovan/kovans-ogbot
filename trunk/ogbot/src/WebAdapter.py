@@ -31,6 +31,8 @@ from datetime import datetime, time
 from time import strptime
 from cStringIO import *
 from ClientForm import HTMLForm, ParseFile, ControlNotFoundError;
+import keepalive
+
 from CommonClasses import *
 from Constants import *
 from GameEntities import *
@@ -76,13 +78,15 @@ class WebAdapter(object):
 
         #setup urllib2:
         socket.setdefaulttimeout(10.0)
-        param1 = urllib2.HTTPCookieProcessor()
-        param2 = urllib2.HTTPRedirectHandler()
+        param1 = keepalive.HTTPHandler()
+        param2 = urllib2.HTTPCookieProcessor()
+        param3 = urllib2.HTTPRedirectHandler()
+
         if self.config.proxy:
-            param3 = urllib2.ProxyHandler({"http":"http://"+self.config.proxy})
-            opener = urllib2.build_opener(param1,param2,param3)
+            param4 = urllib2.ProxyHandler({"http":"http://"+self.config.proxy})
+            opener = urllib2.build_opener(param1,param2,param3,param4)
         else:
-            opener = urllib2.build_opener(param1,param2)
+            opener = urllib2.build_opener(param1,param2,param3)
             
         urllib2.install_opener(opener)
         opener.addheaders = [('User-agent', self.config.userAgent)]            
@@ -512,10 +516,13 @@ class WebAdapter(object):
             threads.append(thread)            
             thread.start()
 
+        found = []
         while filter(threading.Thread.isAlive, threads):
             try:
                 output = outputQueue.get_nowait()
-                yield output
+                if output not in found:
+                    found.append(output)
+                    yield output
             except Empty: 
                 sleep(1)
         
@@ -563,12 +570,14 @@ class ScanThread(threading.Thread):
     def __init__(self, inputQueue, outputQueue, regexps):
         threading.Thread.__init__(self, name="GalaxyScanThread")
         self._inputQueue = inputQueue
-	self._outputQueue = outputQueue
+        self._outputQueue = outputQueue
         self.REGEXPS = regexps
         self.exception = None
         
     def run(self):
         socket.setdefaulttimeout(20)   
+        keepalive_handler = keepalive.HTTPHandler()
+        opener = urllib2.build_opener(keepalive_handler)
 
         error = False
         while True:
@@ -576,7 +585,7 @@ class ScanThread(threading.Thread):
                 if not error:
                     url = self._inputQueue.get_nowait()
                 
-                response = urllib2.urlopen(url)
+                response = opener.open(url)
                 page = response.read()
                 
                 if 'span class="error"' in page:
