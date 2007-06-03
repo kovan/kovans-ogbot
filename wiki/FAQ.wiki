@@ -27,7 +27,7 @@ A: Go to the issues tab and open a new issue in the [http://code.google.com/p/ko
 
 ===Q: I have Commander mode. Will the bot still work?===
 
-A: Yes. But you have to disable message grouping in OGame options.
+A: Yes. But you have to disable message grouping in folders in OGame options.
 
 
 
@@ -143,7 +143,6 @@ _planets_ _with_ _half_ _of_ _the_ _resources_ _each,_ _but_ _at_ _a_ _flight_ _
 _Additionally,_ _those_ _planets_ _with_ _fleet_ _or_ _defenses_ _are_ _re-spied_ _every_ _two_ _days,_ _just_
 _in_ _case_ _they_ _have_ _been_ _destroyed,_ _and_ _every_ _night_ _the_ _list_ _of_ _inactive_ _planets_ _is_
 _updated,_ _and_ _the_ _new_ _ones_ _are_ _spied._
-
 
 
 
