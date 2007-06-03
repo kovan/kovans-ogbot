@@ -115,9 +115,12 @@ class Bot(object):
                 self.stop()
                 self.eventMgr.fatalException(e)
                 break
+            except BotError, e:
+                self.eventMgr.activityMsg("Error: %s" % e)
             except Exception:
                 traceback.print_exc()
                 self.eventMgr.activityMsg("Something unexpected occured, see log file. Restarting bot.")        
+            self._checkThreadQueue()
             mySleep(5)
     
     def stop(self):
@@ -685,7 +688,7 @@ if __name__ == "__main__":
 
     if options.plugin:
         bot = Bot()
-	bot.runPlugin(options.plugin)
+        bot.runPlugin(options.plugin)
     elif options.console:
         bot = Bot()
         bot.run()
