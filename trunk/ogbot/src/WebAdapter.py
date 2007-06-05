@@ -71,7 +71,7 @@ class WebAdapter(object):
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
         
-        self.webpage = "http://"+ config.webpage 
+        self.webpage = "http://"+ config.webpage + "/home.php"
 
         if not self.loadState():
             self.session = '000000000000'
@@ -176,9 +176,7 @@ class WebAdapter(object):
         loopCount = 0
         while not valid:
             self.checkThreadMsgsMethod()
-            loopCount += 1
-            if loopCount > 4:
-               raise BotError("Infinite login loop found, restarting bot (this is not a bug).")
+
             valid = True
             try:
                 response = urllib2.urlopen(request)
@@ -208,7 +206,9 @@ class WebAdapter(object):
                 elif not p or 'errorcode=8' in self.lastFetchedUrl:
                     valid = False
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
-
+                    loopCount += 1
+                    if loopCount > 4:
+                       raise BotError("Infinite login loop found, restarting bot (this is not a bug).")
                     oldSession = self.session
                     self.doLogin()
                     if   isinstance(request, str):
