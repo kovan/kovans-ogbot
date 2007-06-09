@@ -1,4 +1,4 @@
-#Sun Jun 03 16:10:34 CEST 2007
+#Sat Jun 09 00:15:30 CEST 2007
 eclipse.preferences.version=1
 encoding//languages/chinese.ini=GB2312
 encoding//languages/french.ini=ISO-8859-1
@@ -13,4 +13,3 @@ encoding//src/OGBot.py=ISO-8859-1
 encoding//src/WebAdapter.py=ISO-8859-1
 encoding//src/gui.py=ISO-8859-1
 encoding/languages=ISO-8859-1
-encoding/rar-and-publish.bat=ISO-8859-1
