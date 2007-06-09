@@ -45,6 +45,7 @@ class AboutDialog(baseclass,formclass):
     def __init__(self):
         baseclass.__init__(self)        
         self.setupUi(self)
+        self.versionLabel.setText("Version: " + open("src/version.txt").read())
 
 
 
@@ -505,6 +506,7 @@ class MainWindow(baseclass,formclass):
             if item.targetPlanet.espionageHistory:
                 treeItem.setToolTip(6,str(report.fleet) + str(report.defense))
                 treeItem.setToolTip(7,str(report.buildings) + str(report.research))
+        
             if item.rentability > 0:
                 value = int (item.rentability *  255 / maxRentability)
                 backColor = QColor(255-value,255,255-value)            
@@ -540,7 +542,7 @@ def guiMain(options):
     QApplication.setStyle(QStyleFactory.create("plastique"))
     window = MainWindow()
     window.show()
-    if options.autostart:
+    if options and options.autostart:
         window.startClicked()
     app.exec_()
     

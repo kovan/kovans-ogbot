@@ -35,6 +35,7 @@ class BotError(Exception): pass
 class BotFatalError (BotError): pass
 class ManuallyTerminated(BotError): pass
 class FleetSendError(BotError): pass
+class FleetLaunchAbortedError(FleetSendError): pass 
 class NoFreeSlotsError(FleetSendError):    
     def __str__(self): return "No fleet slots available"
 class NotEnoughShipsError (FleetSendError):
@@ -144,6 +145,7 @@ class Configuration(dict):
         self['preMidnightPauseTime'] = '22:30:00'
         self['inactivesAppearanceTime'] = '0:06:00'        
         self['deuteriumSourcePlanet'] = ''
+        self['secondsBetweenEspionages'] = 0
         
     def __getattr__(self, attrName):
         return self[attrName]

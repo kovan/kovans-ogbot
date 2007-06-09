@@ -187,7 +187,7 @@ class EnemyPlanet (Planet):
         
         best = self.espionageHistory[0]
         for report in self.espionageHistory:
-            if report.getDetailLevel() > best.getDetailLevel() and report.date >= best.date:
+            if report.getDetailLevel() > best.getDetailLevel() or (report.getDetailLevel() == best.getDetailLevel() and report.date > best.date):
                 best = report
         return best
 
@@ -214,18 +214,23 @@ class EnemyPlanet (Planet):
 
         
 class GameMessage(object):
-    def __init__(self, code):
+    def __init__(self, code, date):
         self.code = code
+        self.date = date # always server time not local time
+
+class CombatReport(GameMessage): # just a mockup
+    def __init__(self, code, date, coords):
+        GameMessage.__init__(self, code, date)
+        self.coords = coords
 
 class EspionageReport(GameMessage):
     class DetailLevels(Enum):
         resources, fleet, defense, buildings, research = range(5)
             
     def __init__(self, coords, planetName, date, resources, code, fleet=None, defense=None, buildings=None, research=None):
-        GameMessage.__init__(self, code)
+        GameMessage.__init__(self, code,date)
         self.coords = coords
         self.planetName = planetName
-        self.date = date # always server time not local time
         self.resources = resources
         self.fleet = fleet
         self.defense = defense

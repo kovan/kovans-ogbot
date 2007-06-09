@@ -416,7 +416,7 @@ class Bot(object):
             serverTime = self.web.serverTime()                        
             
             for source, target in remainingPlanets[:]:
-                if target.espionageHistory and target.getBestEspionageReport().hasAllNeededInfo(upToDetailLevel) and not target.espionageHistory[-1].hasExpired(serverTime):
+                if (target.espionageHistory and target.getBestEspionageReport().hasAllNeededInfo(upToDetailLevel) and not target.espionageHistory[-1].hasExpired(serverTime)) or target not in self.inactivePlanets:
                     remainingPlanets.remove((source, target))
     
             if not remainingPlanets:
@@ -440,7 +440,7 @@ class Bot(object):
                     probes = [planet.getBestEspionageReport().probesSent for planet in self.inactivePlanets if planet.espionageHistory]
                     if probes:
                         probesToSend = max (int(sum(probes) / len(probes)), int(self.config.probesToSend))
-                    else: probes = 1
+                    else: probes = int(self.config.probesToSend)
                     msg = "Spying for the 1st time"                            
                 else:
                     probesToSend = targetPlanet.getBestEspionageReport().probesSent    
@@ -487,7 +487,7 @@ class Bot(object):
         self.web.launchMission(mission, True, slotsToReserve)
         self._notArrivedEspionages[targetPlanet] = mission
         self.eventMgr.activityMsg("%s %s from %s with %s" % (msg, targetPlanet, sourcePlanet, ships))
-    
+        mySleep(int(self.config.secondsBetweenEspionages))
         return mission                            
         
     
