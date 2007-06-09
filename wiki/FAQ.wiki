@@ -69,24 +69,18 @@ A: Sure. What you have to do is create a new translation file for your language 
 
 A: The easiest and recommended way to run the bot in Windows is to use the prepared version, but it is possible to use the generic version. These are the steps:
 
- #. Download & install Python 2.5 (http://www.python.org/download/releases/2.5/)
- #. Download & install QT 4 GPL for Windows (http://www.trolltech.com/developer/downloads/qt/windows)
- #. Download & install !PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk/pyqt/download.php)
+ #. Download & install Python 2.5 (http://www.python.org)
+ #. Download & install QT 4 GPL for Windows (http://www.trolltech.com)
+ #. Download & install !PyQt v4 GPL for Windows (http://www.riverbankcomputing.co.uk)
 
 Then:
  #. Right-click on "My Computer" and select "Properties"
  #. Click the "Advanced" tab
  #. Click "Environment Variables"
- #. In the system variable PATH include "C:\Qt\4.2.2\bin;C:\Python25" (assuming you installed QT and Python in their default locations).
+ #. In the system variable PATH include "C:\Qt\4.2.1\bin;C:\Python25" (assuming you installed QT and Python in their default locations).
 
 After all that, execute runbot.bat and it _should_ work.
 
-===Q: What libraries does the bot depend on?===
-
-A: 
-  # Python 2.4 or newer.
-  # QT 4.0 or newer, by Trolltech.
-  # !PyQt4 (python bindings for QT).
 
 ===Q: Are there any 'hidden' configuration options?===
 
@@ -143,7 +137,6 @@ _planets_ _with_ _half_ _of_ _the_ _resources_ _each,_ _but_ _at_ _a_ _flight_ _
 _Additionally,_ _those_ _planets_ _with_ _fleet_ _or_ _defenses_ _are_ _re-spied_ _every_ _two_ _days,_ _just_
 _in_ _case_ _they_ _have_ _been_ _destroyed,_ _and_ _every_ _night_ _the_ _list_ _of_ _inactive_ _planets_ _is_
 _updated,_ _and_ _the_ _new_ _ones_ _are_ _spied._
-
 
 
 
