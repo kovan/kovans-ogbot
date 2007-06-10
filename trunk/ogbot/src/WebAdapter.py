@@ -143,7 +143,7 @@ class WebAdapter(object):
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
             'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"', re.I), 
             'maxSlots':re.compile(r"%s([0-9]+)" %  translations['maxFleets'].replace('.', '\. '), re.I), 
-            'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(\w+\s*?(?P<level>\d+)\s*?\)", re.I,re.LOCALE),            
+            'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(\w+\s*?(?P<level>\d+)\s*?\)", re.I|re.LOCALE),            
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
             'charset':re.compile(r'content="text/html; charset=(.*?)"', re.I), 
             'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="\d+" >(\d+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">([\w .]+?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>')
