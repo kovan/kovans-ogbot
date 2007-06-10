@@ -4,7 +4,7 @@ v2.2
 -----------------------
 ** Too many changes to mention, some of them are: **
 
-- Added chinese, russian and dutch languages.
+- Added chinese, danish, russian and dutch languages.
 - New plugin system.
 - Harder to detect by game admins.
 - A lot less espionages are neccesary, hence less overall activity.
@@ -18,7 +18,6 @@ v2.2
 - Daily inactives scan is now done ASAP each day.
 - Any available cargo type is sent if the selected type of attacking fleet is not available.
 - Source planet and last espionage time are now shown in the main window.
-- Fixed issue 103.
 - Internal algorithms rewritten.
 - Minor changes and fixes.
 - New translation item added in language files.

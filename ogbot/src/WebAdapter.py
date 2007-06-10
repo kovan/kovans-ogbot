@@ -86,9 +86,11 @@ class WebAdapter(object):
             opener = urllib2.build_opener(param1,param2,param3)
         else:
             opener = urllib2.build_opener(param1,param2)
-            
+        
+        opener.addheaders = [('User-agent', self.config.userAgent),('Keep-Alive', "300")]            
+                    
         urllib2.install_opener(opener)
-        opener.addheaders = [('User-agent', self.config.userAgent)]            
+
         
         cachedResponse = StringIO(self._fetchValidResponse(self.webpage, True).read())
         # check configured language equals ogame server language
@@ -109,7 +111,7 @@ class WebAdapter(object):
         elif  self.serverLanguage == "kr":
             translation = translation.decode('Euc-kr').encode('utf-8')
         self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
-
+        
 
     def generateRegexps(self, translations):
 
@@ -196,7 +198,6 @@ class WebAdapter(object):
                 file = open("debug/%s%s.html" %(date, php), 'w')
                 file.write(p.replace('<script', '<noscript').replace('</script>', '</noscript>').replace('http-equiv="refresh"', 'http-equiv="kovan-rulez"'))
                 file.close()
-                
                 
                 if skipValidityCheck:
                     return cachedResponse                
@@ -577,8 +578,6 @@ class ScanThread(threading.Thread):
         
     def run(self):
         socket.setdefaulttimeout(20)   
-        keepalive_handler = keepalive.HTTPHandler()
-        opener = urllib2.build_opener(keepalive_handler)
 
         error = False
         while True:
@@ -586,7 +585,7 @@ class ScanThread(threading.Thread):
                 if not error:
                     url = self._inputQueue.get_nowait()
                 
-                response = opener.open(url)
+                response = urllib2.urlopen(url)
                 page = response.read()
                 
                 if 'span class="error"' in page:
