@@ -239,7 +239,7 @@ class WebAdapter(object):
     
     def doLogin(self):
         if self.serverTimeDelta and self.serverTime().hour == 3 and self.serverTime().minute == 0: # don't connect immediately after 3am server reset
-            mySleep(40)                
+            mySleep(60)                
         page = self._fetchValidResponse(self.webpage)
         form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
         form["universe"] = [self.server]
@@ -253,10 +253,11 @@ class WebAdapter(object):
             raise BotFatalError(page)
         self._eventMgr.loggedIn(self.config.username, self.session)
         page = self._fetchPhp('index.php', lgn=1)                
+        mySleep(12)        
         page = self._fetchPhp('overview.php', lgn=1)               
         self.saveState()
 
-        mySleep(10)
+
 
     def getMyPlanets(self):
         self._fetchPhp('index.php', lgn=1)                
@@ -313,7 +314,7 @@ class WebAdapter(object):
                         
                 setattr(report, i, dict)
                 
-            
+            report.rawHtml = rawMessage
             reports.append(report)
             
         return reports

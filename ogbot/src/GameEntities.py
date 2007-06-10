@@ -227,7 +227,7 @@ class EspionageReport(GameMessage):
     class DetailLevels(Enum):
         resources, fleet, defense, buildings, research = range(5)
             
-    def __init__(self, coords, planetName, date, resources, code, fleet=None, defense=None, buildings=None, research=None):
+    def __init__(self, coords, planetName, date, resources, code, fleet=None, defense=None, buildings=None, research=None, rawHtml = ''):
         GameMessage.__init__(self, code,date)
         self.coords = coords
         self.planetName = planetName
@@ -237,6 +237,7 @@ class EspionageReport(GameMessage):
         self.buildings = buildings
         self.research = research
         self.probesSent = 0
+        self.rawHtml = rawHtml
 
             
     def __repr__(self):
