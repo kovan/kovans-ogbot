@@ -147,9 +147,9 @@ class Bot(object):
                
 
         ownedCoords = [repr(planet.coords) for planet in self.myPlanets]
-        for coords in self.config.sourcePlanets:
-            if str(coords) not in ownedCoords:
-                raise BotFatalError("You do not own one or more planets selected as sources of attacks.")        
+        for coords in self.config.sourcePlanets + [self.config.deuteriumSourcePlanet]:
+            if coords and str(coords) not in ownedCoords:
+                raise BotFatalError("You do not own one or more planets you entered.")        
         
         self.sourcePlanets = []
         for planet in self.myPlanets:
@@ -344,9 +344,6 @@ class Bot(object):
         rentabilityTreshold = self.generateRentabilityTable(self.inactivePlanets)[0].rentability
         
         self.spyPlanets(newInactives)
-#        sourcePlanet = self.sourcePlanetsDict[planet]
-#
-#        rentability = planet.rentability(sourcePlanet.coords,self.attackingShip.speed,self.config.entabilityFormula)
        
         rentabilities =  self.generateRentabilityTable(newInactives, False)        
         newInactives = [x.targetPlanet for x in rentabilities if x.rentability > rentabilityTreshold]
@@ -384,16 +381,14 @@ class Bot(object):
                     planetsWithoutShips[sourcePlanet] = serverTime
                     self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet, targetPlanet, e2))
                 except NoFreeSlotsError: 
-                    self.eventMgr.statusMsg("Fleet limit hit")
-                    mySleep(1)
+                    break
                 except FleetSendError, e: 
                     self.eventMgr.activityMsg("Error sending mission to planet %s.Reason: %s" %(targetPlanet, e))
                     self.inactivePlanets.remove(targetPlanet)
                     newInactives.remove((sourcePlanet, targetPlanet))
                         
             except NoFreeSlotsError: 
-                self.eventMgr.statusMsg("Fleet limit hit")
-                mySleep(1)
+                break
             except FleetSendError, e: 
                 self.eventMgr.activityMsg("Error sending mission to planet %s.Reason: %s" %(targetPlanet, e))
                 self.inactivePlanets.remove(targetPlanet)
@@ -487,7 +482,7 @@ class Bot(object):
         self.web.launchMission(mission, True, slotsToReserve)
         self._notArrivedEspionages[targetPlanet] = mission
         self.eventMgr.activityMsg("%s %s from %s with %s" % (msg, targetPlanet, sourcePlanet, ships))
-        mySleep(int(self.config.secondsBetweenEspionages))
+        mySleep(5)
         return mission                            
         
     
@@ -508,7 +503,7 @@ class Bot(object):
         else:
             targetPlanet.simulation.simulatedResources -= resourcesToSteal       
         self.saveFiles()              
-
+        mySleep(20)
         return mission
         
     def checkIfEspionageReportsArrived(self):
@@ -642,6 +637,8 @@ class Bot(object):
             if self.inactivePlanets:
                 planet = self.inactivePlanets[0]
                 dummy = planet.attackHistory
+                if planet.espionageHistory:
+                    dummy = planet.espionageHistory[-1].rawHtml
             
         except (EOFError, IOError, BotError, ImportError, AttributeError):
             try: file.close()            

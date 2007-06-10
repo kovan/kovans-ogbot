@@ -110,11 +110,21 @@ class PlanetDb(object):
     
 class BaseEventManager(object):
         ''' Displays events in console, logs them to a file or tells the gui about them'''
+        def __init__(self):
+            self.loginsInARow = 0
+            
         def logAndPrint(self, msg):
             msg = datetime.now().strftime("%c ") + msg
             print msg
             logging.info(msg)    
         def dispatch(self, methodName, *args):
+            # Hack to detect login loop
+            if 'loggedIn' in methodName:
+                self.loginsInARow += 1
+                if self.loginsInARow >= 3:
+                    raise BotError("Infinite login loop (This is not a bug).")
+            else: self.loginsInARow = 0
+            
             if self.gui:
                 msg = BotToGuiMsg(methodName, *args)
                 self.gui.msgQueue.put(msg)
@@ -142,10 +152,9 @@ class Configuration(dict):
         self['proxy'] = ''
         self['userAgent'] = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)'
         self['rentabilityFormula'] = '(metal + 1.5 * crystal + 3 * deuterium) / flightTime'
-        self['preMidnightPauseTime'] = '22:30:00'
+        self['preMidnightPauseTime'] = '22:00:00'
         self['inactivesAppearanceTime'] = '0:06:00'        
         self['deuteriumSourcePlanet'] = ''
-        self['secondsBetweenEspionages'] = 0
         
     def __getattr__(self, attrName):
         return self[attrName]
@@ -300,7 +309,7 @@ class Enum(object):
     
 
 def mySleep(seconds):
-    for dummy in range(0, random.randrange(seconds, seconds+4)):
+    for dummy in range(0, random.randrange(seconds, seconds+15)):
         sleep(1)
         
 def addCommas(number):

@@ -26,7 +26,7 @@ from Queue import *
 
 import PyQt4
 from PyQt4 import uic
-from PyQt4.QtCore import QTimer,QObject, SIGNAL, SLOT, QProcess, Qt,QDir,QUrl
+from PyQt4.QtCore import QTimer,QObject, SIGNAL, SLOT, QProcess, Qt,QDir,QUrl,QVariant
 from PyQt4.QtGui import *
 import sip
 sys.path.append('src/ui')
@@ -60,12 +60,12 @@ class OptionsDialog(baseclass,formclass):
         self.attackingShipButtonGroup.addButton(self.smallCargoRadioButton)
         self.attackingShipButtonGroup.addButton(self.largeCargoRadioButton)        
         
-        self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent']
+        self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent','deuteriumSourcePlanet']
         self.spinBoxes = ['universe','attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy']
         self.textEdits = ['playersToAvoid','alliancesToAvoid']
         self.formulas = {
                     'defaultFormula': Configuration('').rentabilityFormula,
-                    'mostWithRatio' : 'metal + 1.5 * crystal + 3 * deuterium',
+                    'bestRelation'  : '(metal + crystal + deuterium) / flightTime',
                     'mostTotal'     : 'metal + crystal + deuterium',
                     'mostMetal'     : 'metal',
                     'mostCrystal'   : 'crystal',
@@ -123,36 +123,42 @@ class OptionsDialog(baseclass,formclass):
             
         
     def saveOptions(self):
-        
-        if self.rotatePlanetsRadio.isChecked():
-            sourcePlanets = [ Coords(str(self.sourcePlanetsList.item(i).text())) for i in range(self.sourcePlanetsList.count()) ]
-            if not sourcePlanets:
-                QMessageBox.critical(self,"Error","No source of attacks planets selected")
-                return
-        else: sourcePlanets = []
-
-        self.config['sourcePlanets'] = sourcePlanets
-        self.config['attackingShip'] = str(self.attackingShipButtonGroup.checkedButton().text())
-        
-
-        for i in self.lineEdits:
-            control = getattr(self,i + "LineEdit")
-            self.config[i] = str(control.text())
-        for i in self.spinBoxes:            
-            control = getattr(self,i + "SpinBox")
-            self.config[i] = str(control.value())        
-        for i in self.textEdits:
-            control = getattr(self,i + "TextEdit")
-            self.config[i] = str(control.toPlainText()).split('\n')
+        try: 
+            if self.rotatePlanetsRadio.isChecked():
+                sourcePlanets = [ Coords(str(self.sourcePlanetsList.item(i).text())) for i in range(self.sourcePlanetsList.count()) ]
+                if not sourcePlanets:
+                    QMessageBox.critical(self,"Error","No source of attacks planets selected")
+                    return
+            else: sourcePlanets = []
+    
+            self.config['sourcePlanets'] = sourcePlanets
+            self.config['attackingShip'] = str(self.attackingShipButtonGroup.checkedButton().text())
             
-       
-        
-        self.config.save()
-        try: self.config.load()                 
-        except BotError,e:
+            coordsStr = str(self.deuteriumSourcePlanetLineEdit.text())
+            if '[::]' not in coordsStr:
+                if self.isMoonCheckBox2.isChecked():
+                    coordsType = Coords.Types.moon
+                else : coordsType = Coords.Types.planet
+                self.config['deuteriumSourcePlanet'] = Coords(coordsStr,coordsType = coordsType)
+    
+            for i in self.lineEdits:
+                control = getattr(self,i + "LineEdit")
+                self.config[i] = str(control.text())
+            for i in self.spinBoxes:            
+                control = getattr(self,i + "SpinBox")
+                self.config[i] = str(control.value())        
+            for i in self.textEdits:
+                control = getattr(self,i + "TextEdit")
+                self.config[i] = str(control.toPlainText()).split('\n')
+                
+           
+            
+            self.config.save()
+            self.config.load()                 
+        except Exception,e:
             QMessageBox.critical(self,"Error in configuration",str(e))
-            return
-        self.accept()
+        else:
+            self.accept()
 
     def enablePlanetList(self):
         self.enableOrDisablePlanetList(True)
@@ -213,7 +219,7 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.reportsTree,SIGNAL("currentItemChanged (QTreeWidgetItem*,QTreeWidgetItem*)"),self._planetDb_updateReportDetailsTrees)                
         QObject.connect(self.reloadDbButton,SIGNAL("clicked()"),self._planetDb_filter)                        
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
-        #QObject.connect(self.viewActivityButton,SIGNAL("clicked()"),self.viewActivityClicked)       
+ 
         QObject.connect(self.botActivityTree,SIGNAL("customContextMenuRequested (QPoint)"),self.botActivityTreeRightClicked)
 
         
@@ -310,8 +316,6 @@ class MainWindow(baseclass,formclass):
         except IOError:
             self.launchBrowserButton.setEnabled(False)
         
-
-
     def showAbout(self):
         window = AboutDialog()
         window.exec_()
@@ -334,12 +338,10 @@ class MainWindow(baseclass,formclass):
         self._planetDb_filter()
         self.toolBox.setCurrentWidget(self.planetDbPage)
         
-#    def viewActivityClicked(self):
-#        window = ActivityWindow()
-#        window.exec_()
-
     def botActivityTreeRightClicked (self,point):
          menu = QMenu(self.botActivityTree)
+         action=menu.addAction("Copy last espionage report to clipboard")
+         QObject.connect(action, SIGNAL("triggered()"), self.copyReportToClipboard)         
          action=menu.addAction("Attack now with small cargos")
          QObject.connect(action, SIGNAL("triggered()"), self.forceAttackPlanetSmallCargos)
          action=menu.addAction("Attack now with large cargos")
@@ -347,6 +349,11 @@ class MainWindow(baseclass,formclass):
          action=menu.addAction("Spy now")
          QObject.connect(action, SIGNAL("triggered()"), self.forceSpyPlanet)
          menu.exec_(QCursor.pos())
+
+    def copyReportToClipboard(self):
+        if self.bot:
+            rawReport = self.botActivityTree.currentItem().data(0,Qt.UserRole).toString()
+            QApplication.clipboard().setText(rawReport)
     
     def forceAttackPlanetSmallCargos(self):
         if self.bot:
@@ -506,6 +513,7 @@ class MainWindow(baseclass,formclass):
             if item.targetPlanet.espionageHistory:
                 treeItem.setToolTip(6,str(report.fleet) + str(report.defense))
                 treeItem.setToolTip(7,str(report.buildings) + str(report.research))
+                treeItem.setData(0,Qt.UserRole,QVariant(item.targetPlanet.espionageHistory[-1].rawHtml))
         
             if item.rentability > 0:
                 value = int (item.rentability *  255 / maxRentability)
