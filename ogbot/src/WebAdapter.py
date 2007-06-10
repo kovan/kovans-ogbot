@@ -143,7 +143,7 @@ class WebAdapter(object):
             'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
             'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"', re.I), 
             'maxSlots':re.compile(r"%s([0-9]+)" %  translations['maxFleets'].replace('.', '\. '), re.I), 
-            'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(\w+\s*?(?P<level>\d+)\s*?\)", re.I),            
+            'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(\w+\s*?(?P<level>\d+)\s*?\)", re.I,re.LOCALE),            
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
             'charset':re.compile(r'content="text/html; charset=(.*?)"', re.I), 
             'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="\d+" >(\d+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">([\w .]+?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>')
@@ -174,7 +174,7 @@ class WebAdapter(object):
 
         
         valid = False
-        loopCount = 0
+
         while not valid:
             self.checkThreadMsgsMethod()
 
@@ -259,7 +259,7 @@ class WebAdapter(object):
         mySleep(10)
 
     def getMyPlanets(self):
-        page = self._fetchPhp('index.php', lgn=1)                
+        self._fetchPhp('index.php', lgn=1)                
         page = self._fetchPhp('overview.php',lgn=1).read()
         
         myPlanets = []
@@ -484,19 +484,17 @@ class WebAdapter(object):
         self._fetchForm(form)
         
     def getResearchLevels(self):
-        levels = {}
-        myPlanetsIter = iter(self.myPlanets)
 
-        while True:
-            page = self._fetchPhp('buildings.php', mode='Forschung').read()
+
+        for planet in self.myPlanets:
+            page = self._fetchPhp('buildings.php', mode='Forschung',cp=planet.code).read()
+            levels = {}            
             for fullName, level in self.REGEXPS['researchLevels'].findall(page):
                 levels[self.translationsByLocalText[fullName]] = int(level)
             if 'impulseDrive' in levels and 'combustionDrive' in levels:
-                break
-            try: self.goToPlanet(myPlanetsIter.next())
-            except StopIteration:
-                raise BotFatalError("Not enough technologies researched to run the bot")
-        return levels
+                return levels
+               
+        raise BotFatalError("Not enough technologies researched to run the bot")
                 
     def goToPlanet(self, planet):
         self._fetchPhp('overview.php', cp=planet.code)
