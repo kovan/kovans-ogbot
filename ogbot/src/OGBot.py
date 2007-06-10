@@ -676,7 +676,7 @@ if __name__ == "__main__":
         try: os.makedirs (os.path.dirname(path))
         except OSError, e: pass
 
-    for dir in ('plugins', 'debug', 'output/reports'):
+    for dir in ('plugins', 'debug', 'output'):
         try: os.makedirs (dir)
         except OSError, e: pass
             
