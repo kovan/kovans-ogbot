@@ -51,7 +51,7 @@ If you want to minimize the probabilities of getting baned follow these advices:
   * If you post in the issues tab or in the forums, do not use the same nick/e-mail as in the game (this one is important).
   * Do not leave the bot running day and night.
 
-Probabilities of getting banned greatly depend on how much effort put GAs (AFAIK GOs can't detect the bot) in finding people that uses the bot. In some universes, like some spanish ones, people are running the bot day and night for months without being banned. On the other hand, in some polish universes people are getting banned just because they have a lot of activity, without having any real proof of bot usage. In the latter cases promising you don't use any bot and all that activity is just because you play a lot might get you unbanned.
+Probabilities of getting banned greatly depend on how much effort put GAs (AFAIK GOs can't detect the bot) in finding people that uses the bot. In some universes people are running the bot day and night for months without being banned. On the other hand, in some polish universes people are getting banned just because they have a lot of activity, without having any real proof of bot usage. In the latter cases promising you don't use any bot and all that activity is just because you play a lot might get you unbanned.
 
 
 ===Q: Can I choose which browser does the "Launch web browser" button use?===
@@ -137,6 +137,5 @@ _planets_ _with_ _half_ _of_ _the_ _resources_ _each,_ _but_ _at_ _a_ _flight_ _
 _Additionally,_ _those_ _planets_ _with_ _fleet_ _or_ _defenses_ _are_ _re-spied_ _every_ _two_ _days,_ _just_
 _in_ _case_ _they_ _have_ _been_ _destroyed,_ _and_ _every_ _night_ _the_ _list_ _of_ _inactive_ _planets_ _is_
 _updated,_ _and_ _the_ _new_ _ones_ _are_ _spied._
-
 
 
