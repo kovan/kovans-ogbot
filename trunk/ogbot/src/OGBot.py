@@ -261,7 +261,7 @@ class Bot(object):
         self.inactivePlanetsByCoords = dict([(str(p.coords), p) for p in self.inactivePlanets])              
         self.updateSourcePlanetsDict()
 
-        self.eventMgr.activityMsg("Inactive search finished. %s inactives (%s new) found in %s solar sytems (%s secs. per solar system)." % (len(allInactives), len(newInactives), systems, seconds/float(systems)))
+        self.eventMgr.activityMsg("Inactive search finished. %s inactives (%s new) found in %s solar sytems." % (len(allInactives), len(newInactives), systems))
 
         newInactives.save(FILE_PATHS['newinactives'])
         self.saveFiles()          
