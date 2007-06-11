@@ -13,6 +13,7 @@ A: The access code has a validity of one month. After that it stops working. Thi
 
 A: For some countries payment through SMS is not supported, only payments through phone call. The price is approximately the same. 
 The procedure is as follows: you call and you will listen to a pre-recorded message in the language of your country. After the required call time, the machine will dictate the code, which you should write down.
+All this also applies when your phone company is not supported for SMS payment. Supported companies for a country are listed at the bottom of the pay page. If you send the SMS and your company is not supported you will not be charged anything.
 
 ===Q: My country doesn't appear in the list===
 
