@@ -11,7 +11,6 @@ v2.2
 - New plugin system.
 - Harder to detect by game admins.
 - A lot less espionages are neccesary, hence less overall activity.
-- Fixed infinite login loop
 - Before attacks only one probe is sent.
 - Much faster inactive planets search.
 - Reserved slots are no longer filled with senseless espionages.

@@ -634,11 +634,12 @@ class Bot(object):
                 raise BotError() # if any of those has changed, invalidate stored espionages
             
             # fix to reset old versions's botdata:
-            if self.inactivePlanets:
-                planet = self.inactivePlanets[0]
-                dummy = planet.attackHistory
+
+            for planet in self.inactivePlanets:
+                dummy = planet.attackHistory                    
                 if planet.espionageHistory:
                     dummy = planet.espionageHistory[-1].rawHtml
+                    break
             
         except (EOFError, IOError, BotError, ImportError, AttributeError):
             try: file.close()            
