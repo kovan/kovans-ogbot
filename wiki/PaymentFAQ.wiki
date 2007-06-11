@@ -1,0 +1,14 @@
+#summary Frequently Asked Questions concerning Payment
+#labels Featured
+
+===Q: Will I have access to future versions?===
+
+A: The access code has a validity of one month. After that it stops working. This means that you can download new versions for one month since you send the SMS. *The downloaded versions will not stop working after that month* (unless OGame interface changes, in this case all bots will probably stop working).
+
+===Q: You say that an SMS must be sent, but for my country there is no SMS number===
+
+A: For some countries payment through SMS is not supported, only payments through phone call. The price is approximately the same.
+
+===Q: My country doesn't appear in the list===
+
+A: Some countries are not supported yet, sorry. More countries will be added in the future (for instance Turkey and China are already scheduled), and also an alternative payment method for unsupported countries will be added.
