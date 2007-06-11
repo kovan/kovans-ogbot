@@ -100,7 +100,7 @@ class OptionsDialog(baseclass,formclass):
         
         for i in self.lineEdits:
             control = getattr(self,i + "LineEdit")
-            control.setText(self.config[i])
+            control.setText(str(self.config[i]))
         for i in self.spinBoxes:            
             control = getattr(self,i + "SpinBox")
             control.setValue(int(self.config[i]))
@@ -124,23 +124,6 @@ class OptionsDialog(baseclass,formclass):
         
     def saveOptions(self):
         try: 
-            if self.rotatePlanetsRadio.isChecked():
-                sourcePlanets = [ Coords(str(self.sourcePlanetsList.item(i).text())) for i in range(self.sourcePlanetsList.count()) ]
-                if not sourcePlanets:
-                    QMessageBox.critical(self,"Error","No source of attacks planets selected")
-                    return
-            else: sourcePlanets = []
-    
-            self.config['sourcePlanets'] = sourcePlanets
-            self.config['attackingShip'] = str(self.attackingShipButtonGroup.checkedButton().text())
-            
-            coordsStr = str(self.deuteriumSourcePlanetLineEdit.text())
-            if '[::]' not in coordsStr:
-                if self.isMoonCheckBox2.isChecked():
-                    coordsType = Coords.Types.moon
-                else : coordsType = Coords.Types.planet
-                self.config['deuteriumSourcePlanet'] = Coords(coordsStr,coordsType = coordsType)
-    
             for i in self.lineEdits:
                 control = getattr(self,i + "LineEdit")
                 self.config[i] = str(control.text())
@@ -150,8 +133,27 @@ class OptionsDialog(baseclass,formclass):
             for i in self.textEdits:
                 control = getattr(self,i + "TextEdit")
                 self.config[i] = str(control.toPlainText()).split('\n')
+    
                 
-           
+            if self.rotatePlanetsRadio.isChecked():
+                sourcePlanets = [ Coords(str(self.sourcePlanetsList.item(i).text())) for i in range(self.sourcePlanetsList.count()) ]
+                if not sourcePlanets:
+                    QMessageBox.critical(self,"Error","No source of attacks planets selected")
+                    return
+            else: sourcePlanets = []
+    
+            self.config['sourcePlanets'] = sourcePlanets
+            self.config['attackingShip'] = str(self.attackingShipButtonGroup.checkedButton().text())
+        
+            coordsStr = str(self.deuteriumSourcePlanetLineEdit.text())
+            if '[::]' in coordsStr:
+                deuteriumSourcePlanet = ''
+            else:
+                if self.isMoonCheckBox2.isChecked():
+                    coordsType = Coords.Types.moon
+                else:coordsType = Coords.Types.planet
+                deuteriumSourcePlanet= Coords(coordsStr,coordsType = coordsType)
+            self.config['deuteriumSourcePlanet'] = deuteriumSourcePlanet
             
             self.config.save()
             self.config.load()                 
