@@ -5,9 +5,10 @@
 
 A: The access code has a validity of one month. After that it stops working. This means that you can download new versions for one month since you send the SMS. *The downloaded versions will not stop working after that month* (unless OGame interface changes, in this case all bots will probably stop working).
 
-===Q: You say that an SMS must be sent, but for my country there is no SMS number===
+===Q: You say that an SMS must be sent, but for my country there is no number for SMS, only for phone calls.===
 
-A: For some countries payment through SMS is not supported, only payments through phone call. The price is approximately the same.
+A: For some countries payment through SMS is not supported, only payments through phone call. The price is approximately the same. 
+The procedure is as follows: you call and you will listen to a pre-recorded message in the language of your country. After the required call time, the machine will dictate the code, which you should write down.
 
 ===Q: My country doesn't appear in the list===
 
