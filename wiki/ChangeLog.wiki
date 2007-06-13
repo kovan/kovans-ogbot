@@ -195,3 +195,5 @@ v1.0
 
 
 }}}
+
+[https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=jsceballos%40gmail%2ecom&item_name=Kovan%27s%20OGBot&item_number=1983&amount=1%2e40&no_shipping=1&return=http%3a%2f%2fns23463%2eovh%2enet%2fkovans%2dogbot%2fpaypal%2fdownload%2ephp&no_note=1&currency_code=EUR&lc=ES&bn=PP%2dBuyNowBF&charset=UTF%2d8 Copyright (c) 2007]
