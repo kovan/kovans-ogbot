@@ -12,7 +12,7 @@ The procedure is simple: after payment you will receive an e-mail with a downloa
 
 ===Q: Will I have access to future versions?===
 
-A: The access code has a validity of one month. After that it stops working. This means that you can download new versions for one month from the moment you make the purchase. *The downloaded versions will not stop working after that month* (unless OGame interface changes, in this case all bots will probably stop working).
+A: The access code has a validity of one month. After that it stops working. This means that you can download new versions for one month from the moment you make the purchase. *The downloaded versions will not stop working after that month* unless OGame interface changes, in this case all bots will probably stop working.
 
 ===Q: You say that an SMS must be sent, but for my country there is no number for SMS, only for phone calls.===
 
