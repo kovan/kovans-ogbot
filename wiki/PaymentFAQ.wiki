@@ -23,4 +23,4 @@ All this also applies when your phone company is not supported for SMS payment. 
 ===Q: My country doesn't appear in the list for SMS/Phone payments===
 ===Q: My phone company is not supported===
 
-A: Some countries and/or phone companies are not supported, sorry. You can use PayPal instead.
+A: Some countries and/or phone companies are not supported, sorry. You can use !PayPal instead.
