@@ -1,5 +1,11 @@
 v2.2a
 -----------------------
+ June, 15. 2007     
+-----------------------
+- Support for admiral officer.
+
+v2.2a
+-----------------------
  June, 14. 2007     
 -----------------------
 - Small corrections for dutch and portuguese translations.

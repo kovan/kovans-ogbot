@@ -455,6 +455,8 @@ class WebAdapter(object):
         else: 
             usedSlots = int(usedSlotsNums[-1])
         maxFleets = int(self.REGEXPS['maxSlots'].search(page).group(1))
+        if "admiral_ikon.gif" in page:
+            maxFleets += 2
         return maxFleets - usedSlots
     
     def getAvailableFleet(self, planet, alreadyFetchedPage = None):    
