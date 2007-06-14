@@ -589,7 +589,10 @@ class Bot(object):
                     attackingShip = INGAME_TYPES_BY_NAME['smallCargo']
                 else:
                     attackingShip = INGAME_TYPES_BY_NAME['largeCargo']
-                try: self.attackPlanet(self.sourcePlanetsDict[targetPlanet], targetPlanet, attackingShip, False)
+                try:
+                    if targetPlanet.getBestEspionageReport().isDefended(): 
+                        raise FleetSendError("The planet is defended")
+                    else: self.attackPlanet(self.sourcePlanetsDict[targetPlanet], targetPlanet, attackingShip, False)
                 
                 except FleetSendError, e: 
                     self.eventMgr.activityMsg("Error sending mission to planet %s. Reason: %s" %(targetPlanet, e))                
