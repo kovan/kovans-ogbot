@@ -1,7 +1,7 @@
 #summary Frequently Asked Questions concerning Payment
 #labels Featured
 
-===Q: How does SMS payment work?===
+===Q: How does SMS or phone payment work?===
 
 A: It's simple: You send an SMS to the number of your country, and you will receive another SMS with a code. When you enter that code in the white text box and click Send, you will start downloading the bot. The amount in the orange rectangle will be charged to you phone bill.
 
