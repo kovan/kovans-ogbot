@@ -7,7 +7,7 @@ A: It's simple: You send an SMS to the number of your country, and you will rece
 
 ===Q: How does PayPal payment work?===
 
-A: You need to have an account at www.paypal.com. PayPal is a payment system frequently used in the Internet.
+A: You need to have an account at http://www.paypal.com. !PayPal is a payment system frequently used in the Internet.
 The procedure is simple: after payment you will receive an e-mail with a download link.
 
 ===Q: Will I have access to future versions?===
