@@ -3,7 +3,7 @@
 
 ===Q: How do I run the bot in Windows?===
 
-A: Send the SMS (from 1€ to 2€ aprox., depending on country), download the file, decompress it and run OGBot.exe
+A: After downloading the file, decompress it and run OGBot.exe
 
 ===Q: How do I run the bot in Linux?===
 
