@@ -1,6 +1,13 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+v2.2a
+-----------------------
+ June, 14. 2007     
+-----------------------
+- Small corrections for dutch and portuguese translations.
+
+
 v2.2
 -----------------------
  May, 30. 2007     
