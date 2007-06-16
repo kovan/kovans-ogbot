@@ -61,7 +61,8 @@ class Bot(object):
     class EventManager(BaseEventManager):
         ''' Displays events in console, logs them to a file or tells the gui about them'''
         def __init__(self, gui = None):
-            self.gui = gui
+            super(Bot.EventManager, self).__init__(gui)
+            
         def fatalException(self, exception):
             self.logAndPrint("Fatal error found, terminating. %s" % exception)
             self.dispatch("fatalException", exception)
@@ -227,7 +228,7 @@ class Bot(object):
             self._checkThreadQueue()                     
     
     def scanGalaxies(self):
-        self.eventMgr.activityMsg("Searching inactive planets in range...")
+        self.eventMgr.activityMsg("Searching inactive planets in range (this may take up to some minutes)...")
 
         startTime = datetime.now()           
         if self.config.deuteriumSourcePlanet:
@@ -308,7 +309,6 @@ class Bot(object):
                     if targetPlanet.espionageHistory[-1].getAge(serverTime).seconds < 900 or targetPlanet in [attack.targetPlanet for attack in notArrivedAttacks]:
                         sentMission = self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip)
                         notArrivedAttacks.append(sentMission)
-                        mySleep(20)
                     elif targetPlanet not in self._notArrivedEspionages:    #planet's espionage report timed out, re-spy.
                         self._spyPlanet(sourcePlanet, targetPlanet, False, "Spying", 1)
                 except NotEnoughShipsError, e1:
@@ -482,7 +482,7 @@ class Bot(object):
         self.web.launchMission(mission, True, slotsToReserve)
         self._notArrivedEspionages[targetPlanet] = mission
         self.eventMgr.activityMsg("%s %s from %s with %s" % (msg, targetPlanet, sourcePlanet, ships))
-        mySleep(5)
+        mySleep(0)
         return mission                            
         
     
@@ -621,8 +621,9 @@ class Bot(object):
         file.close()
         
     def loadFiles(self):
+        path = FILE_PATHS['gamedata']
         try:
-            file = open(FILE_PATHS['gamedata'], 'rb')
+            file = open(path, 'rb')
             u = cPickle.Unpickler(file)
             self.inactivePlanets = u.load()
             self.reachableSolarSystems = u.load()
@@ -647,10 +648,16 @@ class Bot(object):
         except (EOFError, IOError, BotError, ImportError, AttributeError):
             try: file.close()            
             except UnboundLocalError: pass
+            try: 
+                shutil.copy(path + ".bak", path) # try to restore backup
+                self.loadFiles()
+                return
+            except IOError: pass      
+      
             self.inactivePlanets = []
             self.reachableSolarSystems = []
-            self.eventMgr.activityMsg("Invalid or missing gamedata, respying planets.")
-            try: os.remove(FILE_PATHS['gamedata'])              
+            self.eventMgr.activityMsg("Invalid or missing gamedata, spying planets.")
+            try: os.remove(path)              
             except Exception : pass
      
     def runPlugin(self, plugin):

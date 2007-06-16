@@ -110,24 +110,27 @@ class PlanetDb(object):
     
 class BaseEventManager(object):
         ''' Displays events in console, logs them to a file or tells the gui about them'''
-        def __init__(self):
+        def __init__(self,gui = None):
             self.loginsInARow = 0
+            self.gui = gui
             
         def logAndPrint(self, msg):
             msg = datetime.now().strftime("%c ") + msg
             print msg
             logging.info(msg)    
         def dispatch(self, methodName, *args):
+            if self.gui:
+                msg = BotToGuiMsg(methodName, *args)
+                self.gui.msgQueue.put(msg)
+                            
             # Hack to detect login loop
-            if 'loggedIn' in methodName:
+            if 'activityMsg' in methodName and 'Logged in' in args[0]:
                 self.loginsInARow += 1
                 if self.loginsInARow >= 3:
                     raise BotError("Infinite login loop (This is not a bug).")
             else: self.loginsInARow = 0
             
-            if self.gui:
-                msg = BotToGuiMsg(methodName, *args)
-                self.gui.msgQueue.put(msg)
+
                 
         
 class Configuration(dict):
@@ -309,7 +312,7 @@ class Enum(object):
     
 
 def mySleep(seconds):
-    for dummy in range(0, random.randrange(seconds, seconds+15)):
+    for dummy in range(0, random.randrange(seconds, seconds+10)):
         sleep(1)
         
 def addCommas(number):
