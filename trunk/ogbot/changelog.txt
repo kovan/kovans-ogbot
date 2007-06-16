@@ -1,8 +1,11 @@
 v2.2b
 -----------------------
- June, 15. 2007     
+ June, 17. 2007     
 -----------------------
+- Added turkish
 - Support for admiral officer.
+- Database is backed up and restored if neccesary.
+- Anti detection fix.
 
 v2.2a
 -----------------------
@@ -28,7 +31,7 @@ v2.2
 - Reserved slots are no longer filled with senseless espionages.
 - Attacks and espionages from planets with no probes or cargos are deactivated for a while.
 - Rush mode at midnight (attack new inactive planets as they are found if they are very rentable).
-- Option to stop attacks before midnight, in order to free slots for rush mode.
+- Attacks are paused before midnight, in order to free slots for rush mode.
 - Daily inactives scan is now done ASAP each day.
 - Any available cargo type is sent if the selected type of attacking fleet is not available.
 - Source planet and last espionage time are now shown in the main window.
