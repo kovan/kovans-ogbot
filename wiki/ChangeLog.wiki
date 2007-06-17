@@ -1,30 +1,40 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+v2.2b
+-----------------------
+ June, 17. 2007     
+-----------------------
+- Added turkish
+- Support for admiral officer.
+- Database is backed up and restored if neccesary.
+- Anti detection fix.
+
 v2.2a
 -----------------------
  June, 14. 2007     
 -----------------------
 - Small corrections for dutch and portuguese translations.
 
-
 v2.2
 -----------------------
- May, 30. 2007     
+ June, 11. 2007     
 -----------------------
 ** Too many changes to mention, some of them are: **
-
+- Login loop fixed.
+- Added random delays.
+- Configurable deuterium source planet
+- Espionage reports can be copied to clipboard by right-clicking.
 - Added chinese, danish, russian and dutch languages.
 - New plugin system.
 - Harder to detect by game admins.
 - A lot less espionages are neccesary, hence less overall activity.
-- Fixed infinite login loop
 - Before attacks only one probe is sent.
 - Much faster inactive planets search.
 - Reserved slots are no longer filled with senseless espionages.
 - Attacks and espionages from planets with no probes or cargos are deactivated for a while.
 - Rush mode at midnight (attack new inactive planets as they are found if they are very rentable).
-- Option to stop attacks before midnight, in order to free slots for rush mode.
+- Attacks are paused before midnight, in order to free slots for rush mode.
 - Daily inactives scan is now done ASAP each day.
 - Any available cargo type is sent if the selected type of attacking fleet is not available.
 - Source planet and last espionage time are now shown in the main window.
@@ -32,7 +42,7 @@ v2.2
 - Minor changes and fixes.
 - New translation item added in language files.
 
-v2.1.2d
+v2.1.2c
 -----------------------
  March, 12. 2007     
 -----------------------
@@ -73,7 +83,7 @@ v2.1.1
 -----------------------
  March, 5. 2007     
 -----------------------
-- Added command-line option (-c) to autostart bot without clicking start.
+- Added command-line option (-a) to autostart bot without clicking start.
 - Replaced list of planets to avoid by list of players and alliances to avoid.
 - Customizable rentability formula.
 - Redesigned options dialog and added options to customize user-agent and 
@@ -85,7 +95,6 @@ v2.1k
  March, 2. 2007     
 -----------------------
 - Fixed "Connecting..." loop in Windows versions.
-
 
 v2.1i
 -----------------------
