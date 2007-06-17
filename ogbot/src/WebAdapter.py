@@ -145,7 +145,8 @@ class WebAdapter(object):
             'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(.*?(?P<level>\d+)\s*?\)", re.I|re.LOCALE),            
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
             'charset':re.compile(r'content="text/html; charset=(.*?)"', re.I), 
-            'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="\d+" >(\d+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">([\w .]+?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>')
+            'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="\d+" >(\d+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">([\w .]+?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>'),
+            'stats': re.compile(r"<th>(?:<font color='87CEEB'>)?([^<]+)(?:</font>)?</th>.*?<th>([0-9.]+)</th>",re.DOTALL)
         }
         
         
@@ -536,8 +537,7 @@ class WebAdapter(object):
             form['type'] = [type]
             form['start'] = [str(i)]
             page = self._fetchForm(form).read()
-            regexp = r"<th>(?:<font color='87CEEB'>)?([^<]+)(?:</font>)?</th>.*?<th>([0-9.]+)</th>"
-            for player, points in re.findall(regexp, page, re.DOTALL):
+            for player, points in self.REGEXPS['stats'].findall(page):
                 yield player, int(points.replace('.', ''))
         
 
