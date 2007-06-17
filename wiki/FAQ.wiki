@@ -16,10 +16,6 @@ After installing them just run runbot.sh
 
 Note for Gentoo Linux: there is not a pyqt-4 package, so !PyQt must be compiled manually. Instructions [http://www.riverbankcomputing.com/Docs/PyQt4/pyqt4ref.html#installing-pyqt here]: 
 
-===Q: How do I run the bot in Mac OS X?===
-
-A: There is a user who wrote about it  [http://groups.google.com/group/kovans-ogbot/browse_frm/thread/674a21ebcc4fe7d4 here]
-
 ===Q: I have Commander mode. Will the bot still work?===
 
 A: Yes. But you have to disable message grouping in folders in OGame options.
