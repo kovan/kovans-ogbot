@@ -187,9 +187,9 @@ class WebAdapter(object):
                 cachedResponse = StringIO(response.read())
                 p = cachedResponse.getvalue()
                 cachedResponse.seek(0)
-                # store last 20 pages fetched in the debug directory:
+                # store last 30 pages fetched in the debug directory:
                 files = os.listdir('debug')
-                if len(files) >= 20: #never allow more than 20 files
+                if len(files) >= 30: #never allow more than 30 files
                     files.sort()
                     os.remove('debug/'+files[0])
                 try: php = '_'+re.findall("/(\w+\.php)", self.lastFetchedUrl)[0]

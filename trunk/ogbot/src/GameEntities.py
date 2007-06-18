@@ -77,11 +77,10 @@ class Coords(object):
     def convertToInts(self):
         self.galaxy, self.solarSystem, self.planet = int(self.galaxy), int(self.solarSystem), int(self.planet)
         
-    def __str__(self):
-        return "[%s:%s:%s]" % (self.galaxy, self.solarSystem, self.planet)                   
+  
     
     def __repr__(self):
-        repr = str(self)
+        repr = "[%s:%s:%s]" % (self.galaxy, self.solarSystem, self.planet)      
         if not self.coordsType == self.Types.planet:
             repr += " " + self.Types.toStr(self.coordsType)
         return  repr
