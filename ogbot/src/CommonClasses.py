@@ -205,8 +205,6 @@ class Configuration(dict):
         except Exception, e:
             raise BotError("Invalid rentability formula: " + str(e))
         
-#        if 'ogame.com.es' in self.webpage and self.universe == '42':
-#            raise BotError("Bot doesn't work in that universe.")
             
     def _parseList(self,listStr):
         list = []

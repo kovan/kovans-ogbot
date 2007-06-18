@@ -112,6 +112,10 @@ class OptionsDialog(baseclass,formclass):
             self.rotatePlanetsRadio.setChecked(True)
             self.enablePlanetList()
             self.sourcePlanetsList.addItems( [repr(p) for p in self.config['sourcePlanets']] )
+
+        deuteriumSourcePlanet = self.config['deuteriumSourcePlanet']
+        if deuteriumSourcePlanet and deuteriumSourcePlanet.isMoon():
+            self.isMoonCheckBox2.setChecked(True)
         
 
         formulasReversed = dict([(formula,name) for name,formula in self.formulas.items() ])
