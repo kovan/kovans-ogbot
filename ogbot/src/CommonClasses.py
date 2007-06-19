@@ -143,7 +143,7 @@ class Configuration(dict):
         self['universe'] = 0
         self['username'] = ''
         self['password'] = ''
-        self['webpage'] = 'ogame.com.es'      
+        self['webpage'] = 'ogame.org'      
         self['attackRadius'] = 10
         self['slotsToReserve'] = 0
         self['attackingShip'] = 'smallCargo'

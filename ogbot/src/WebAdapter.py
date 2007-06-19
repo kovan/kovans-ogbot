@@ -70,6 +70,7 @@ class WebAdapter(object):
         self.checkThreadMsgsMethod = checkThreadMsgsMethod
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
+        self._mutex = threading.RLock()
         
         self.webpage = "http://"+ config.webpage + "/home.php"
 
@@ -172,7 +173,7 @@ class WebAdapter(object):
     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
 
-        
+        self._mutex.acquire()
         valid = False
 
         while not valid:
@@ -235,6 +236,8 @@ class WebAdapter(object):
                 else: raise e
             if not valid: 
                 mySleep(5)
+                
+        self._mutex.release()
         return cachedResponse
     
     def doLogin(self):
