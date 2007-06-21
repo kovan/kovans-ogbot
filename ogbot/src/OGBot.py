@@ -489,7 +489,7 @@ class Bot(object):
     def attackPlanet(self, sourcePlanet, targetPlanet, attackingShip, abortIfNoShips = True):
         resourcesToSteal = targetPlanet.simulation.simulatedResources.half()        
         producedMeanwhile = targetPlanet.simulation.calculateProduction(sourcePlanet.coords.flightTimeTo(targetPlanet.coords, attackingShip.speed))
-        ships = math.ceil((resourcesToSteal + producedMeanwhile).total() / attackingShip.capacity)
+        ships = math.ceil((resourcesToSteal + producedMeanwhile).total() / float(attackingShip.capacity))
         fleet = { attackingShip.name : ships }
         mission = Mission(Mission.Types.attack, sourcePlanet, targetPlanet, fleet)
         self.web.launchMission(mission, abortIfNoShips, self.config.slotsToReserve)
