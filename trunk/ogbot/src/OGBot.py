@@ -68,7 +68,7 @@ class Bot(object):
             self.dispatch("fatalException", exception)
         # new GUI messages:
         def connected(self):
-            self.logAndPrint("Connected")
+            self.logAndPrint("OK")
             self.dispatch("connected")
         def simulationsUpdate(self, rentabilities):
             self.dispatch("simulationsUpdate", rentabilities)
@@ -130,7 +130,7 @@ class Bot(object):
   
          
     def _connect(self):
-        self.eventMgr.activityMsg("Connecting...")        
+        self.eventMgr.activityMsg("Contacting server...")        
         self.web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue, self.gui)
         self.myPlanets = self.web.getMyPlanets()
         self.researchLevels = self.web.getResearchLevels()
@@ -140,7 +140,7 @@ class Bot(object):
 
 
         largeCargos.speed =  int(7500 * (1 + (self.researchLevels['combustionDrive'] * 0.1)))
-        if self.researchLevels['combustionDrive'] < 5:
+        if self.researchLevels['impulseDrive'] < 5:
             smallCargos.speed =  int(5000  * (1 + (self.researchLevels['combustionDrive'] * 0.1)))
         else:
             smallCargos.speed =  int(10000 * (1 + (self.researchLevels['impulseDrive'] * 0.2)))
