@@ -139,7 +139,42 @@ class Configuration(dict):
         self.configParser = ConfigParser.SafeConfigParser()
         self.configParser.optionxform = str # prevent ini parser from converting vars to lowercase         
         self.loadDefaults()
+        
+    def loadDefaults(self): 
+        pass
+    def __getattr__(self, attrName):
+        return self[attrName]
+    
+    def load(self):
+        if not os.path.isfile(self.file):
+            raise BotFatalError("File %s does not exist" % self.file)
+            
+        self.configParser.read(self.file)
+        for section in self.configParser.sections():
+            self.update(self.configParser.items(section))
+        
+    def _parseList(self,listStr):
+        list = []
+        for item in listStr.split(','):
+            item = item.strip('''[] ,'"''')
+            if item : list.append(item)
+        return list
+
+    def _parseTime(self,timeStr):
+        return time(*strptime(timeStr,"%H:%M:%S")[3:6])
+        
+    def save(self):      
+        if not self.configParser.has_section('options'):
+            self.configParser.add_section('options')
+
+        for key, value in self.items():
+            self.configParser.set('options', key, str(value))
+        self.configParser.write(open(self.file, 'w'))
+
+                
+class BotConfiguration (Configuration):
     def loadDefaults(self):
+        super(BotConfiguration, self).loadDefaults() 
         self['universe'] = 0
         self['username'] = ''
         self['password'] = ''
@@ -158,17 +193,12 @@ class Configuration(dict):
         self['preMidnightPauseTime'] = '22:00:00'
         self['inactivesAppearanceTime'] = '0:06:00'        
         self['deuteriumSourcePlanet'] = ''
+        self['maxProbes'] = 15        
         
-    def __getattr__(self, attrName):
-        return self[attrName]
+
         
     def load(self):
-        if not os.path.isfile(self.file):
-            raise BotFatalError("File %s does not exist" % self.file)
-            
-        self.configParser.read(self.file)
-        for section in self.configParser.sections():
-            self.update(self.configParser.items(section))
+        super(BotConfiguration, self).load()        
         
         for time in ('preMidnightPauseTime','inactivesAppearanceTime'):
             self[time] = self._parseTime(self[time])
@@ -204,25 +234,6 @@ class Configuration(dict):
             exec self.rentabilityFormula
         except Exception, e:
             raise BotError("Invalid rentability formula: " + str(e))
-        
-            
-    def _parseList(self,listStr):
-        list = []
-        for item in listStr.split(','):
-            item = item.strip('''[] ,'"''')
-            if item : list.append(item)
-        return list
-
-    def _parseTime(self,timeStr):
-        return time(*strptime(timeStr,"%H:%M:%S")[3:6])
-        
-    def save(self):      
-        if not self.configParser.has_section('options'):
-            self.configParser.add_section('options')
-
-        for key, value in self.items():
-            self.configParser.set('options', key, str(value))
-        self.configParser.write(open(self.file, 'w'))
 
     
 class Translations(dict):
@@ -254,7 +265,7 @@ class ResourceSimulation(object):
             self._crystalMine = mines.get('crystalMine', 0)
             self._deuteriumSynthesizer = mines.get('deuteriumSynthesizer', 0)
         else:
-            self._metalMine, self._crystalMine, self._deuteriumSynthesizer = 22, 19, 11
+            self._metalMine, self._crystalMine, self._deuteriumSynthesizer = 16, 14, 9
             
     def _setResources(self, resources):
         self._resourcesSimulationTime = datetime.now() # no need to use server time because it's use is isolated to inside this class
@@ -299,6 +310,10 @@ class PlanetList(dict):
             try:os.remove(filePath)          
             except Exception : pass                
         self.update(loaded)
+        
+class Plugin(object):
+    def __init__(self):
+        pass
 
 class Struct(object):
     def __init__(self, **entries): self.__dict__.update(entries)    
