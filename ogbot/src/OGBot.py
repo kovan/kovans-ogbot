@@ -84,7 +84,7 @@ class Bot(object):
         self.msgQueue = Queue()
         self.eventMgr = Bot.EventManager(gui)
         self._planetDb = PlanetDb(FILE_PATHS['planetdb'])
-        self.config = Configuration(FILE_PATHS['config'])                   
+        self.config = BotConfiguration(FILE_PATHS['config'])                   
         self.web = None
         self.myPlanets = []
         self.researchLevels = {}
@@ -433,9 +433,10 @@ class Bot(object):
                 if not targetPlanet.espionageHistory:
                     # send no. of probes equal to the average no. of probes sent until now.
                     probes = [planet.getBestEspionageReport().probesSent for planet in self.inactivePlanets if planet.espionageHistory]
-                    if probes:
+                    if probes and len(probes) > 20:
                         probesToSend = max (int(sum(probes) / len(probes)), int(self.config.probesToSend))
-                    else: probes = int(self.config.probesToSend)
+                    else: 
+                        probesToSend = int(self.config.probesToSend)
                     msg = "Spying for the 1st time"                            
                 else:
                     probesToSend = targetPlanet.getBestEspionageReport().probesSent    
@@ -448,24 +449,28 @@ class Bot(object):
 
                 probesToSend = max(samePlayerProbes + [probesToSend])
             
-            try:
-                self._spyPlanet(sourcePlanet, targetPlanet, True, msg, probesToSend)
-            except NotEnoughShipsError, e:
-                self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet, targetPlanet, e))
-                # move to the end all planets with this source planet
-                for source, planet in remainingPlanets[:]:
-                    if source == sourcePlanet:
-                        remainingPlanets.remove((source, planet))
-                        remainingPlanets.append((source, planet))
-                mySleep(1)
-            except NoFreeSlotsError: 
-                self.eventMgr.statusMsg("Fleet limit hit")
-                mySleep(3)
-            except FleetSendError, e: 
-                self.eventMgr.activityMsg("Error sending mission to planet %s.Reason: %s" %(targetPlanet, e))
-                try: planetsToSpy.remove(targetPlanet)                
-                except ValueError: pass
+            if probesToSend > int(self.config.maxProbes):
+                self.eventMgr.activityMsg("Espionage to planet %s would need too many probes. Skipping planet." % targetPlanet)
                 remainingPlanets.remove((sourcePlanet, targetPlanet))
+            else:
+                try:
+                    self._spyPlanet(sourcePlanet, targetPlanet, True, msg, probesToSend)
+                except NotEnoughShipsError, e:
+                    self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet, targetPlanet, e))
+                    # move to the end all planets with this source planet
+                    for source, planet in remainingPlanets[:]:
+                        if source == sourcePlanet:
+                            remainingPlanets.remove((source, planet))
+                            remainingPlanets.append((source, planet))
+                    mySleep(1)
+                except NoFreeSlotsError: 
+                    self.eventMgr.statusMsg("Fleet limit hit")
+                    mySleep(3)
+                except FleetSendError, e: 
+                    self.eventMgr.activityMsg("Error sending mission to planet %s.Reason: %s" %(targetPlanet, e))
+                    try: planetsToSpy.remove(targetPlanet)                
+                    except ValueError: pass
+                    remainingPlanets.remove((sourcePlanet, targetPlanet))
 
     def _spyPlanet(self, sourcePlanet, targetPlanet, useReservedSlots=False, msg = "Spying", probesToSend = None):
         if useReservedSlots:
@@ -630,7 +635,6 @@ class Bot(object):
             self.lastInactiveScanTime = u.load()
             storedWebpage = u.load()
             storedUniverse = u.load()
-            storedUsername = u.load()
             file.close()
                  
             if storedWebpage != self.config.webpage \
@@ -649,7 +653,7 @@ class Bot(object):
             try: file.close()            
             except UnboundLocalError: pass
             try: 
-                shutil.copy(path + ".bak", path) # try to restore backup
+                shutil.move(path + ".bak", path) # try to restore backup
                 self.loadFiles()
                 return
             except IOError: pass      

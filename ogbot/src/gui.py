@@ -61,10 +61,10 @@ class OptionsDialog(baseclass,formclass):
         self.attackingShipButtonGroup.addButton(self.largeCargoRadioButton)        
         
         self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent','deuteriumSourcePlanet']
-        self.spinBoxes = ['universe','attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy']
+        self.spinBoxes = ['universe','attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy','maxProbes']
         self.textEdits = ['playersToAvoid','alliancesToAvoid']
         self.formulas = {
-                    'defaultFormula': Configuration('').rentabilityFormula,
+                    'defaultFormula': BotConfiguration('').rentabilityFormula,
                     'bestRelation'  : '(metal + crystal + deuterium) / flightTime',
                     'mostTotal'     : 'metal + crystal + deuterium',
                     'mostMetal'     : 'metal',
@@ -88,7 +88,7 @@ class OptionsDialog(baseclass,formclass):
         
     def loadOptions(self):
         
-        self.config = Configuration(FILE_PATHS['config'])
+        self.config = BotConfiguration(FILE_PATHS['config'])
         if os.path.isfile(FILE_PATHS['config']):
             try: self.config.load()
             except BotError, e: 
@@ -236,7 +236,7 @@ class MainWindow(baseclass,formclass):
         self.planetsTree.header().setResizeMode(QHeaderView.Stretch)                
         self.botActivityTree.header().setResizeMode(QHeaderView.Interactive)
         self.botActivityTree.header().setStretchLastSection(False)
-        headerSizes = [70,75,111,111,70,300,60,120,140]
+        headerSizes = [70,75,111,111,70,300,60,120,150]
         for i in range(len(headerSizes)):
             self.botActivityTree.header().resizeSection(i,headerSizes[i])
                 
@@ -272,7 +272,7 @@ class MainWindow(baseclass,formclass):
             try:
                 msg = self.msgQueue.get(False)
                 if msg.methodName not in dir(self):
-                    raise BotFatalError("Inter-queue message not found.")
+                    raise BotFatalError("Inter-thread message not found (%s)." % msg.methodName)
                 
                 method = getattr(self,msg.methodName)
                 method(*msg.args)
@@ -281,8 +281,6 @@ class MainWindow(baseclass,formclass):
  
     def startClicked(self):
         if self.startButton.text() == "Start":
-            if self.botThread and self.botThread.isAlive():
-                self.botThread.join()
             self.bot = Bot(self)
             self.botThread = threading.Thread(None,self.bot.run,"BotThread")
             self.botThread.start()
@@ -342,7 +340,7 @@ class MainWindow(baseclass,formclass):
         coordsStr = item.text(1)
         self.planetFilterLineEdit.setText(coordsStr)
         self._planetDb_filter()
-        self.toolBox.setCurrentWidget(self.planetDbPage)
+        self.tabWidget.setCurrentWidget(self.planetDbPage)
         
     def botActivityTreeRightClicked (self,point):
          menu = QMenu(self.botActivityTree)
@@ -473,7 +471,7 @@ class MainWindow(baseclass,formclass):
     def fatalException(self,exception):
         self.stopClicked()
         QMessageBox.critical(self,"Fatal error","Critical error: %s" % exception)
-    # new GUI messages
+
     def statusMsg(self,msg):
         self.setConnectionOK()        
         self.botStatusLabel.setPalette(QPalette(MyColors.lightYellow))
@@ -534,7 +532,6 @@ class MainWindow(baseclass,formclass):
         item = QListWidgetItem(str(msg))
         self.botActivityList.addItem(item)
         self.botActivityList.scrollToItem(item)
-
 
 class MyTreeWidgetItem(QTreeWidgetItem):
     # subclassed just to implement sorting by numbers instead of by strings

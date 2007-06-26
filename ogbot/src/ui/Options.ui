@@ -78,7 +78,7 @@
     </rect>
    </property>
    <property name="currentIndex" >
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page_3" >
     <property name="geometry" >
@@ -689,19 +689,6 @@
         <string>is moon</string>
        </property>
       </widget>
-      <widget class="QLabel" name="label_16" >
-       <property name="geometry" >
-        <rect>
-         <x>240</x>
-         <y>220</y>
-         <width>141</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text" >
-        <string>Deuterium source planet:</string>
-       </property>
-      </widget>
       <widget class="QLineEdit" name="deuteriumSourcePlanetLineEdit" >
        <property name="geometry" >
         <rect>
@@ -719,6 +706,55 @@
        </property>
        <property name="alignment" >
         <set>Qt::AlignHCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_16" >
+       <property name="geometry" >
+        <rect>
+         <x>240</x>
+         <y>220</y>
+         <width>141</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text" >
+        <string>Deuterium source planet:</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_17" >
+       <property name="geometry" >
+        <rect>
+         <x>240</x>
+         <y>150</y>
+         <width>181</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text" >
+        <string>Discard planet if more than</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_20" >
+       <property name="geometry" >
+        <rect>
+         <x>290</x>
+         <y>170</y>
+         <width>121</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="text" >
+        <string>probes are needed.</string>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="maxProbesSpinBox" >
+       <property name="geometry" >
+        <rect>
+         <x>240</x>
+         <y>170</y>
+         <width>46</width>
+         <height>23</height>
+        </rect>
        </property>
       </widget>
      </widget>

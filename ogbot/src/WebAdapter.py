@@ -495,7 +495,7 @@ class WebAdapter(object):
                 levels[self.translationsByLocalText[fullName]] = int(level)
             if 'impulseDrive' in levels and 'combustionDrive' in levels:
                 return levels
-               
+    
         raise BotFatalError("Not enough technologies researched to run the bot")
                 
     def goToPlanet(self, planet):
@@ -588,7 +588,7 @@ class ScanThread(threading.Thread):
                 page = response.read()
                 
                 if 'span class="error"' in page:
-                    raise BotError("Probably there is not enough deuterium in current planet.")
+                    raise BotError("Probably there is not enough deuterium planet.")
                 elif 'error' in  response.geturl():
                     error = True
                     continue
