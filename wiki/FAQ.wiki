@@ -69,7 +69,7 @@ A: Sure. What you have to do is create a new translation file for your language 
 
 ===Q: How do I run the multi-platform (source) version of the bot in Windows?===
 
-A: The easiest and recommended way to run the bot in Windows is to use the prepared version, but it is possible to use the generic version. These are the steps:
+A: The easiest and recommended way to run the bot in Windows is to use the prepared version, but it is possible to use the source version. These are the steps:
 
  #. Download & install Python 2.5 (http://www.python.org)
  #. Download & install QT 4 GPL for Windows (http://www.trolltech.com)
