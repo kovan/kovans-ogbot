@@ -50,14 +50,14 @@ If you want to minimize the probabilities of getting baned follow these advices:
 Probabilities of getting banned greatly depend on how much effort put GAs (AFAIK GOs can't detect the bot) in finding people that uses the bot. In some universes people are running the bot day and night for months without being banned. On the other hand, in some polish universes people are getting banned just because they have a lot of activity, without having any real proof of bot usage. In the latter cases promising you don't use any bot and all that activity is just because you play a lot might get you unbanned.
 
 
+===Q: I've heard this bot has a virus. Is it true?===
+
+A: No. Someone uploaded a modified version of the bot in the forums, which had a virus or trojan. However the official version never had nor will have any. That's why the bot should always be downloaded only from this page.
 
 ===Q: Can I choose which browser does the "Launch web browser" button use?===
 
 A: You have to set the BROWSER environment variable to the command of the browser you want to use. A list of possible values and further instructions can be found here: http://docs.python.org/lib/module-webbrowser.html
 
-===Q: I've heard this bot has a virus. Is it true?===
-
-A: No. Someone uploaded a modified version of the bot in the forums, which had a virus or trojan. However the official version never had nor will have any. That's why the bot should always be downloaded only from the official downloads section of this page.
 
 ===Q: How can I choose the language?===
 
