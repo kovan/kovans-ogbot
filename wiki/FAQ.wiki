@@ -14,6 +14,7 @@ A: Download the source version. Under Linux, the libraries required by the bot a
 In other distros their names might differ but not much. 
 After installing them just run runbot.sh
 
+bsddb is also required, and some distros don't provide it by default.
 Note for Gentoo Linux: [http://packages.gentoo.org/search/?sstring=PyQt4 PyQt4] package is masked, so it can not to be installed by default. To do so, it has to be unmasked. Instructions [http://gentoo-wiki.com/TIP_Dealing_with_masked_packages here].
 
 ===Q: I have Commander mode. Will the bot still work?===
@@ -23,12 +24,11 @@ A: Yes. But you have to disable message grouping in folders in OGame options.
 
 ===Q: I found some error in the bot, how do I report it?===
 
-A: Go to the issues tab and see if someone has already reported it. If so, you can click the star near it to be notified of changes and comments.  If not, open a new issue in the [http://code.google.com/p/kovans-ogbot/issues/list issues tab], then follow the instructions.  DO NOT post feature request here. Instead see next question:
+A: Go to the [http://code.google.com/p/kovans-ogbot/issues/list issues tab] and see if someone has already reported it. If so, you can click the star near it to be notified of changes and comments. If not, open a new issue and then follow the instructions.  DO NOT post feature request here. Instead see next question:
 
 ===Q: I have a feature request, could you implement it?===
 
-A: You can comment it in [http://kovansogbot.16.forumer.com/viewforum.php?f=2 this] forum. 
-The author is a busy person though and only a few of them will likely be implemented.
+A: You can comment it in the appropiate forum section. The author is a busy person though and only a few of them will likely be implemented.
 
 
 
