@@ -14,8 +14,6 @@ A: Download the source version. Under Linux, the libraries required by the bot a
 In other distros their names might differ but not much. 
 After installing them just run runbot.sh
 
-Note for Gentoo Linux: there is not a pyqt-4 package, so !PyQt must be compiled manually. Instructions [http://www.riverbankcomputing.com/Docs/PyQt4/pyqt4ref.html#installing-pyqt here]: 
-
 ===Q: I have Commander mode. Will the bot still work?===
 
 A: Yes. But you have to disable message grouping in folders in OGame options.
