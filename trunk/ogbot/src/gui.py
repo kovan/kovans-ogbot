@@ -236,7 +236,7 @@ class MainWindow(baseclass,formclass):
         self.planetsTree.header().setResizeMode(QHeaderView.Stretch)                
         self.botActivityTree.header().setResizeMode(QHeaderView.Interactive)
         self.botActivityTree.header().setStretchLastSection(False)
-        headerSizes = [70,75,111,111,70,300,60,120,150]
+        headerSizes = [70,70,90,80,55,280,60,111,162,135]
         for i in range(len(headerSizes)):
             self.botActivityTree.header().resizeSection(i,headerSizes[i])
                 
