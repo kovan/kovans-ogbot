@@ -3,6 +3,7 @@ v2.2e
  June, 23. 2007     
 -----------------------
 - Ability to set max. no. of probes
+- Added suport for brazilian OGame
 
 v2.2d
 -----------------------
