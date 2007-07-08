@@ -2,7 +2,9 @@ v2.2e
 -----------------------
  June, 23. 2007     
 -----------------------
-- Ability to set max. no. of probes
+- Fixed "Says 'Fleet limit hit' but there are free slots" (issues 240, 244 and 248)
+- Fixed "KeyError: 'Laboratorio di ricerca'" (issue 245)
+- Ability to set maximum number of probes the bot can use for a planet.
 - Added suport for brazilian OGame
 
 v2.2d
