@@ -1,6 +1,15 @@
 #summary What's new on each version.
 #labels Featured
 {{{
+v2.2e
+-----------------------
+ July, 8. 2007     
+-----------------------
+- Fixed "Says 'Fleet limit hit' but there are free slots" (issues 240, 244 and 248)
+- Fixed "KeyError: 'Laboratorio di ricerca'" (issue 245)
+- Ability to set maximum number of probes the bot can use for a planet.
+- Added suport for brazilian OGame
+
 v2.2d
 -----------------------
  June, 23. 2007     
