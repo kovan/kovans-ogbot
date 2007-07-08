@@ -79,14 +79,18 @@ class WebAdapter(object):
         # setup urllib2:
         socket.setdefaulttimeout(10.0)
         #httplib.HTTPConnection.debuglevel = 1
-        #param1 = keepalive.HTTPHandler()
-        param2 = urllib2.HTTPCookieProcessor()
-        self.opener = urllib2.build_opener(param2)
+
+        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
+        self.keepAliveOpener = urllib2.build_opener(keepalive.HTTPHandler())        
         
         if self.config.proxy:
-            self.opener.add_handler(urllib2.ProxyHandler({"http":"http://"+self.config.proxy}))
+            proxyHandler = urllib2.ProxyHandler({"http":"http://"+self.config.proxy})
+            self.opener.add_handler(proxyHandler)
+            self.keepAliveOpener.add_handler(proxyHandler)
         
-        self.opener.addheaders = [('User-agent', self.config.userAgent),('Keep-Alive', "300")]            
+        headers = [('User-agent', self.config.userAgent),('Keep-Alive', "300")]            
+        self.opener.addheaders = headers
+        self.keepAliveOpener.addheaders = headers
                     
         cachedResponse = StringIO(self._fetchValidResponse(self.webpage, True).read())
         # check configured language equals ogame server language
@@ -211,16 +215,10 @@ class WebAdapter(object):
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
                     oldSession = self.session
                     self.doLogin()
-                    if isinstance(request, HTMLForm):
-                        request.action = request.action.replace(self.REGEXP_SESSION_STR, self.session)
-                        request['session'] = self.session
-                    elif isinstance(request, urllib2.Request) or isinstance(request, types.InstanceType): # check for new style object and old style too, 
-                        for attrName in dir(request):
-                            attr = getattr(request, attrName)
-                            if isinstance(attr, str):
-                                newValue = re.sub(oldSession, self.session, attr)  
-                                setattr(request, attr, newValue)
-                    else: raise BotError(request)
+                    url =  request.get_full_url().replace(oldSession, self.session)
+                    data = request.get_data()
+                    if data: data = data.replace(oldSession, self.session)                    
+                    request = urllib2.Request(url,data)
                     valid = False
             except urllib2.HTTPError, e:
                 if e.code == 302: # happens once in a while when user and bot are playing simultaneusly.
@@ -512,9 +510,11 @@ class WebAdapter(object):
             params = {'session':self.session, 'galaxy':galaxy, 'system':solarSystem }
             url = "http://%s/game/galaxy.php?%s" % (self.server, urllib.urlencode(params))        
             inputQueue.put(url)
-            
+        
+ 
+        
         for dummy in range(20):
-            thread = ScanThread(inputQueue, outputQueue, self.opener, self.REGEXPS)
+            thread = ScanThread(inputQueue, outputQueue, self.keepAliveOpener, self.REGEXPS)
             threads.append(thread)            
             thread.start()
 
