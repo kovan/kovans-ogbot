@@ -1,6 +1,6 @@
 v2.2e
 -----------------------
- June, 23. 2007     
+ July, 8. 2007     
 -----------------------
 - Fixed "Says 'Fleet limit hit' but there are free slots" (issues 240, 244 and 248)
 - Fixed "KeyError: 'Laboratorio di ricerca'" (issue 245)
@@ -74,7 +74,7 @@ v2.1.2b
  March, 11. 2007     
 -----------------------
 - Fixed bug AttributeError: 'module' object has no attribute 'SpyReport'
-- Fixed bug WindowsError: [Error 13] (...) files/botdata/gamedata.dat'
+- Fixed bug WindowsError: [Error 13] (...) files/botdata/gamedata.dat
 
 v2.1.2
 -----------------------
