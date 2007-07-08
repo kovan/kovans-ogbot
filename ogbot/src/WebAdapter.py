@@ -26,6 +26,7 @@ import copy
 import sys
 import httplib
 import warnings
+import cookielib
 from Queue import *
 from datetime import datetime, time
 from time import strptime
@@ -36,8 +37,6 @@ import keepalive
 from CommonClasses import *
 from Constants import *
 from GameEntities import *
-
-
 
 class WebAdapter(object):
     """Encapsulates the details of the communication with the ogame servers. This involves
@@ -77,22 +76,18 @@ class WebAdapter(object):
         if not self.loadState():
             self.session = '000000000000'
 
-        #setup urllib2:
+        # setup urllib2:
         socket.setdefaulttimeout(10.0)
-        param1 = keepalive.HTTPHandler()
+        #httplib.HTTPConnection.debuglevel = 1
+        #param1 = keepalive.HTTPHandler()
         param2 = urllib2.HTTPCookieProcessor()
-
+        self.opener = urllib2.build_opener(param2)
+        
         if self.config.proxy:
-            param3 = urllib2.ProxyHandler({"http":"http://"+self.config.proxy})
-            opener = urllib2.build_opener(param1,param2,param3)
-        else:
-            opener = urllib2.build_opener(param1,param2)
+            self.opener.add_handler(urllib2.ProxyHandler({"http":"http://"+self.config.proxy}))
         
-        opener.addheaders = [('User-agent', self.config.userAgent),('Keep-Alive', "300")]            
+        self.opener.addheaders = [('User-agent', self.config.userAgent),('Keep-Alive', "300")]            
                     
-        urllib2.install_opener(opener)
-
-        
         cachedResponse = StringIO(self._fetchValidResponse(self.webpage, True).read())
         # check configured language equals ogame server language
         regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"', re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
@@ -174,14 +169,21 @@ class WebAdapter(object):
     def _fetchValidResponse(self, request, skipValidityCheck = False):
 
         self._mutex.acquire()
-        valid = False
 
+        if isinstance(request, str):
+            request = urllib2.Request(request)
+        if self.lastFetchedUrl:
+            request.add_header('Referer',self.lastFetchedUrl)
+            
+            
+        valid = False            
         while not valid:
             self.checkThreadMsgsMethod()
 
             valid = True
             try:
-                response = urllib2.urlopen(request)
+                response = self.opener.open(request)
+                    
                 self.lastFetchedUrl = response.geturl()
                 if __debug__: 
                     print >>sys.stderr, "         Fetched " + self.lastFetchedUrl
@@ -209,9 +211,7 @@ class WebAdapter(object):
                 elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
                     oldSession = self.session
                     self.doLogin()
-                    if   isinstance(request, str):
-                        request = request.replace(oldSession, self.session)
-                    elif isinstance(request, HTMLForm):
+                    if isinstance(request, HTMLForm):
                         request.action = request.action.replace(self.REGEXP_SESSION_STR, self.session)
                         request['session'] = self.session
                     elif isinstance(request, urllib2.Request) or isinstance(request, types.InstanceType): # check for new style object and old style too, 
@@ -375,7 +375,7 @@ class WebAdapter(object):
             
             forms = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)
             if not forms or 'flotten3.php' not in forms[0].action:
-                raise NoFreeSlotsError()
+                continue
             form = forms[0]
             destCoords = mission.targetPlanet.coords         
             form['galaxy']    = str(destCoords.galaxy)
@@ -514,7 +514,7 @@ class WebAdapter(object):
             inputQueue.put(url)
             
         for dummy in range(20):
-            thread = ScanThread(inputQueue, outputQueue, self.REGEXPS)
+            thread = ScanThread(inputQueue, outputQueue, self.opener, self.REGEXPS)
             threads.append(thread)            
             thread.start()
 
@@ -568,12 +568,14 @@ class WebAdapter(object):
     
 class ScanThread(threading.Thread):
     ''' Scans solar systems from inputQueue'''
-    def __init__(self, inputQueue, outputQueue, regexps):
+    def __init__(self, inputQueue, outputQueue, opener, regexps):
         threading.Thread.__init__(self, name="GalaxyScanThread")
         self._inputQueue = inputQueue
         self._outputQueue = outputQueue
+        self.opener = opener
         self.REGEXPS = regexps
         self.exception = None
+        
         
     def run(self):
         socket.setdefaulttimeout(20)   
@@ -584,7 +586,7 @@ class ScanThread(threading.Thread):
                 if not error:
                     url = self._inputQueue.get_nowait()
                 
-                response = urllib2.urlopen(url)
+                response = self.opener.open(url)
                 page = response.read()
                 
                 if 'span class="error"' in page:
