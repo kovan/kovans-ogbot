@@ -1,3 +1,9 @@
+v2.2f
+-----------------------
+ July, 9. 2007     
+-----------------------
+- Login loop fixed.
+
 v2.2e
 -----------------------
  July, 8. 2007     
@@ -39,7 +45,6 @@ v2.2
  June, 11. 2007     
 -----------------------
 ** Too many changes to mention, some of them are: **
-- Login loop fixed.
 - Added random delays.
 - Configurable deuterium source planet
 - Espionage reports can be copied to clipboard by right-clicking.
@@ -205,7 +210,7 @@ v2.04
 - Translations do not have to match case.
 - Logging works (log stored in files/log)
 - Daily inactive scan is made at 8:10h, right after server update.
-- All planets don't have to be spied again after changing attack radio or source planets.
+- All planets dont have to be spied again after changing attack radio or source planets.
 
 v2.0
 -----------------------
