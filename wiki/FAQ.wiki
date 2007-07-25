@@ -22,6 +22,11 @@ Note for Gentoo Linux: [http://packages.gentoo.org/search/?sstring=PyQt4 PyQt4] 
 A: Yes. But you have to disable message grouping in folders in OGame options.
 
 
+===Q: I have Officers. Will the bot still work?===
+
+A: Yes.
+
+
 ===Q: I found some error in the bot, how do I report it?===
 
 A: Go to the [http://code.google.com/p/kovans-ogbot/issues/list issues tab] and see if someone has already reported it. If so, you can click the star near it to be notified of changes and comments. If not, open a new issue and then follow the instructions.  DO NOT post feature request here. Instead see next question:
