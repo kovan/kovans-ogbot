@@ -45,6 +45,11 @@ A: Delete the files in the directory files/botdata.
 
 A: Deactivate IP check in OGame options.
 
+===Q: I get "Not enought technologies researched to run the bot". What do I need to research? ===
+
+A: Currently the bot requires Combustion drive level 1 and Impulse drive level 1 to run.
+
+
 ===Q: Will I get banned if I use this bot?===
 
 A: Maybe. OGame admins are always finding new ways to detect it. 
