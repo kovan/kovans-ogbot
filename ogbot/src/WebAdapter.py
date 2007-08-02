@@ -289,8 +289,6 @@ class WebAdapter(object):
             
         reports = []              
         for code, rawMessage in rawMessages.items():
-#            if 'class="combatreport"' in rawMessage:
-#                [2:444:6] (A:8.000)
             if 'class="espionagereport"' not in rawMessage:
                 continue
             
@@ -343,7 +341,7 @@ class WebAdapter(object):
     def launchMission(self, mission, abortIfNotEnough = True, slotsToReserve = 0):
 
         while True:
-            # assure cuantities are integers
+            # make sure cuantities are integers
             for shipType, cuantity in mission.fleet.items(): 
                 mission.fleet[shipType] = int(cuantity)
                         
@@ -356,13 +354,15 @@ class WebAdapter(object):
             availableFleet = self.getAvailableFleet(None, pageText)
             form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]        
             
-            for shipType, requested in mission.fleet.items():
-                available = availableFleet.get(shipType, 0)
-                if available == 0 or (abortIfNotEnough and available  < requested):
-                    raise NotEnoughShipsError(availableFleet, {shipType:requested}, available)
-                
-                shipCode = INGAME_TYPES_BY_NAME[shipType].code            
-                form[shipCode] = str(requested)
+            if not mission.fleet:
+                mission.fleet = availableFleet
+            else:
+                for shipType, requested in mission.fleet.items():
+                    available = availableFleet.get(shipType, 0)
+                    if available == 0 or (abortIfNotEnough and available  < requested):
+                        raise NotEnoughShipsError(availableFleet, {shipType:requested}, available)
+                    shipCode = INGAME_TYPES_BY_NAME[shipType].code            
+                    form[shipCode] = str(requested)
                 
             if self.getFreeSlots(pageText) <= int(slotsToReserve):
                 raise NoFreeSlotsError()
@@ -416,8 +416,7 @@ class WebAdapter(object):
             # fill remaining mission fields
             arrivalTime = parseTime(resultPage[self.translations['arrivalTime']])
             returnTime = parseTime(resultPage[self.translations['returnTime']])
-            mission.flightTime = returnTime - arrivalTime
-            mission.launchTime = arrivalTime - mission.flightTime
+            mission.setTimes(arrivalTime,returnTime)
             mission.distance =  int(resultPage[self.translations['distance']].replace('.', ''))
             mission.consumption = int(resultPage[self.translations['consumption']].replace('.', ''))
                 
@@ -440,9 +439,10 @@ class WebAdapter(object):
                     sentFleet[name] = int(value.replace('.', ''))
     
             if mission.fleet != sentFleet:
-                warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % (mission.fleet, sentFleet))
-                mission.fleet = sentFleet
-        
+                if mission.fleet:
+                    warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % (mission.fleet, sentFleet))
+                mission.fleet = sentFleet                    
+            
             break
                 
     def getFreeSlots(self, alreadyFetchedPage = None):
