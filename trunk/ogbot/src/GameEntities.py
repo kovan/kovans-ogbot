@@ -325,15 +325,17 @@ class Mission(object):
         # these will be automatically corrected (if needed) once the mission is sent
         self.distance = 0
         self.consumption = 0
-        self.launchTime = None # type datetime
+        # type datetime, all dates are server time not local time
+        self.launchTime = None 
         self.flightTime = None
-        
-    def _arrivalTime(self):
-        return self.launchTime + self.flightTime
-    arrivalTime = property(_arrivalTime)         
-    def _returnTime(self):
-        return self.launchTime + self.flightTime * 2
-    returnTime = property(_returnTime)         
+        self.arrivalTime = None
+        self.returnTime = None
+
+    def setTimes(self,arrivalTime,returnTime):
+        self.flightTime = returnTime - arrivalTime
+        self.launchTime = arrivalTime - self.flightTime
+        self.arrivalTime = arrivalTime
+        self.returnTime = returnTime
         
     def __repr__(self):
         return "%s to %s with %s" % (self.Types.toStr(self.missionType).title() , self.targetPlanet, self.fleet)
