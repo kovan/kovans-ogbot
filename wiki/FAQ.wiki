@@ -75,7 +75,7 @@ A: You can't. A common confusion is that language files also translate the bot m
 
 ===Q: My language is not supported. Can I contribute a translation?===
 
-A: Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to the author and it will probably be included in the next release.
+A: Sure. What you have to do is create a new translation file for your language and place it in the languages directory. You should use english.ini as a template, as there are further instructions in it. If it works send it to the author and it will probably be included in the next release. Not all languages are guaranteed to work thought.
 
 ===Q: How do I run the multi-platform (source) version of the bot in Windows?===
 
