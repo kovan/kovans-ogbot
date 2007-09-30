@@ -30,10 +30,8 @@ import cookielib
 from Queue import *
 from datetime import datetime, time
 from time import strptime
-from cStringIO import *
 from ClientForm import HTMLForm, ParseFile, ControlNotFoundError;
 import keepalive
-
 from CommonClasses import *
 from Constants import *
 from GameEntities import *
@@ -115,7 +113,7 @@ class WebAdapter(object):
     def generateRegexps(self, translations):
 
         reportTmp  = r'%s (?P<planetName>[^<]*?) .*?(?P<coords>\[[0-9:]+\]).*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
-        reportTmp += r'<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
+        reportTmp += r'.*?<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
         reportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
         reportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9.]+)</td>\n'
         reportTmp += r'<td>.*?</td><td>(?P<energy>[-0-9.]+)</td></tr>'  
@@ -129,7 +127,7 @@ class WebAdapter(object):
         {
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>', re.I), 
-            'myPlanets':re.compile('<option value="/game/overview\.php\?session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>', re.I), 
+            'myPlanets':re.compile('<option value="/game/index\.php\?page=overview&session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>', re.I), 
             'report': 
             {
                 'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
@@ -255,16 +253,17 @@ class WebAdapter(object):
         self._eventMgr.loggedIn(self.config.username, self.session)
         page = self._fetchPhp('index.php', lgn=1)                
         mySleep(12)        
-        page = self._fetchPhp('overview.php', lgn=1)               
+        page = self._fetchPhp('index.php', page='overview', lgn=1)               
         self.saveState()
 
 
 
     def getMyPlanets(self):
-        self._fetchPhp('index.php', lgn=1)                
-        page = self._fetchPhp('overview.php',lgn=1).read()
+        page = self._fetchPhp('index.php', page='overview', lgn=1).read()              
+        #page = self._fetchPhp('overview.php',lgn=1).read()
         
         myPlanets = []
+        plan = self.REGEXPS['myPlanets'].findall(page)
         for code, name, galaxy, ss, pos in self.REGEXPS['myPlanets'].findall(page):
             coords = Coords(galaxy, ss, pos)
             for planet in myPlanets:
@@ -282,13 +281,15 @@ class WebAdapter(object):
     
         
     def getEspionageReports(self):
-        page = self._fetchPhp('messages.php').read()
+        page = self._fetchPhp('index.php', page='messages').read()
         rawMessages = {}
         for match in self.REGEXPS['messages.php'].finditer(page):
             rawMessages[match.group('code')] = match.group(0) 
             
         reports = []              
         for code, rawMessage in rawMessages.items():
+#            if 'class="combatreport"' in rawMessage:
+#                [2:444:6] (A:8.000)
             if 'class="espionagereport"' not in rawMessage:
                 continue
             
@@ -320,8 +321,8 @@ class WebAdapter(object):
         
 #    def buildShips(self, ships, planet):
 #        return 
-        #
-        # with python 2.4. sgmlib doesnt parse well indexed controls, all of them get the root name, no index. the fix that corrected it in python 2.5 introduced the bug below
+#
+# with python 2.4. sgmlib doesnt parse well indexed controls, all of them get the root name, no index. the fix that corrected it in python 2.5 introduced the bug below
         
 #        if not ships:
 #            return
@@ -336,17 +337,17 @@ class WebAdapter(object):
 #        self._fetchForm( form )
         
     def buildBuildings(self, building, planet):
-        self._fetchPhp('b_building.php', bau=building.code, cp=planet.code)
+        self._fetchPhp('index.php', page='b_building', bau=building.code, cp=planet.code)
         
     def launchMission(self, mission, abortIfNotEnough = True, slotsToReserve = 0):
 
         while True:
-            # make sure cuantities are integers
+            # assure cuantities are integers
             for shipType, cuantity in mission.fleet.items(): 
                 mission.fleet[shipType] = int(cuantity)
                         
             # 1st step: select fleet
-            page = self._fetchPhp('flotten1.php', mode='Flotte', cp=mission.sourcePlanet.code)
+            page = self._fetchPhp('index.php', page='flotten1', mode='Flotte', cp=mission.sourcePlanet.code)
             pageText = page.read()
             page.seek(0)            
             
@@ -354,15 +355,13 @@ class WebAdapter(object):
             availableFleet = self.getAvailableFleet(None, pageText)
             form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]        
             
-            if not mission.fleet:
-                mission.fleet = availableFleet
-            else:
-                for shipType, requested in mission.fleet.items():
-                    available = availableFleet.get(shipType, 0)
-                    if available == 0 or (abortIfNotEnough and available  < requested):
-                        raise NotEnoughShipsError(availableFleet, {shipType:requested}, available)
-                    shipCode = INGAME_TYPES_BY_NAME[shipType].code            
-                    form[shipCode] = str(requested)
+            for shipType, requested in mission.fleet.items():
+                available = availableFleet.get(shipType, 0)
+                if available == 0 or (abortIfNotEnough and available  < requested):
+                    raise NotEnoughShipsError(availableFleet, {shipType:requested}, available)
+                
+                shipCode = INGAME_TYPES_BY_NAME[shipType].code            
+                form[shipCode] = str(requested)
                 
             if self.getFreeSlots(pageText) <= int(slotsToReserve):
                 raise NoFreeSlotsError()
@@ -372,7 +371,7 @@ class WebAdapter(object):
             page = self._fetchForm(form)
             
             forms = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)
-            if not forms or 'flotten3.php' not in forms[0].action:
+            if not forms or 'flotten3' not in forms[0].action:
                 continue
             form = forms[0]
             destCoords = mission.targetPlanet.coords         
@@ -416,7 +415,8 @@ class WebAdapter(object):
             # fill remaining mission fields
             arrivalTime = parseTime(resultPage[self.translations['arrivalTime']])
             returnTime = parseTime(resultPage[self.translations['returnTime']])
-            mission.setTimes(arrivalTime,returnTime)
+            mission.flightTime = returnTime - arrivalTime
+            mission.launchTime = arrivalTime - mission.flightTime
             mission.distance =  int(resultPage[self.translations['distance']].replace('.', ''))
             mission.consumption = int(resultPage[self.translations['consumption']].replace('.', ''))
                 
@@ -439,16 +439,15 @@ class WebAdapter(object):
                     sentFleet[name] = int(value.replace('.', ''))
     
             if mission.fleet != sentFleet:
-                if mission.fleet:
-                    warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % (mission.fleet, sentFleet))
-                mission.fleet = sentFleet                    
-            
+                warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % (mission.fleet, sentFleet))
+                mission.fleet = sentFleet
+        
             break
                 
     def getFreeSlots(self, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('flotten1.php', mode='Flotte').read()
+            page = self._fetchPhp('index.php', page='flotten1', mode='Flotte').read()
         usedSlotsNums = re.findall(r"<th>([0-9]+)</th>", page)
 
         if len(usedSlotsNums) == 0:
@@ -463,14 +462,14 @@ class WebAdapter(object):
     def getAvailableFleet(self, planet, alreadyFetchedPage = None):    
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('flotten1.php', mode='Flotte', cp=planet.code).read()
+            page = self._fetchPhp('index.php', page='flotten1', mode='Flotte', cp=planet.code).read()
         fleet = {}
         for code, cuantity in self.REGEXPS['availableFleet'].findall(page):
             fleet[INGAME_TYPES_BY_CODE[code].name] = int(cuantity.replace('.', ''))
         return fleet
     
     def deleteMessages(self, messages):
-        page = self._fetchPhp('messages.php')
+        page = self._fetchPhp('index.php', page='messages')
         form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
         for message in messages:
             checkBoxName = "delmes" + message.code
@@ -485,19 +484,20 @@ class WebAdapter(object):
         
     def getResearchLevels(self):
 
-
+        
         for planet in self.myPlanets:
-            page = self._fetchPhp('buildings.php', mode='Forschung',cp=planet.code).read()
+            page = self._fetchPhp('index.php', page='buildings', mode='Forschung',cp=planet.code).read()
+
             levels = {}            
             for fullName, level in self.REGEXPS['researchLevels'].findall(page):
                 levels[self.translationsByLocalText[fullName]] = int(level)
             if 'impulseDrive' in levels and 'combustionDrive' in levels:
                 return levels
-    
+ 
         raise BotFatalError("Not enough technologies researched to run the bot")
                 
     def goToPlanet(self, planet):
-        self._fetchPhp('overview.php', cp=planet.code)
+        self._fetchPhp('index.php', page='overview', cp=planet.code)
         
     def getSolarSystems(self, solarSystems, deuteriumSourcePlanet = None): # solarsytems is an iterable of tuples
 
@@ -508,7 +508,7 @@ class WebAdapter(object):
         outputQueue = Queue()
         for galaxy, solarSystem in solarSystems:
             params = {'session':self.session, 'galaxy':galaxy, 'system':solarSystem }
-            url = "http://%s/game/galaxy.php?%s" % (self.server, urllib.urlencode(params))        
+            url = "http://%s/game/index.php?page=galaxy&%s" % (self.server, urllib.urlencode(params))        
             inputQueue.put(url)
         
  
@@ -533,7 +533,7 @@ class WebAdapter(object):
                 raise thread.exception
         
     def getStats(self, type): # type can be: pts for points, flt for fleets or res for research
-        page = self._fetchPhp('stat.php', start=1)
+        page = self._fetchPhp('index.php', page='stat', start=1)
         form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]
         
         for i in range(1, 1401, 100):

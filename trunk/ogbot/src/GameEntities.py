@@ -314,12 +314,12 @@ class Mission(object):
         recycle = 8
         # colonize
     
-    def __init__(self, missionType, sourcePlanet, targetPlanet, fleet, resources=Resources(), speedPercentage=100):
+    def __init__(self, missionType, sourcePlanet, targetPlanet, fleet = None, resources=Resources(), speedPercentage=100):
         self.missionType = missionType              
         self.sourcePlanet = sourcePlanet              
         self.targetPlanet = targetPlanet
         self.fleet = fleet              
-        self.resources = resources
+        self.resources = Resources()
         self.speedPercentage = speedPercentage
 
         # these will be automatically corrected (if needed) once the mission is sent

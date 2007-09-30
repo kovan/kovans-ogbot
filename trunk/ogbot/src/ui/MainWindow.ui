@@ -657,6 +657,68 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="autoFleetsavePage" >
+       <attribute name="title" >
+        <string>Auto fleetsave</string>
+       </attribute>
+       <layout class="QVBoxLayout" >
+        <property name="margin" >
+         <number>9</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" >
+          <property name="margin" >
+           <number>0</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QGroupBox" name="groupBox_4" >
+            <property name="title" >
+             <string>Fleetsave mode:</string>
+            </property>
+            <layout class="QVBoxLayout" >
+             <property name="margin" >
+              <number>9</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
+             </property>
+             <item>
+              <widget class="QRadioButton" name="radioButton_3" >
+               <property name="text" >
+                <string>Hide fleet: fleetsave also when enemy espionages detected</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="radioButton_4" >
+               <property name="text" >
+                <string>Normal: fleetsave only when attacks detected</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="enableDisableButton_2" >
+            <property name="text" >
+             <string>Enable</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTreeWidget" name="treeWidget" />
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
