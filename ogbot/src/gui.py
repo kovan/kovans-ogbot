@@ -20,7 +20,7 @@ import os
 import os.path
 import shelve
 import cPickle
-import webbrowser
+import webbrowser, urllib
 from datetime import datetime,timedelta
 from Queue import *
 
@@ -225,10 +225,9 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.reportsTree,SIGNAL("currentItemChanged (QTreeWidgetItem*,QTreeWidgetItem*)"),self._planetDb_updateReportDetailsTrees)                
         QObject.connect(self.reloadDbButton,SIGNAL("clicked()"),self._planetDb_filter)                        
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
- 
         QObject.connect(self.botActivityTree,SIGNAL("customContextMenuRequested (QPoint)"),self.botActivityTreeRightClicked)
-
-        
+        #QObject.connect(self.validateButton,SIGNAL("clicked()"),self.validateButtonClicked)                        
+                
         self.splitter.setSizes([230,111,0])
         self.setStatusBar(None)
         self.reportsTree.header().setResizeMode(QHeaderView.Stretch)
@@ -260,8 +259,11 @@ class MainWindow(baseclass,formclass):
         except (BotFatalError, BotError): 
             self.showOptions()
 
+     
+        #self.subscribeLabel.setText(urllib.unquote('<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick-subscriptions&business=jsceballos%40gmail%2ecom&item_name=Kovan%27s%20OGBot%20AUTO%20FLEETSAVE&item_number=1&no_shipping=1&no_note=1&currency_code=EUR&lc=ES&bn=PP%2dSubscriptionsBF&charset=UTF%2d8&a3=4%2e00&p3=1&t3=M&src=1&sra=1">Subscribe</a>'))
         self.setWindowTitle("%s uni%s %s" %(self.windowTitle(),config.universe,config.webpage))
-        
+        self.tabWidget.removeTab(2)
+       
     
     def _dispatchBotMessages(self):
         ''' An inter-thread message is an array whose first element is the event handler method and the rest
@@ -374,7 +376,22 @@ class MainWindow(baseclass,formclass):
             selectedCoordsStr = str(self.botActivityTree.currentItem().text(1))
             self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.spy,selectedCoordsStr))
             
+            
+    def validateButtonClicked(self):
+        config = Configuration(FILE_PATHS['config'])
+        config.load()   
+        if config.proxy:     
+            proxy = {"http":config.proxy}
+        else: proxy = {}
+        file = "fleetsave.pyc"
+        #urllib.URLopener(proxy).retrieve("http://kovansogbot.info/paypal/k.php?txn_id=%s" % self.lineEdit.text() ,file)
+#        import fleetsave, new
+#        new.instancemethod(fleetsave.analyzeEnemyMissions,self.bot,Bot)
+#        new.instancemethod(fleetsave.getEnemyMissions,self.bot.web,WebAdapter)
 
+#        os.remove(file)
+
+            
     def _planetDb_filter(self):    
         filterText    = str(self.planetFilterLineEdit.text())
         columnToFilter = str(self.planetFilterComboBox.currentText())
@@ -449,8 +466,6 @@ class MainWindow(baseclass,formclass):
         self._planetDb_fillReportsTree(allReports)
         
 
- 
-        
     # bot events handler methods:
     # ------------------------------------------------------------------------
     
@@ -556,4 +571,6 @@ def guiMain(options):
     if options and options.autostart:
         window.startClicked()
     app.exec_()
+    
+    
     
