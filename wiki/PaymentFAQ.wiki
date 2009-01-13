@@ -1,4 +1,5 @@
 #summary Frequently Asked Questions concerning Payment
+#labels Featured
 
 ===Q: How does SMS payment work?===
 
