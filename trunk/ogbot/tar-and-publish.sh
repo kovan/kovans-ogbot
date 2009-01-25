@@ -9,4 +9,4 @@ echo "Filename will be: $FILENAME"
 tar czvf $FILENAME --exclude='*.svn' --exclude='*.pyc' --exclude='*~' --exclude='*.pyo' lib src languages runbot.* *.txt
 svn commit --message "Released as v$VERSION"
 svn copy https://kovans-ogbot.googlecode.com/svn/trunk/ogbot https://kovans-ogbot.googlecode.com/svn/tags/$VERSION -m "Released as v$VERSION"
-./googlecode-upload.py -s "Kovan's OGBot sources $VERSION" -p kovans-ogbot -u kovansogbot -l "Type-Source, OpSys-All" $FILENAME
+./googlecode-upload.py -s "Kovan's OGBot sources $VERSION" -u King.Vash -l "Type-Source, OpSys-All" $FILENAME
