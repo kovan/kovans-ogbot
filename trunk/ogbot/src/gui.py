@@ -49,7 +49,7 @@ class AboutDialog(baseclass,formclass):
 
 
 
-formclass, baseclass = uic.loadUiType("src/ui/Options_test.ui")
+formclass, baseclass = uic.loadUiType("src/ui/Options.ui")
 class OptionsDialog(baseclass,formclass): 
     
     def __init__(self):
