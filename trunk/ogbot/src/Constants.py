@@ -85,7 +85,9 @@ INGAME_TYPES = [
     Research('ionTechnology', 121, 1000, 300, 100), 
     Research('plasmaTechnology', 122, 2000, 4000, 100), 
     Research('intergalacticResearchNetwork', 123, 240000, 400000, 160000), 
-    Research('gravitonTechnology', 199, 0, 0, 0), 
+    Research('gravitonTechnology', 199, 0, 0, 0),
+    Research('expeditionTechnology', 124, 4000, 8000, 4000),
+ 
 ]
 
 INGAME_TYPES_BY_NAME = dict([ (type.name, type) for type in INGAME_TYPES  ])
