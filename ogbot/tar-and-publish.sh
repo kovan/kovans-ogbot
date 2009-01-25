@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VERSION=$(cat src/version.txt)
-FILENAME=kovans-ogbot-source_$VERSION.tar.gz
+FILENAME=kovans-king-vash-ogbot-source_$VERSION.tar.gz
 
 echo "Filename will be: $FILENAME"
 
