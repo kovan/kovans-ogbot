@@ -268,7 +268,7 @@ class Translations(dict):
         for fileName in os.listdir('languages'):
             fileName, extension = os.path.splitext(fileName)
 
-            if not fileName or fileName.startswith('.') or (extension != '.ini' and extension != '.ini.fix'):
+            if not fileName or fileName.startswith('.') or extension != '.ini':
                 continue
             parser = ConfigParser.SafeConfigParser()
             parser.optionxform = str # prevent ini parser from converting names to lowercase           
@@ -278,7 +278,6 @@ class Translations(dict):
                 translation = {}
                 for section in parser.sections():
                 	translation.update((key, value) for key, value in parser.items(section))
-		translation['old'] = (extension == '.ini.fix')
                 self[translation['languageCode']] = translation
             except Exception, e: 
                 raise BotError("Malformed language file (%s%s): %s"%(fileName,extension,e))
