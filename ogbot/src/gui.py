@@ -49,7 +49,7 @@ class AboutDialog(baseclass,formclass):
 
 
 
-formclass, baseclass = uic.loadUiType("src/ui/Options.ui")
+formclass, baseclass = uic.loadUiType("src/ui/Options_test.ui")
 class OptionsDialog(baseclass,formclass): 
     
     def __init__(self):
@@ -93,7 +93,6 @@ class OptionsDialog(baseclass,formclass):
             try: self.config.load()
             except BotError, e: 
                 QMessageBox.critical(self,"Error in configuration",str(e))
-
 
         radioButton = getattr(self, self.config.attackingShip + "RadioButton")
         radioButton.setChecked(True)
@@ -256,12 +255,12 @@ class MainWindow(baseclass,formclass):
 
         config = Configuration(FILE_PATHS['config'])
         try: config.load()
-        except (BotFatalError, BotError): 
-            self.showOptions()
+        except (BotFatalError, BotError):
+        	self.showOptions()
+	        config.load()
 
-     
         #self.subscribeLabel.setText(urllib.unquote('<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick-subscriptions&business=jsceballos%40gmail%2ecom&item_name=Kovan%27s%20OGBot%20AUTO%20FLEETSAVE&item_number=1&no_shipping=1&no_note=1&currency_code=EUR&lc=ES&bn=PP%2dSubscriptionsBF&charset=UTF%2d8&a3=4%2e00&p3=1&t3=M&src=1&sra=1">Subscribe</a>'))
-        self.setWindowTitle("%s uni%s %s" %(self.windowTitle(),config.universe,config.webpage))
+        self.setWindowTitle("%s universe %s %s" %(self.windowTitle(),config.universe,config.webpage))
         self.tabWidget.removeTab(2)
        
     
