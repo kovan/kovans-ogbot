@@ -146,7 +146,7 @@ class WebAdapter(object):
         try: self.translations = allTranslations[self.serverLanguage]
 	except KeyError:
 		raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage)
-	if self.translations['old']:
+	if self.translations['old'] == 'True':
 		raise BotFatalError("Server language (%s) needs to updated follow instructions in language/howtofix.fix" % self.serverLanguage)
         self.translationsByLocalText = dict([ (value, key) for key, value in self.translations.items() ])
         self.generateRegexps(self.translations)        
