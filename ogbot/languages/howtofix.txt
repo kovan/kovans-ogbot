@@ -5,6 +5,9 @@ and old changed to False
 fields =
 rank =
 
+#research page
+expeditionTechnology =
+
 # when being attacked
 aHostile = 
 itsMissionIs =
