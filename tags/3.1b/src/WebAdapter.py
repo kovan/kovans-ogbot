@@ -113,7 +113,8 @@ class WebAdapter(object):
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
         self._mutex = threading.RLock()
-	self.webpage = "http://"+ config.webpage + "/index.php"     
+        
+        self.webpage = "http://"+ config.webpage + "/index.php"
 
         if not self.loadState():
             self.session = '000000000000'  
@@ -139,18 +140,9 @@ class WebAdapter(object):
         self.keepAliveOpener.addheaders = headers
                     
         cachedResponse = StringIO.StringIO(self._fetchValidResponse(self.webpage, True).read())
-
         # check configured language equals ogame server language
         regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"', re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
-	oldServer = re.compile(r'<frame[\s]*name="mainframe"[\s]*src="([a-z]*).php', re.I)# similar to above
-        self.serverLanguage =  regexpLanguage.findall(cachedResponse.getvalue())[0]  	
-	# checks for old front page note \ fix this 
-	self.oldServer = (oldServer.search(cachedResponse.getvalue()))
-	if self.oldServer:
-		print "Old Server"
-		self.webpage = "http://"+ config.webpage + "/home.php"
-		cachedResponse = StringIO.StringIO(self._fetchValidResponse(self.webpage, True).read())
-
+        self.serverLanguage =  regexpLanguage.findall(cachedResponse.getvalue())[0]  
         try: self.translations = allTranslations[self.serverLanguage]
 	except KeyError:
 		raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage)
@@ -159,12 +151,9 @@ class WebAdapter(object):
         self.translationsByLocalText = dict([ (value, key) for key, value in self.translations.items() ])
         self.generateRegexps(self.translations)        
         # retrieve server based on universe number        
-        cachedResponse.seek(0)     
-        form = ParseFile(cachedResponse, self.lastFetchedUrl, backwards_compat=False)[0]   
-	if self.oldServer:
-		select = form.find_control(name = "universe")	
-	else:	 
-		select = form.find_control(name = "uni_url")
+        cachedResponse.seek(0)                        
+        form = ParseFile(cachedResponse, self.lastFetchedUrl, backwards_compat=False)[0]        
+        select = form.find_control(name = "uni_url")
         translation = self.translations['universe']
         if self.serverLanguage == "tw":
             translation = translation.decode('gb2312').encode('utf-8')
@@ -255,10 +244,7 @@ class WebAdapter(object):
             mySleep(30)                
         page = self._fetchValidResponse(self.webpage)
         form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]
-	if self.oldServer:
-		form["universe"] = [self.server]	
-	else:	
-	        form["uni_url"] = [self.server]
+        form["uni_url"] = [self.server]
         form["login"] = self.config.username
         form["pass"]  = self.config.password
         form.action = "http://"+self.server+"/game/reg/login2.php"
@@ -329,7 +315,7 @@ class WebAdapter(object):
         {
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
             'charset':re.compile(r'content="text/html; charset=(.*?)"', re.I), 
-            'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" % (translations['serverTime']), re.DOTALL|re.I),
+            'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" % (translations['serverTime']), re.DOTALL|re.I), 
 	    'report': 
             {
                 'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
@@ -356,7 +342,7 @@ class WebAdapter(object):
 	    'currentlyUpgradingResearch':re.compile(r'ss=([0-9]+);', re.I),
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>', re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
-	    'fleetSlots':re.compile(r"%s[\s]*([0-9]+) \/ ([0-9]+)" %(translations['fleets']), re.I),
+	    'fleetSlots':re.compile(r"fleets ([0-9]+) \/ ([0-9]+)", re.I),
             'myPlanets':re.compile('<option value="/game/index\.php\?page=overview&session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>', re.I),    
             'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(.*?(?P<level>[0-9]+)\s*?\)",re.I|re.LOCALE),            
             'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="[0-9]+" >([0-9]+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">(.*?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>'),
