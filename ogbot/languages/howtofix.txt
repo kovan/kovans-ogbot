@@ -1,0 +1,19 @@
+any language with old = True needs to have these added
+and old changed to False
+
+# as found in the overview page:
+fields =
+rank =
+
+#research page
+expeditionTechnology =
+
+# when being attacked
+aHostile = 
+itsMissionIs =
+
+# as found on the fleets page
+expeditions =
+
+#as found on shipyard and defense page
+durationRemaining =
