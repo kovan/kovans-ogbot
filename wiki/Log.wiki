@@ -1,3 +1,4 @@
+#labels Featured
 A running log of progress
 
 = Details =
