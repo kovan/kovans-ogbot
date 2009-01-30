@@ -1,0 +1,16 @@
+#Sat Jul 07 22:29:05 CEST 2007
+eclipse.preferences.version=1
+encoding//languages/chinese.ini=GB2312
+encoding//languages/french.ini=ISO-8859-1
+encoding//languages/polish.ini=ISO-8859-2
+encoding//languages/russian.ini=koi8-r
+encoding//languages/turkish.ini=ISO-8859-9
+encoding//plugins/fleetsearch.py=ISO-8859-1
+encoding//plugins/scangalaxy.py=ISO-8859-1
+encoding//src/CommonClasses.py=ISO-8859-1
+encoding//src/Constants.py=ISO-8859-1
+encoding//src/GameEntities.py=ISO-8859-1
+encoding//src/OGBot.py=ISO-8859-1
+encoding//src/WebAdapter.py=ISO-8859-1
+encoding//src/gui.py=ISO-8859-1
+encoding/languages=ISO-8859-1
