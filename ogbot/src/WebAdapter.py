@@ -356,7 +356,7 @@ class WebAdapter(object):
 	    'currentlyUpgradingResearch':re.compile(r'ss=([0-9]+);', re.I),
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>', re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
-	    'fleetSlots':re.compile(r"fleets ([0-9]+) \/ ([0-9]+)", re.I),
+	    'fleetSlots':re.compile(r"%s[\s]*([0-9]+) \/ ([0-9]+)" %(translations['fleets']), re.I),
             'myPlanets':re.compile('<option value="/game/index\.php\?page=overview&session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>', re.I),    
             'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(.*?(?P<level>[0-9]+)\s*?\)",re.I|re.LOCALE),            
             'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="[0-9]+" >([0-9]+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">(.*?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>'),
