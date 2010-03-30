@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-# -*- coding: ISO-8859-1 -*-
 #
 #      Kovan's OGBot
-#      Copyright (c) 2007 by kovan 
+#      Copyright (c) 2010 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
