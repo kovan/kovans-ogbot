@@ -131,7 +131,7 @@ class WebAdapter(object):
                 'research': re.compile(reportTmp2 % translations['research'], re.DOTALL|re.I), 
                 'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<cuantity>[-0-9.]+)</td>", re.DOTALL|re.I)
             }, 
-            'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" %  translations['serverTime'], re.DOTALL|re.I), 
+            'serverTime':re.compile(r"var serverTime = new Date\((\d+)\)"),
             'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<cuantity>[-0-9.]+)"', re.I), 
             'maxSlots':re.compile(r"\(%s.*?([0-9]+).*\)" %  translations['maxFleets'].replace('.', '\. '), re.I), 
             'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(.*?(?P<level>\d+)\s*?\)", re.I|re.LOCALE),            
@@ -255,7 +255,9 @@ class WebAdapter(object):
 
 
     def getMyPlanets(self):
-        page = self._fetchPhp('index.php', page='overview', lgn=1).read()              
+        page = self._fetchPhp('index.php', page='overview', lgn=1).read()
+        # parser = etree.HTMLParser()
+        # tree = etree.parse(page,parser)
         #page = self._fetchPhp('overview.php',lgn=1).read()
         
         myPlanets = []
@@ -267,9 +269,11 @@ class WebAdapter(object):
                     coords.coordsType = Coords.Types.moon
             planet = OwnPlanet(coords, name.strip(), code)
             myPlanets.append(planet)
-        
-        strTime = self.REGEXPS['serverTime'].findall(page)[0]
-        serverTime = parseTime(strTime)
+
+        # 
+        timestamp = self.REGEXPS['serverTime'].findall(page)[0]
+        import pdb; pdb.set_trace()
+        serverTime = datetime.fromtimestamp(float(int(timestamp)/1000))
         self.serverTimeDelta = serverTime - datetime.now()
         self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
         self.myPlanets = myPlanets
@@ -621,7 +625,7 @@ class ScanThread(threading.Thread):
 
 
 def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:52                        
-    ''' parses a time string formatted in OGame's most usual format and 
+    ''' parses a time string formatted in OGame most usual format and 
     converts it to a datetime object'''
     
     format = "%Y " + format
