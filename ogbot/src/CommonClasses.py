@@ -30,6 +30,7 @@ from time import strptime,sleep
 from datetime import *
 
 
+
 class BotError(Exception): pass
 class BotFatalError (BotError): pass
 class ManuallyTerminated(BotError): pass
@@ -43,10 +44,10 @@ class NotEnoughShipsError (FleetSendError):
         self.requested = requested
         self.available = available
     def __str__(self):
-        return 'Requested: %s. Available: %s' %(self.requested,self.available)
+        return 'Requested: %s. Available: %s' %(self.requested,self.available)
+
+
     
-
-
 class ThreadMsg(object):    pass
 
 class BotToGuiMsg(ThreadMsg):
@@ -152,28 +153,6 @@ class Configuration(dict):
         for section in self.configParser.sections():
             self.update(self.configParser.items(section))
         
-    def _parseListOfDictionary(self, dictionaryStr):
-	dictionaryStr = dictionaryStr.replace('\n','')[1:-1]
-	list = []	
-	dictionary = {}
-	for dict in dictionaryStr.split('}'):
-		if len(dict) > 1: 
-			dictionary = self._parseDictionary(dict)
-			list.append(dictionary)	
-	return list	
-		
-    def _parseDictionary(self, listStr):
-	dictionary = {}
-	value = None
-	for item in listStr.split(','):
-		for subitem in item.split(':'):
-			subitem = subitem.strip('''{} ,'"''')
-			if value:
-				dictionary[value] = subitem
-				value = None
-			else: value = subitem
-    	return dictionary
-
     def _parseList(self,listStr):
         list = []
         for item in listStr.split(','):
@@ -184,7 +163,7 @@ class Configuration(dict):
     def _parseTime(self,timeStr):
         return time(*strptime(timeStr,"%H:%M:%S")[3:6])
         
-    def save(self):    
+    def save(self):      
         if not self.configParser.has_section('options'):
             self.configParser.add_section('options')
 
@@ -196,10 +175,9 @@ class Configuration(dict):
 class BotConfiguration (Configuration):
     def loadDefaults(self):
         super(BotConfiguration, self).loadDefaults() 
-        self['universe'] = 1
+        self['universe'] = 0
         self['username'] = ''
         self['password'] = ''
-	self['waitBetweenAttackChecks'] = 45
         self['webpage'] = 'ogame.org'      
         self['attackRadius'] = 10
         self['slotsToReserve'] = 0
@@ -215,52 +193,47 @@ class BotConfiguration (Configuration):
         self['preMidnightPauseTime'] = '22:00:00'
         self['inactivesAppearanceTime'] = '0:06:00'        
         self['deuteriumSourcePlanet'] = ''
-        self['maxProbes'] = 15  
-	self['fleetPoint'] = '[{}]'
-	self['buildingPoint'] = '[{}]'      
-        self['defensePoint'] = '[{}]'
-	self['researchPoint'] = '[{}]'
+        self['maxProbes'] = 15        
+        
+
         
     def load(self):
         super(BotConfiguration, self).load()        
-
+        
         for time in ('preMidnightPauseTime','inactivesAppearanceTime'):
-		self[time] = self._parseTime(self[time])
+            self[time] = self._parseTime(self[time])
 
         for url in ('webpage','proxy'):
-		self[url] = self[url].replace("http://", "")
+            self[url] = self[url].replace("http://", "")
 
-        for listName in ('buildingPoint','fleetPoint','defensePoint','researchPoint'):
-		self[listName] = self._parseListOfDictionary(self[listName])
-
-     	for listName in ('playersToAvoid','alliancesToAvoid','sourcePlanets'):
-		self[listName] = self._parseList(self[listName])
+        for listName in ('playersToAvoid','alliancesToAvoid','sourcePlanets'):
+            self[listName] = self._parseList(self[listName])
 
         from GameEntities import Coords
         for coordsStr in self['sourcePlanets'][:]:
-		self['sourcePlanets'].remove(coordsStr)
-		self['sourcePlanets'].append(Coords(coordsStr))
+            self['sourcePlanets'].remove(coordsStr)
+            self['sourcePlanets'].append(Coords(coordsStr))
 
         try: self['deuteriumSourcePlanet'] =  Coords(self['deuteriumSourcePlanet'])
         except ValueError: pass
 
         try:
-		if not self.username or not self.password or not self.webpage or not self.universe:
-			raise BotError("Empty username, password, universe or webpage.")
+            if not self.username or not self.password or not self.webpage or not self.universe:
+                raise BotError("Empty username, password, universe or webpage.")
         except Exception:
-		raise BotError("Missing username, password, universe or webpage.")            
+                raise BotError("Missing username, password, universe or webpage.")            
         
         
         if self['attackingShip'] not in ("smallCargo","largeCargo"):
-		raise BotError("Invalid attacking ship type.")
+            raise BotError("Invalid attacking ship type.")
         
         from GameEntities import EnemyPlanet
 
         try:
-		metal, crystal, deuterium, flightTime = 1,1,1,1
-		exec self.rentabilityFormula
+            metal, crystal, deuterium, flightTime = 1,1,1,1
+            exec self.rentabilityFormula
         except Exception, e:
-		raise BotError("Invalid rentability formula: " + str(e))
+            raise BotError("Invalid rentability formula: " + str(e))
 
     
 class Translations(dict):
@@ -277,10 +250,10 @@ class Translations(dict):
                 parser.read('languages/'+fileName+extension)
                 translation = {}
                 for section in parser.sections():
-                	translation.update((key, value) for key, value in parser.items(section))
-                self[translation['languageCode']] = translation
+                    translation.update((key, value) for key, value in parser.items(section))
+                self[translation['languageCode']] = translation 
             except Exception, e: 
-                raise BotError("Malformed language file (%s%s): %s"%(fileName,extension,e))
+                raise BotError("Malformed languaje file (%s%s): %s"%(fileName,extension,e))
         # after all this access to a translated string is obtained thru p.e.: self['es']['smallCargo']
         
 class ResourceSimulation(object):

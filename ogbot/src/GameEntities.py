@@ -17,33 +17,24 @@
 
 import math
 import re
-import datetime,time
+from datetime import timedelta
 from CommonClasses import Enum, addCommas
 
+
 class IngameType(object):
-    def __init__(self, name, code, costmetal, costcrystal, costdeuterium):
+    def __init__(self, name, code):
         self.name = name         
-        self.code = code
-        self.costmetal = int(costmetal)
-	self.costcrystal = int(costcrystal)  
-	self.costdeuterium = int(costdeuterium) 
+        self.code = code    
     def __repr__(self):
         return self.name    
     
 class Ship(IngameType):
-    def __init__(self, name, code, costmetal, costcrystal, costdeuterium, capacity, consumption):
-        super(Ship, self).__init__(name, code, costmetal, costcrystal, costdeuterium) 
+    def __init__(self, name, code, capacity, consumption):
+        super(Ship, self).__init__(name, code)
         self.capacity = capacity         
         self.consumption = consumption
-
-class Building(IngameType):
-    def __init__(self, name, code, costmetal, costcrystal, costdeuterium):
-        super(Building, self).__init__(name, code, costmetal, costcrystal, costdeuterium)   
-
-class Defense(IngameType):
-    def __init__(self, name, code, costmetal, costcrystal, costdeuterium):
-        super(Defense, self).__init__(name, code, costmetal, costcrystal, costdeuterium)
-
+class Building(IngameType): pass
+class Defense(IngameType): pass
 class Research(IngameType): pass
 
 class Coords(object):
@@ -85,7 +76,9 @@ class Coords(object):
     
     def convertToInts(self):
         self.galaxy, self.solarSystem, self.planet = int(self.galaxy), int(self.solarSystem), int(self.planet)
-          
+        
+  
+    
     def __repr__(self):
         repr = "[%s:%s:%s]" % (self.galaxy, self.solarSystem, self.planet)      
         if not self.coordsType == self.Types.planet:
@@ -124,13 +117,8 @@ class Coords(object):
     
     def flightTimeTo(self, coords, speed, speedPercentage=100):
         seconds = 350000.0/speedPercentage * math.sqrt(self.distanceTo(coords) * 10.0 / float(speed)) + 10.0
-        return datetime.timedelta(seconds=int(seconds))
+        return timedelta(seconds=int(seconds))
 
-class Cost(object):
-    def __init__(self, metal, crystal, deuterium=0):
-	self.metal = int(metal)
-	self.crystal = int(crystal)
-	self.deuterium = int(deuterium)
 
 class Resources(object):
     compiledFormula = None
@@ -174,38 +162,11 @@ class Planet(object):
         self.name = name
     def __repr__(self):
         return self.name + " " + str(self.coords)
-
-
-class Player(object):
-    def __init__(self):
-	self.main = 0
-        self.colonies = []
-	self.raidingColonies = []
-	self.upgradeToRaid = []
-	self.upgradingColonies = []
-	self.alliance = ""
-	self.attack = []
-	self.freeFleetSlots = 0
-	self.totalFleetSlots = 0
-	self.name = ""
-	self.rank = 0
-        self.research = {}
-	self.points = 0
-
-
+    
 class OwnPlanet(Planet):
     def __init__(self, coords, name="", code=0):
         super(OwnPlanet, self).__init__(coords, name)
         self.code = code
-	self.point = 0
-	self.buildings, self.allbuildings, self.defense, self.fleet = {}, {}, {}, {}
-	self.metal, self.crystal, self.deuterium, self.energy = 0, 0, 0, 0
-	self.metalProduct, self.crystalProduct, self.deuteriumProduct = 0, 0, 0
-	self.freeBuildingSlots,	self.totalBuildingslots = 0, 0
-	self.endWaitTime  = datetime.datetime.combine(datetime.date(0001,1,1), datetime.time(0,0))
-	self.endBuildTime = self.endWaitTime
-	self.endFleetWaitTime = self.endWaitTime
-	self.endDefenseWaitTime = self.endWaitTime
 
 
 class EnemyPlanet (Planet):
@@ -353,12 +314,12 @@ class Mission(object):
         recycle = 8
         # colonize
     
-    def __init__(self, missionType, sourcePlanet, targetPlanet, fleet=None, resources=Resources(), speedPercentage=100):
+    def __init__(self, missionType, sourcePlanet, targetPlanet, fleet = None, resources=Resources(), speedPercentage=100):
         self.missionType = missionType              
         self.sourcePlanet = sourcePlanet              
         self.targetPlanet = targetPlanet
         self.fleet = fleet              
-        self.resources = resources
+        self.resources = Resources()
         self.speedPercentage = speedPercentage
 
         # these will be automatically corrected (if needed) once the mission is sent
