@@ -18,6 +18,7 @@
 # python library:
 
 import sys, os
+os.chdir( "/home/k/prog/kovans-ogbot/original/ogbot")
 
 sys.path.insert(0, 'src')
 sys.path.insert(0, 'lib')
@@ -119,7 +120,7 @@ class Bot(object):
                 self.eventMgr.activityMsg("Error: %s" % e)
             except Exception:
                 traceback.print_exc()
-                self.eventMgr.activityMsg("Something unexpected occured, see log file. Restarting bot.")        
+                self.eventMgr.activityMsg("Something unexpected occured, see log file. Restarting bot.")
             self._checkThreadQueue()
             mySleep(5)
     
@@ -666,8 +667,8 @@ class Bot(object):
     def runPlugin(self, plugin):
         execfile("plugins/%s.py" % plugin)
 
-    
-if __name__ == "__main__":
+
+def run():
 
     parser = OptionParser()
     parser.add_option("-c", "--console", action="store_true", help="Run in console mode'")
@@ -680,11 +681,11 @@ if __name__ == "__main__":
         dirPrefix = options.workdir
     else:
         dirPrefix = 'files'
-        
+
     for key, path in FILE_PATHS.items():
-        path = dirPrefix + '/' + path
-        FILE_PATHS[key] = path
-        try: os.makedirs (os.path.dirname(path))
+        filepath = dirPrefix + '/' + path
+        FILE_PATHS[key] = filepath
+        try: os.makedirs (os.path.dirname(filepath))
         except OSError, e: pass
 
     for dir in ('plugins', 'debug', 'output'):
@@ -707,3 +708,7 @@ if __name__ == "__main__":
         from gui import guiMain
         guiMain(options)
 	
+        
+    
+if __name__ == "__main__":
+    run()
