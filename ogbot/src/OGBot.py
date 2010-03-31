@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: ISO-8859-1 -*-
+# 
 #
 #      Kovan's OGBot
-#      Copyright (c) 2007 by kovan 
+#      Copyright (c) 2010 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
@@ -84,7 +84,7 @@ class Bot(object):
         self.config = BotConfiguration(FILE_PATHS['config'])                   
         self.web = None
         self.config.load()
-	self.player = Player()
+        self.player = Player()
         self.allTranslations = Translations()
         self.inactivePlanets = []
         self.sourcePlanetsDict = {}
@@ -102,10 +102,10 @@ class Bot(object):
     def run(self):
         while True:
             try:
-		self._checkThreadQueue()
-		self._connect()              
-		self.eventMgr.activityMsg("Bot started.")  		
-		self._start()
+                self._checkThreadQueue()
+                self._connect()              
+                self.eventMgr.activityMsg("Bot started.")               
+                self._start()
             except (KeyboardInterrupt, SystemExit, ManuallyTerminated):
                 self.stop()
                 self.eventMgr.activityMsg("Bot stopped.")                
@@ -117,18 +117,18 @@ class Bot(object):
             except BotError, e:
                 self.stop()
                 self.eventMgr.activityMsg("Error: %s" % e)
-		break
+                break
             except Exception:
                 traceback.print_exc()
                 self.stop()
                 self.eventMgr.activityMsg("Something unexpected occured, see log file. Stopping bot.")        
-		break
+                break
     
 
 ########################################################################################## 
     def stop(self):
         if self.web:
-		self.web.saveState()
+                self.web.saveState()
 
 
 ########################################################################################## 
@@ -136,7 +136,7 @@ class Bot(object):
         self.eventMgr.activityMsg("Contacting server...")        
         self.web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue, self.gui)
         self.web.doLogin()
-	self.web.updatePlayerData(self.player)
+        self.web.updatePlayerData(self.player)
 
         largeCargos = INGAME_TYPES_BY_NAME['largeCargo']
         smallCargos = INGAME_TYPES_BY_NAME['smallCargo']
@@ -160,8 +160,8 @@ class Bot(object):
         
         self.loadFiles()
 
-	# BAD note \ fix this
-	self.player.raidingColonies.append(self.player.colonies[0])
+        # TODO. BAD note \ fix this
+        self.player.raidingColonies.append(self.player.colonies[0])
 
 
         # remove planets to avoid from target list
@@ -197,7 +197,7 @@ class Bot(object):
         rentabilities = self.generateRentabilityTable(self.inactivePlanets)
         self.eventMgr.simulationsUpdate(rentabilities)                
 
-	print "main loop"
+        print "main loop"
         # main loop:
         while True:
 
@@ -208,7 +208,7 @@ class Bot(object):
                 newInactives = self.scanGalaxies()
                 if serverTime.time() < datetime.time(3, 30):#(datetime.datetime.combine(serverTime.date(),self.config.inactivesAppearanceTime) + datetime.timedelta(hours=3)).time():
                     self.rushMode(newInactives.values(), oldInactivesList)               
-		self.spyPlanets(self.inactivePlanets, EspionageReport.DetailLevels.buildings) 
+                self.spyPlanets(self.inactivePlanets, EspionageReport.DetailLevels.buildings) 
             else:
                 
                 if serverTime.time() > self.config.preMidnightPauseTime or serverTime.time() < self.config.inactivesAppearanceTime:
@@ -235,8 +235,8 @@ class Bot(object):
             deuteriumSourcePlanet = None
         allInactives = []
         for galaxy, solarSystem, foundPlanets, htmlSource in self.web.getSolarSystems(self.reachableSolarSystems, deuteriumSourcePlanet):
-    		for planet in foundPlanets:
-    			allInactives.append(planet)
+            for planet in foundPlanets:
+                allInactives.append(planet)
 
         seconds = (datetime.datetime.now() - startTime).seconds
         systems = len(self.reachableSolarSystems)

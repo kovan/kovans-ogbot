@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: ISO-8859-1 -*-
+# 
 #
 #      Kovan's OGBot
-#      Copyright (c) 2007 by kovan 
+#      Copyright (c) 2010 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
@@ -25,8 +25,8 @@ class IngameType(object):
         self.name = name         
         self.code = code
         self.costmetal = int(costmetal)
-	self.costcrystal = int(costcrystal)  
-	self.costdeuterium = int(costdeuterium) 
+        self.costcrystal = int(costcrystal)  
+        self.costdeuterium = int(costdeuterium) 
     def __repr__(self):
         return self.name    
     
@@ -59,7 +59,7 @@ class Coords(object):
     def __init__(self, galaxyOrStr, solarSystem=0, planet=0, coordsType=Types.planet):
         ''' 
             First parameter can be a string to be parsed e.g: [1:259:12] or the galaxy. 
-            If it's the galaxy, solarSystem and planet must also be supplied.
+            If its the galaxy, solarSystem and planet must also be supplied.
         '''
         self.coordsType = coordsType        
         try: self.parse(galaxyOrStr)
@@ -128,9 +128,9 @@ class Coords(object):
 
 class Cost(object):
     def __init__(self, metal, crystal, deuterium=0):
-	self.metal = int(metal)
-	self.crystal = int(crystal)
-	self.deuterium = int(deuterium)
+        self.metal = int(metal)
+        self.crystal = int(crystal)
+        self.deuterium = int(deuterium)
 
 class Resources(object):
     compiledFormula = None
@@ -178,34 +178,34 @@ class Planet(object):
 
 class Player(object):
     def __init__(self):
-	self.main = 0
+        self.main = 0
         self.colonies = []
-	self.raidingColonies = []
-	self.upgradeToRaid = []
-	self.upgradingColonies = []
-	self.alliance = ""
-	self.attack = []
-	self.freeFleetSlots = 0
-	self.totalFleetSlots = 0
-	self.name = ""
-	self.rank = 0
+        self.raidingColonies = []
+        self.upgradeToRaid = []
+        self.upgradingColonies = []
+        self.alliance = ""
+        self.attack = []
+        self.freeFleetSlots = 0
+        self.totalFleetSlots = 0
+        self.name = ""
+        self.rank = 0
         self.research = {}
-	self.points = 0
+        self.points = 0
 
 
 class OwnPlanet(Planet):
     def __init__(self, coords, name="", code=0):
         super(OwnPlanet, self).__init__(coords, name)
         self.code = code
-	self.point = 0
-	self.buildings, self.allbuildings, self.defense, self.fleet = {}, {}, {}, {}
-	self.metal, self.crystal, self.deuterium, self.energy = 0, 0, 0, 0
-	self.metalProduct, self.crystalProduct, self.deuteriumProduct = 0, 0, 0
-	self.freeBuildingSlots,	self.totalBuildingslots = 0, 0
-	self.endWaitTime  = datetime.datetime.combine(datetime.date(0001,1,1), datetime.time(0,0))
-	self.endBuildTime = self.endWaitTime
-	self.endFleetWaitTime = self.endWaitTime
-	self.endDefenseWaitTime = self.endWaitTime
+        self.point = 0
+        self.buildings, self.allbuildings, self.defense, self.fleet = {}, {}, {}, {}
+        self.metal, self.crystal, self.deuterium, self.energy = 0, 0, 0, 0
+        self.metalProduct, self.crystalProduct, self.deuteriumProduct = 0, 0, 0
+        self.freeBuildingSlots, self.totalBuildingslots = 0, 0
+        self.endWaitTime  = datetime.datetime.combine(datetime.date(0001,1,1), datetime.time(0,0))
+        self.endBuildTime = self.endWaitTime
+        self.endFleetWaitTime = self.endWaitTime
+        self.endDefenseWaitTime = self.endWaitTime
 
 
 class EnemyPlanet (Planet):
