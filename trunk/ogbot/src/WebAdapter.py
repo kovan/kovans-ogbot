@@ -142,30 +142,20 @@ class WebAdapter(object):
 
         # check configured language equals ogame server language
         regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"', re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
-        oldServer = re.compile(r'<frame[\s]*name="mainframe"[\s]*src="([a-z]*).php', re.I)# similar to above
-        self.serverLanguage =  regexpLanguage.findall(cachedResponse.getvalue())[0]     
-        # checks for old front page note \ fix this 
-        self.oldServer = (oldServer.search(cachedResponse.getvalue()))
-        if self.oldServer:
-            print "Old Server"
-            self.webpage = "http://"+ config.webpage + "/home.php"
-            cachedResponse = StringIO.StringIO(self._fetchValidResponse(self.webpage, True).read())
 
         try: self.translations = allTranslations[self.serverLanguage]
         except KeyError:
             raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage)
-        if self.translations['old'] == 'True':
+        if int(self.translations['fileVersion']) < 0.1:
             raise BotFatalError("Server language (%s) needs to updated follow instructions in language/howtofix.fix" % self.serverLanguage)
         self.translationsByLocalText = dict([ (value, key) for key, value in self.translations.items() ])
         self.generateRegexps(self.translations)        
         # retrieve server based on universe number        
         cachedResponse.seek(0)     
         form = ParseFile(cachedResponse, self.lastFetchedUrl, backwards_compat=False)[0]   
-        if self.oldServer:
-            select = form.find_control(name = "universe")   
-        else:    
-            select = form.find_control(name = "uni_url")
+        select = form.find_control(name = "uni_url")
         translation = self.translations['universe']
+        
         if self.serverLanguage == "tw":
             translation = translation.decode('gb2312').encode('utf-8')
 
@@ -255,10 +245,7 @@ class WebAdapter(object):
             mySleep(30)                
         page = self._fetchValidResponse(self.webpage)
         form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]
-        if self.oldServer:
-            form["universe"] = [self.server]        
-        else:   
-            form["uni_url"] = [self.server]
+        form["uni_url"] = [self.server]
         form["login"] = self.config.username
         form["pass"]  = self.config.password
         form.action = "http://"+self.server+"/game/reg/login2.php"
