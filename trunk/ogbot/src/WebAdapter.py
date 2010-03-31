@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# 
+# -*- coding: iso-8859-1 -*-
 #
 #      Kovan's OGBot
 #      Copyright (c) 2010 by kovan
