@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: ISO-8859-1 -*-
+# 
 #
 #      Kovan's OGBot
-#      Copyright (c) 2007 by kovan 
+#      Copyright (c) 2010 by kovan 
 #
 #      *************************************************************************
 #      *                                                                       *
@@ -153,31 +153,31 @@ class Configuration(dict):
             self.update(self.configParser.items(section))
         
     def _parseListOfDictionary(self, dictionaryStr):
-	dictionaryStr = dictionaryStr.replace('\n','')[1:-1]
-	list = []	
-	dictionary = {}
-	for dict in dictionaryStr.split('}'):
-		if len(dict) > 1: 
-			dictionary = self._parseDictionary(dict)
-			list.append(dictionary)	
-	return list	
-		
+        dictionaryStr = dictionaryStr.replace('\n','')[1:-1]
+        list = []
+        dictionary = {}
+        for dict in dictionaryStr.split('}'):
+            if len(dict) > 1: 
+                dictionary = self._parseDictionary(dict)
+                list.append(dictionary) 
+        return list     
+
     def _parseDictionary(self, listStr):
-	dictionary = {}
-	value = None
-	for item in listStr.split(','):
-		for subitem in item.split(':'):
-			subitem = subitem.strip('''{} ,'"''')
-			if value:
-				dictionary[value] = subitem
-				value = None
-			else: value = subitem
-    	return dictionary
+        dictionary = {}
+        value = None
+        for item in listStr.split(','):
+                for subitem in item.split(':'):
+                        subitem = subitem.strip('''{} ,'"''') # "
+                        if value:
+                                dictionary[value] = subitem
+                                value = None
+                        else: value = subitem
+        return dictionary
 
     def _parseList(self,listStr):
         list = []
         for item in listStr.split(','):
-            item = item.strip('''[] ,'"''')
+            item = item.strip('''[] ,'"''') #"
             if item : list.append(item)
         return list
 
@@ -199,7 +199,7 @@ class BotConfiguration (Configuration):
         self['universe'] = 1
         self['username'] = ''
         self['password'] = ''
-	self['waitBetweenAttackChecks'] = 45
+        self['waitBetweenAttackChecks'] = 45
         self['webpage'] = 'ogame.org'      
         self['attackRadius'] = 10
         self['slotsToReserve'] = 0
@@ -216,51 +216,51 @@ class BotConfiguration (Configuration):
         self['inactivesAppearanceTime'] = '0:06:00'        
         self['deuteriumSourcePlanet'] = ''
         self['maxProbes'] = 15  
-	self['fleetPoint'] = '[{}]'
-	self['buildingPoint'] = '[{}]'      
+        self['fleetPoint'] = '[{}]'
+        self['buildingPoint'] = '[{}]'      
         self['defensePoint'] = '[{}]'
-	self['researchPoint'] = '[{}]'
+        self['researchPoint'] = '[{}]'
         
     def load(self):
         super(BotConfiguration, self).load()        
 
         for time in ('preMidnightPauseTime','inactivesAppearanceTime'):
-		self[time] = self._parseTime(self[time])
+            self[time] = self._parseTime(self[time])
 
         for url in ('webpage','proxy'):
-		self[url] = self[url].replace("http://", "")
+            self[url] = self[url].replace("http://", "")
 
         for listName in ('buildingPoint','fleetPoint','defensePoint','researchPoint'):
-		self[listName] = self._parseListOfDictionary(self[listName])
+            self[listName] = self._parseListOfDictionary(self[listName])
 
-     	for listName in ('playersToAvoid','alliancesToAvoid','sourcePlanets'):
-		self[listName] = self._parseList(self[listName])
+        for listName in ('playersToAvoid','alliancesToAvoid','sourcePlanets'):
+            self[listName] = self._parseList(self[listName])
 
         from GameEntities import Coords
         for coordsStr in self['sourcePlanets'][:]:
-		self['sourcePlanets'].remove(coordsStr)
-		self['sourcePlanets'].append(Coords(coordsStr))
+            self['sourcePlanets'].remove(coordsStr)
+            self['sourcePlanets'].append(Coords(coordsStr))
 
         try: self['deuteriumSourcePlanet'] =  Coords(self['deuteriumSourcePlanet'])
         except ValueError: pass
 
         try:
-		if not self.username or not self.password or not self.webpage or not self.universe:
-			raise BotError("Empty username, password, universe or webpage.")
+            if not self.username or not self.password or not self.webpage or not self.universe:
+                raise BotError("Empty username, password, universe or webpage.")
         except Exception:
-		raise BotError("Missing username, password, universe or webpage.")            
+            raise BotError("Missing username, password, universe or webpage.")            
         
         
         if self['attackingShip'] not in ("smallCargo","largeCargo"):
-		raise BotError("Invalid attacking ship type.")
+            raise BotError("Invalid attacking ship type.")
         
         from GameEntities import EnemyPlanet
 
         try:
-		metal, crystal, deuterium, flightTime = 1,1,1,1
-		exec self.rentabilityFormula
+            metal, crystal, deuterium, flightTime = 1,1,1,1
+            exec self.rentabilityFormula
         except Exception, e:
-		raise BotError("Invalid rentability formula: " + str(e))
+            raise BotError("Invalid rentability formula: " + str(e))
 
     
 class Translations(dict):
@@ -277,7 +277,7 @@ class Translations(dict):
                 parser.read('languages/'+fileName+extension)
                 translation = {}
                 for section in parser.sections():
-                	translation.update((key, value) for key, value in parser.items(section))
+                    translation.update((key, value) for key, value in parser.items(section))
                 self[translation['languageCode']] = translation
             except Exception, e: 
                 raise BotError("Malformed language file (%s%s): %s"%(fileName,extension,e))
