@@ -789,7 +789,7 @@ class WebAdapter(object):
             inputQueue.put(url)
        
         for dummy in range(1):
-            thread = ScanThread(inputQueue, outputQueue, self.opener, self.REGEXPS) #fix this note changed self.keepaliveopener to self.opener
+            thread = ScanThread(inputQueue, outputQueue, self.keepaliveopener, self.REGEXPS)
             thread.start() 
             threads.append(thread)            
  
