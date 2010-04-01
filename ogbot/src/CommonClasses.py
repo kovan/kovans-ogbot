@@ -196,7 +196,6 @@ class Configuration(dict):
 class BotConfiguration (Configuration):
     def loadDefaults(self):
         super(BotConfiguration, self).loadDefaults() 
-        self['universe'] = 1
         self['username'] = ''
         self['password'] = ''
         self['waitBetweenAttackChecks'] = 45
@@ -210,7 +209,7 @@ class BotConfiguration (Configuration):
         self['alliancesToAvoid'] = ''       
         self['systemsPerGalaxy'] = 499
         self['proxy'] = ''
-        self['userAgent'] = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)'
+        self['userAgent'] = 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)'
         self['rentabilityFormula'] = '(metal + 1.5 * crystal + 3 * deuterium) / flightTime'
         self['preMidnightPauseTime'] = '22:00:00'
         self['inactivesAppearanceTime'] = '0:06:00'        
@@ -245,10 +244,10 @@ class BotConfiguration (Configuration):
         except ValueError: pass
 
         try:
-            if not self.username or not self.password or not self.webpage or not self.universe:
-                raise BotError("Empty username, password, universe or webpage.")
+            if not self.username or not self.password or not self.webpage:
+                raise BotError("Empty username, password or webpage.")
         except Exception:
-            raise BotError("Missing username, password, universe or webpage.")            
+            raise BotError("Missing username, password or webpage.")            
         
         
         if self['attackingShip'] not in ("smallCargo","largeCargo"):

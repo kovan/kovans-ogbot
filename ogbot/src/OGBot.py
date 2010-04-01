@@ -15,7 +15,6 @@
 #
 
 
-
 # python library:
 
 import sys, os
@@ -118,11 +117,11 @@ class Bot(object):
                 self.stop()
                 self.eventMgr.activityMsg("Error: %s" % e)
                 break
-            except Exception:
-                traceback.print_exc()
-                self.stop()
-                self.eventMgr.activityMsg("Something unexpected occured, see log file. Stopping bot.")        
-                break
+            # except Exception:
+            #     traceback.print_exc()
+            #     self.stop()
+            #     self.eventMgr.activityMsg("Something unexpected occured, see log file. Stopping bot.")        
+            #     break
     
 
 ########################################################################################## 
@@ -685,21 +684,10 @@ if __name__ == "__main__":
     parser = OptionParser()
     parser.add_option("-c", "--console", action="store_true", help="Run in console mode'")
     parser.add_option("-a", "--autostart", action="store_true", help="Auto start bot, no need to click Start button")
-    parser.add_option("-w", "--workdir", help="Specify working directory (useful to run various bots at once). If not specified defaults to 'files'")    
     parser.add_option("-p", "--plugin", help="Run the specified plugin from the plugins folder, and exit.")    
     (options, args) = parser.parse_args()
     
-    if options.workdir:
-        dirPrefix = options.workdir
-    else:
-        dirPrefix = 'files'
         
-    for key, path in FILE_PATHS.items():
-        path = dirPrefix + '/' + path
-        FILE_PATHS[key] = path
-        try: os.makedirs (os.path.dirname(path))
-        except OSError, e: pass
-
     for dir in ('plugins', 'debug', 'output'):
         try: os.makedirs (dir)
         except OSError, e: pass
