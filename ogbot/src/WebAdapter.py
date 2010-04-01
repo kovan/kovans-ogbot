@@ -30,16 +30,17 @@ import warnings
 import cookielib
 import StringIO
 import random
+import time
+from datetime import *
 from lxml import etree
-
 from Queue import *
-import datetime, time
-from time import strptime
-from ClientForm import HTMLForm, ParseFile, ControlNotFoundError;
+
 import keepalive
+from ClientForm import HTMLForm, ParseFile, ControlNotFoundError
 from CommonClasses import *
 from Constants import *
 from GameEntities import *
+
 
 
 """Ability to 
@@ -95,11 +96,11 @@ class WebAdapter(object):
         def loggedIn(self, username, session):
             msg = 'Logged in with user %s.' % username
             self.logAndPrint(msg)
-            msg = datetime.datetime.now().strftime("%X %x ") + msg
+            msg = datetime.now().strftime("%X %x ") + msg
             self.dispatch("activityMsg", msg)            
         def activityMsg(self, msg):
             self.logAndPrint(msg)
-            msg = datetime.datetime.now().strftime("%X %x ") + msg
+            msg = datetime.now().strftime("%X %x ") + msg
             self.dispatch("activityMsg", msg)
 
             
@@ -151,8 +152,6 @@ class WebAdapter(object):
         self.generateRegexps(self.translations)        
         # retrieve server based on universe number        
         cachedResponse.seek(0)     
-        form = ParseFile(cachedResponse, self.lastFetchedUrl, backwards_compat=False)[0]   
-        select = form.find_control(name = "uni_url")
         translation = self.translations['universe']
         
         if self.serverLanguage == "tw":
@@ -189,21 +188,23 @@ class WebAdapter(object):
                 response = self.opener.open(request)
                 self.lastFetchedUrl = response.geturl()
                 if __debug__: 
-                    print >>sys.stderr, "\t " + datetime.datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + self.lastFetchedUrl
+                    print >>sys.stderr, "\t " + datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + self.lastFetchedUrl
                 cachedResponse = StringIO.StringIO(response.read())
                 p = cachedResponse.getvalue()
                 cachedResponse.seek(0)
+                
                 # store last 30 pages fetched in the debug directory:
                 files = os.listdir('debug')
                 if len(files) >= 30: #never allow more than 30 files
                     files.sort()
                     os.remove('debug/'+files[0])
-                try: php = '_'+re.findall("/(\w+\.php)", self.lastFetchedUrl)[0]
+                try: php = re.findall("/(\w+\.php.*)", self.lastFetchedUrl)[0].replace('?',',').replace('&',',')
                 except IndexError: php = ''
-                date = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
-                file = open("debug/%s%s.html" %(date, php), 'w')
-                file.write(p.replace('<script', '<noscript').replace('</script>', '</noscript>').replace('http-equiv="refresh"', 'http-equiv="kovan-rulez"'))
-                file.close()
+                date = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
+                f = open("debug/%s,%s.html" %(date, php), 'w')
+                f.write(p.replace('<script', '<noscript').replace('</script>', '</noscript>').replace('http-equiv="refresh"', 'http-equiv="kovan-rulez"'))
+                f.close()
+                
                 if skipValidityCheck:
                     return cachedResponse           
                 elif self.translations['youAttemptedToLogIn'] in p:         
@@ -255,7 +256,7 @@ class WebAdapter(object):
             raise BotFatalError(page)
         self._eventMgr.loggedIn(self.config.username, self.session)
         page = self._fetchPhp('index.php', lgn=1)                
-        mySleep(10)        
+        mySleep(5)
         page = self._fetchPhp('index.php', page='overview', lgn=1)               
         self.saveState()
 
@@ -274,10 +275,10 @@ class WebAdapter(object):
 
 ########################################################################################## 
     def saveState(self):
-        file = open(FILE_PATHS['webstate'], 'wb')
-        pickler = cPickle.Pickler(file, 2)        
+        f = open(FILE_PATHS['webstate'], 'wb')
+        pickler = cPickle.Pickler(f, 2)        
         pickler.dump(self.session)
-        file.close()
+        f.close()
 
 
 ##########################################################################################      
@@ -313,11 +314,10 @@ class WebAdapter(object):
         {
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
             'charset':re.compile(r'content="text/html; charset=(.*?)"', re.I), 
-            'serverTime':re.compile(r"var serverTime = new Date\((\d+)\)"),
             'report': 
             {
                 'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
-                'fleet':    re.compile(reportTmp2 % translations['fleets'], re.DOTALL|re.I), 
+#TODO                'fleet':    re.compile(reportTmp2 % translations['fleets'], re.DOTALL|re.I), 
                 'defense':  re.compile(reportTmp2 % translations['defense'], re.DOTALL|re.I), 
                 'buildings':re.compile(reportTmp2 % translations['buildings'], re.DOTALL|re.I), 
                 'research': re.compile(reportTmp2 % translations['research'], re.DOTALL|re.I), 
@@ -340,7 +340,6 @@ class WebAdapter(object):
             'currentlyUpgradingResearch':re.compile(r'ss=([0-9]+);', re.I),
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>', re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
-            'fleetSlots':re.compile(r"%s[\s]*([0-9]+) \/ ([0-9]+)" %(translations['fleets']), re.I),
             'myPlanets':re.compile('<option value="/game/index\.php\?page=overview&session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>', re.I),    
             'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(.*?(?P<level>[0-9]+)\s*?\)",re.I|re.LOCALE),            
             'stats': re.compile(r"style='color:lime;'.*?<!-- points -->.*?([0-9.]+).*?<!-- rank -->.*?([0-9.]+)", re.I|re.DOTALL),
@@ -350,7 +349,7 @@ class WebAdapter(object):
         
 ##########################################################################################     
     def getServerTime(self):
-        return self.serverTimeDelta + datetime.datetime.now()
+        return self.serverTimeDelta + datetime.now()
      
 
 ########################################################################################## 
@@ -360,22 +359,25 @@ class WebAdapter(object):
 
 ########################################################################################## 
     def getMyPlanets(self, player, alreadyFetchedPage = None):
+
         page = alreadyFetchedPage
         if not page:
             page = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0').read()
         myPlanets = []
-        plan = self.REGEXPS['myPlanets'].findall(page)
-        for code, name, galaxy, ss, pos in self.REGEXPS['myPlanets'].findall(page):
-            coords = Coords(galaxy, ss, pos)
+        
+        tree = etree.fromstring(page,etree.HTMLParser())
+        planetNames  = tree.xpath("//*[@class='planet-name']")
+        planetCoords = tree.xpath("//*[@class='planet-koords']")
+        for name, coord, in zip(planetNames, planetCoords):
+            coords = Coords(coord.text)
             for planet in myPlanets:
                 if planet.coords == coords: # we found a moon for this planet
                     coords.coordsType = Coords.Types.moon
-            planet = OwnPlanet(coords, name.strip(), code)
-            player.colonies.append(planet)
-        
-        timestamp = self.REGEXPS['serverTime'].findall(page)[0]
-        serverTime = datetime.datetime.fromtimestamp(float(int(timestamp)/1000))
-        self.serverTimeDelta = serverTime - datetime.datetime.now()
+            planet = OwnPlanet(coords, player, name.text)
+            
+        timestamp = re.findall("var serverTime = new Date\((\d+)\)",page)[0]
+        serverTime = datetime.fromtimestamp(float(int(timestamp)/1000))
+        self.serverTimeDelta = serverTime - datetime.now()
         self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
 
 
@@ -388,17 +390,18 @@ class WebAdapter(object):
 ########################################################################################## 
     def updatePlayerData(self, player):
         overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0').read()
+        self.getFleetSlots(player)
         self.checkForAttack(player, overview)
         self.getMyPlanets(player, overview)
-        self.getStats(player, "pts", overview)
-        self.getFleetSlots(player)
-        self.getResearchLevels(player, [player.colonies[0]])
+        # TODO: fix: self.getStats(player, "pts", overview)
+        self.getResearchLevels(player)
+        
 ########################################################################################## 
     def updatePlanetData(self, planet):
-        overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0').read()
-        self.checkResourcesOnPlanet(planet, overview)
-        self.checkBuildingFields(planet, overview)
-        self.getBuildingLevels(planet)
+#        overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0').read()
+#        self.checkResourcesOnPlanet(planet, overview)
+#        self.checkBuildingFields(planet, overview)
+#        self.getBuildingLevels(planet)
         self.getDefense(planet)
 
 
@@ -414,39 +417,43 @@ class WebAdapter(object):
 
 
 ########################################################################################## 
-    def checkResourcesOnPlanet(self, planet, alreadyFetchedPage = None):
-        page = alreadyFetchedPage
-        if not page:
-            page = self._fetchPhp('index.php', page='overview',cp=planet.code, mode='', gid='', messageziel='', re='0').read()
-        resources       = self.REGEXPS['planet']['resources'].findall(text)
-        planet.metal            = int(resources[0].replace('.', ''))
-        planet.crystal          = int(resources[1].replace('.', ''))
-        planet.deuterium        = int(resources[2].replace('.', ''))
-        planet.availableEnergy  = int(self.REGEXPS['planet']['resourceEnergy'].search(text).group(1).replace('.', ''))
+# TODO: not working:        
+    # def checkResourcesOnPlanet(self, planet, alreadyFetchedPage = None):
+    #     page = alreadyFetchedPage
+    #     if not page:
+    #         page = self._fetchPhp('index.php', page='overview',cp=planet.code, mode='', gid='', messageziel='', re='0').read()
+    #     resources       = self.REGEXPS['planet']['resources'].findall(text)
+    #     planet.metal            = int(resources[0].replace('.', ''))
+    #     planet.crystal          = int(resources[1].replace('.', ''))
+    #     planet.deuterium        = int(resources[2].replace('.', ''))
+    #     planet.availableEnergy  = int(self.REGEXPS['planet']['resourceEnergy'].search(text).group(1).replace('.', ''))
 
 
-########################################################################################## 
-    def checkBuildingFields(self, planet, alreadyFetchedPage = None):
-        page = alreadyFetchedPage
-        if not page:
-            page = self._fetchPhp('index.php', page='overview',cp=planet.code, mode='', gid='', messageziel='', re='0').read()
-        BuildingFields  = self.REGEXPS['planet']['buildingFields'].findall(text)
-        planet.totalBuildingFields = int(BuildingFields[1])
-        planet.freeBuildingFields = int(BuildingFields[1])
+##########################################################################################
+# TODO: not working:        
+    # def checkBuildingFields(self, planet, alreadyFetchedPage = None):
+    #     page = alreadyFetchedPage
+    #     if not page:
+    #         page = self._fetchPhp('index.php', page='overview',cp=planet.code, mode='', gid='', messageziel='', re='0').read()
+    #     BuildingFields  = self.REGEXPS['planet']['buildingFields'].findall(text)
+    #     planet.totalBuildingFields = int(BuildingFields[1])
+    #     planet.freeBuildingFields = int(BuildingFields[1])
 
 
-########################################################################################## 
-    def getBuildingLevels(self, planet):
-        page = self._fetchPhp('index.php', page='b_building',cp=planet.code).read()
-        self._checkEndTimeOfBuildingUpgrade(planet, page)
-        planet.buildings, planet.allBuildings = {}, {}
-        for fullName, level in self.REGEXPS['planet']['buildingLevels'].findall(page):
-             planet.buildings[self.translationsByLocalText[fullName]] = int(level)
-        for item in ['solarPlant', 'metalMine', 'crystalMine', 'deuteriumSynthesizer', 'fusionReactor', 'roboticsFactory', 'naniteFactory', 'shipyard', 'metalStorage', 'crystalStorage', 'deuteriumTank', 'researchLab', 'terraformer', 'allianceDepot', 'missileSilo']:
-            if item in player.buildings:
-                planet.allBuildings[item] = building[item]      
-            else:
-                planet.allBuildings[item] = 0
+##########################################################################################
+# TODO: not working:        
+    # def getBuildingLevels(self, planet):
+    #     pass 
+        # page = self._fetchPhp('index.php', page='b_building',cp=planet.code).read()
+        # self._checkEndTimeOfBuildingUpgrade(planet, page)
+        # planet.buildings, planet.allBuildings = {}, {}
+        # for fullName, level in self.REGEXPS['planet']['buildingLevels'].findall(page):
+        #      planet.buildings[self.translationsByLocalText[fullName]] = int(level)
+        # for item in ['solarPlant', 'metalMine', 'crystalMine', 'deuteriumSynthesizer', 'fusionReactor', 'roboticsFactory', 'naniteFactory', 'shipyard', 'metalStorage', 'crystalStorage', 'deuteriumTank', 'researchLab', 'terraformer', 'allianceDepot', 'missileSilo']:
+        #     if item in player.buildings:
+        #         planet.allBuildings[item] = building[item]      
+        #     else:
+        #         planet.allBuildings[item] = 0
 
 
 ########################################################################################## 
@@ -456,10 +463,10 @@ class WebAdapter(object):
             page = self._fetchPhp('index.php', page='b_building', cp=planet.code).read()
         upgradeTime = self.REGEXPS['planet']['currentlyUpgradingBuilding'].search(page)
         if upgradeTime:
-            planet.endBuildTime = datetime.datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
+            planet.endBuildTime = datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
         else:
             #guarentuees all time comparisons will work
-            planet.endBuildTime = datetime.datetime.now() - timedelta(days=10000)
+            planet.endBuildTime = datetime.now() - timedelta(days=10000)
         
 
 ########################################################################################## 
@@ -470,20 +477,31 @@ class WebAdapter(object):
     
 
 ########################################################################################## 
-    def getResearchLevels(self, player, planetList):
-        player.research, player.allResearch = {}, {}
-        for planet in planetList:
-            page = self._fetchPhp('index.php', page='buildings', mode='Forschung',cp=planet.code).read()
-            player.research['CompletionTime'] = self._checkEndTimeOfResearchUpgrade(planet, page)
-            for fullName, level in self.REGEXPS['researchLevels'].findall(page):
-                player.research[self.translationsByLocalText[fullName]] = int(level)
-                
-        for item in ['espionageTechnology', 'computerTechnology', 'weaponsTechnology', 'shieldingTechnology', 'armourTechnology', 'energyTechnology', 'hyperspaceTechnology', 'combustionDrive', 'impulseDrive', 'hyperspaceDrive', 'laserTechnology', 'ionTechnology',  'plasmaTechnology', 'intergalacticResearchNetwork', 'gravitonTechnology']:
-            if item in player.research:
-                player.allResearch[item] = player.research[item]
-            else:
-                player.allResearch[item] = 0
+    def getResearchLevels(self, player):
 
+        # TODO: make automatic research work:
+        # for planet in planetList:
+        #     page = self._fetchPhp('index.php', page='research').read()
+
+        #     player.research['CompletionTime'] = self._checkEndTimeOfResearchUpgrade(planet, page)
+        #     for fullName, level in self.REGEXPS['researchLevels'].findall(page):
+        #         player.research[self.translationsByLocalText[fullName]] = int(level)
+        
+        page = self._fetchPhp('index.php', page='research')
+        tree = etree.parse(page,etree.HTMLParser())
+
+        technologies = [t for t in INGAME_TYPES if isinstance(type,Research)]
+        for technology in technologies:
+            import pdb; pdb.set_trace()
+
+            level = int(tree.xpath("//*[@class='research%s']//*[@class='level']" % technology.code)[0].text)
+            player.researchLevels[technology.name] = level
+                
+                
+        if 'impulseDrive'    not in player.researchLevels \
+        or 'combustionDrive' not in player.researchLevels:
+            raise BotFatalError("Not enough technologies researched to run the bot")
+                
 
 ########################################################################################## 
     def _checkEndTimeOfResearchUpgrade(self, planet, alreadyFetchedPage = None):
@@ -494,10 +512,10 @@ class WebAdapter(object):
         labPresent  = self.REGEXPS['planet']['ResearchLabPresent'].search(page)
         if labPresent:
             if upgradeTime:
-                return datetime.datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
+                return datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
             else:
                 #guarentuees all time comparisons will work
-                return datetime.datetime.now() - timedelta(days=10000)
+                return datetime.now() - timedelta(days=10000)
 
 
 ########################################################################################## 
@@ -525,7 +543,7 @@ class WebAdapter(object):
         time = self.REGEXPS['planet']['durationRemaining'].search(page)
         if time: 
             return True 
-            planet.endDefenseWaitTime = datetime.datetime.now() + timedelta(days=time.group(2), hours=time.group(4), minutes=time.group(5), seconds=time.group(6))
+            planet.endDefenseWaitTime = datetime.now() + timedelta(days=time.group(2), hours=time.group(4), minutes=time.group(5), seconds=time.group(6))
         else: 
             return False    
 
@@ -553,39 +571,40 @@ class WebAdapter(object):
             planet.fleet[INGAME_TYPES_BY_CODE[code].name] = int(quantity.replace('.', ''))
 
 
-########################################################################################## 
-    def checkFleetQueue(self, planet, alreadyFetchedPage = None):
-        time = self.REGEXPS['planet']['durationRemaining'].search(page.read())
-        if time: 
-            return True 
-            planet.endFleetWaitTime = datetime.datetime.now() + timedelta(days=time.group(2), hours=time.group(4), minutes=time.group(5), seconds=time.group(6))
-        else: 
-            return False    
+# ########################################################################################## 
+#     def checkFleetQueue(self, planet, alreadyFetchedPage = None):
+#         time = self.REGEXPS['planet']['durationRemaining'].search(page.read())
+#         if time: 
+#             return True 
+#             planet.endFleetWaitTime = datetime.now() + timedelta(days=time.group(2), hours=time.group(4), minutes=time.group(5), seconds=time.group(6))
+#         else: 
+#             return False    
 
 
-########################################################################################## 
-    def buildShips(self, planet, ships):
-        if not ships: return
-        page = self._fetchPhp('index.php', page='buildings', mode='Flotte', cp=planet.code )
-        form = ParseFile( page, self.lastFetchedUrl, backwards_compat=False )[-1]
-        for shipType, quantity in ships.iteritems():
-            try:
-                controlName = "fmenge[%s]" % INGAME_TYPES_BY_NAME[shipType].code[-3:]
-                form[controlName] = str( quantity )
-            except ControlNotFoundError:
-                raise BotError( shipType )
-        reply = self._fetchForm( form )
-        self.checkFleetQueue(planet, reply)
+# ########################################################################################## 
+#     def buildShips(self, planet, ships):
+#         if not ships: return
+#         page = self._fetchPhp('index.php', page='buildings', mode='Flotte', cp=planet.code )
+#         form = ParseFile( page, self.lastFetchedUrl, backwards_compat=False )[-1]
+#         for shipType, quantity in ships.iteritems():
+#             try:
+#                 controlName = "fmenge[%s]" % INGAME_TYPES_BY_NAME[shipType].code[-3:]
+#                 form[controlName] = str( quantity )
+#             except ControlNotFoundError:
+#                 raise BotError( shipType )
+#         reply = self._fetchForm( form )
+#         self.checkFleetQueue(planet, reply)
 
 ########################################################################################## 
     def getFleetSlots(self, player, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='flotten1', mode='Flotte').read()
-        fleetSlots = self.REGEXPS['fleetSlots'].search(page)
-        player.totalFleetSlots = int(fleetSlots.group(2))
-        player.freeFleetSlots = player.totalFleetSlots - int(fleetSlots.group(1))
-
+            page = self._fetchPhp('index.php', page='fleet1').read()
+            
+        tree = etree.fromstring(page,etree.HTMLParser())
+        used, total = re.findall("(\d+)/(\d+)",tree.xpath("string(//*[@id='slots'])"))[0]
+        player.totalFleetSlots = int(total)
+        player.freeFleetSlots = int(total) - int(used)
 
 ########################################################################################## 
     def getEspionageReports(self):
@@ -613,14 +632,14 @@ class WebAdapter(object):
             report = EspionageReport(coords, planetName, date, resources, code)
             
             for i in "fleet", "defense", "buildings", "research":
-                dict = None
+                dictionary = None
                 match = self.REGEXPS['report'][i].search(rawMessage)
                 if match:
-                    dict, text = {}, match.group(1)
+                    dictionary, text = {}, match.group(1)
                     for fullName, quantity in self.REGEXPS['report']['details'].findall(text):
-                        dict[self.translationsByLocalText[fullName.strip()]] = int(quantity.replace('.', ''))
+                        dictionary[self.translationsByLocalText[fullName.strip()]] = int(quantity.replace('.', ''))
                         
-                setattr(report, i, dict)
+                    setattr(report, i, dictionary)
                 
             report.rawHtml = rawMessage
             reports.append(report)
@@ -642,7 +661,7 @@ class WebAdapter(object):
             page.seek(0)            
 
             self.getFleetSlots(player, pageText)
-            self.getAvailableFleet(mission.sourcePlanet, pageText)
+            availableFleet = self.getAvailableFleet(mission.sourcePlanet, pageText)
             form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]        
 
             for shipType, requested in mission.fleet.iteritems():
@@ -701,8 +720,8 @@ class WebAdapter(object):
                     raise FleetSendError(errors)
 
             resultPage = {}
-            for type, value in self.REGEXPS['fleetSendResult'].findall(page):
-                resultPage[type] = value
+            for resultType, value in self.REGEXPS['fleetSendResult'].findall(page):
+                resultPage[resultType] = value
 
             # fill remaining mission fields
             arrivalTime = parseTime(resultPage[self.translations['arrivalTime']])
@@ -753,11 +772,11 @@ class WebAdapter(object):
 
 
 ########################################################################################## 
-    def getStats(self, player, type, alreadyFetchedPage = None): # type can be: pts for points, flt for fleets or res for research
-        if type != "pts" :
+    def getStats(self, player, statsType, alreadyFetchedPage = None): # type can be: pts for points, flt for fleets or res for research
+        if statsType != "pts" :
             page = self._fetchPhp('index.php', page='statistics')
             form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]
-            form['type'] = [type]
+            form['type'] = [statsType]
             form['start'] = ['[Own position]']
             page = self._fetchForm(form)
             page = page.read()
@@ -785,7 +804,7 @@ class WebAdapter(object):
             inputQueue.put(url)
        
         for dummy in range(1):
-            thread = ScanThread(inputQueue, outputQueue, self.keepaliveopener, self.REGEXPS)
+            thread = ScanThread(inputQueue, outputQueue, self.keepAliveOpener, self.REGEXPS)
             thread.start() 
             threads.append(thread)
  
@@ -818,7 +837,7 @@ class ScanThread(threading.Thread):
         
     def run(self):
         socket.setdefaulttimeout(20)   
-        parser = etree.HTMLParser()
+        parser = HTMLParser()
         playersByName = {}
         error = False
         
@@ -840,7 +859,7 @@ class ScanThread(threading.Thread):
                     continue
                 
                 if __debug__: 
-                    print >>sys.stderr, "\t " + datetime.datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + url                
+                    print >>sys.stderr, "\t " + datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + url                
                 
                 htmlSource = page
                 page = page.replace("\n", "")
@@ -871,6 +890,7 @@ class ScanThread(threading.Thread):
                     planet.name =      row.xpath("//*[@class='planetname']")[0].strip()
                     planet.hasMoon =   row.xpath("//*[@class='moon']")[0].strip() != ""
                     planet.hasDebris = row.xpath("//*[@class='debris']")[0].strip() != ""
+                    
                     foundPlanets.append(planet)
                     
                 self._outputQueue.put((galaxy, solarSystem, foundPlanets, htmlSource))
@@ -894,6 +914,6 @@ def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:
     converts it to a datetime object'''
     
     format = "%Y " + format
-    strTime = str(datetime.datetime.now().year) + " " +strTime
-    date = datetime.datetime.strptime(strTime, format) 
+    strTime = str(datetime.now().year) + " " +strTime
+    date = datetime.strptime(strTime, format) 
     return date

@@ -17,34 +17,38 @@
 
 import math
 import re
-import datetime,time
+import time
+from datetime import *
+
 from CommonClasses import Enum, addCommas
 
 class IngameType(object):
-    def __init__(self, name, code, costmetal, costcrystal, costdeuterium):
+    def __init__(self, name, code, cost):
         self.name = name         
         self.code = code
-        self.costmetal = int(costmetal)
-        self.costcrystal = int(costcrystal)  
-        self.costdeuterium = int(costdeuterium) 
+        self.cost = cost
+        
     def __repr__(self):
         return self.name    
     
 class Ship(IngameType):
-    def __init__(self, name, code, costmetal, costcrystal, costdeuterium, capacity, consumption):
-        super(Ship, self).__init__(name, code, costmetal, costcrystal, costdeuterium) 
+    def __init__(self, name, code, cost, capacity, consumption):
+        super(Ship, self).__init__(name, code, cost)
         self.capacity = capacity         
         self.consumption = consumption
 
 class Building(IngameType):
-    def __init__(self, name, code, costmetal, costcrystal, costdeuterium):
-        super(Building, self).__init__(name, code, costmetal, costcrystal, costdeuterium)   
+    def __init__(self, name, code, cost):
+        super(Building, self).__init__(name, code, cost)
 
 class Defense(IngameType):
-    def __init__(self, name, code, costmetal, costcrystal, costdeuterium):
-        super(Defense, self).__init__(name, code, costmetal, costcrystal, costdeuterium)
+    def __init__(self, name, code, cost):
+        super(Defense, self).__init__(name, code, cost)
 
-class Research(IngameType): pass
+class Research(IngameType):
+    def __init__(self, name, code, cost):
+        super(Research, self).__init__(name, code, cost)
+    
 
 class Coords(object):
     class Types(Enum):
@@ -87,10 +91,10 @@ class Coords(object):
         self.galaxy, self.solarSystem, self.planet = int(self.galaxy), int(self.solarSystem), int(self.planet)
           
     def __repr__(self):
-        repr = "[%s:%s:%s]" % (self.galaxy, self.solarSystem, self.planet)      
+        s = "[%s:%s:%s]" % (self.galaxy, self.solarSystem, self.planet)      
         if not self.coordsType == self.Types.planet:
-            repr += " " + self.Types.toStr(self.coordsType)
-        return  repr
+            s += " " + self.Types.toStr(self.coordsType)
+        return  s
 
     def __eq__(self, otherCoords):
         return self.tuple() == otherCoords.tuple() and self.coordsType == otherCoords.coordsType 
@@ -124,7 +128,7 @@ class Coords(object):
     
     def flightTimeTo(self, coords, speed, speedPercentage=100):
         seconds = 350000.0/speedPercentage * math.sqrt(self.distanceTo(coords) * 10.0 / float(speed)) + 10.0
-        return datetime.timedelta(seconds=int(seconds))
+        return timedelta(seconds=int(seconds))
 
 class Cost(object):
     def __init__(self, metal, crystal, deuterium=0):
@@ -170,9 +174,9 @@ class Resources(object):
 
 class Player(object):
     def __init__(self, name = "", alliance = ""):
-        self.name = ""
+        self.name = name
         self.colonies = []
-        self.alliance = ""
+        self.alliance = alliance
         self.rank = 0
         self.points = 0
         
@@ -181,6 +185,7 @@ class Player(object):
 
 class OwnPlayer(Player):
     def __init__(self):
+        super(OwnPlayer, self).__init__()
         self.raidingColonies = []
         self.upgradeToRaid = []
         self.upgradingColonies = []
@@ -188,6 +193,7 @@ class OwnPlayer(Player):
         self.freeFleetSlots = 0
         self.totalFleetSlots = 0
         self.research = {}
+        self.researchLevels = {}
 
 class EnemyPlayer(Player):
     def __init__(self, name, alliance):
@@ -201,21 +207,27 @@ class Planet(object):
         self.coords = coords
         self.owner = owner
         self.name = name
+        owner.colonies.append(self)
         
     def __repr__(self):
         return self.name + " " + str(self.coords)
 
 
 class OwnPlanet(Planet):
-    def __init__(self, coords, owner, name, code):
+    def __init__(self, coords, owner, name):
         super(OwnPlanet, self).__init__(coords, owner, name)
-        self.code = code
+        self.code = 0 # TODO: obtain this
         self.point = 0
-        self.buildings, self.allbuildings, self.defense, self.fleet = {}, {}, {}, {}
-        self.metal, self.crystal, self.deuterium, self.energy = 0, 0, 0, 0
-        self.metalProduct, self.crystalProduct, self.deuteriumProduct = 0, 0, 0
-        self.freeBuildingSlots, self.totalBuildingslots = 0, 0
-        self.endWaitTime  = datetime.datetime.combine(datetime.date(0001,1,1), datetime.time(0,0))
+        self.buildings = {}
+        self.allbuildings = {}
+        self.defense = {} 
+        self.fleet = {}
+        self.resources = Resources()
+        self.energy = 0
+        self.resourceProduction = Resources()
+        self.freeBuildingSlots = 0
+        self.totalBuildingslots = 0
+        self.endWaitTime  = None #datetime.combine(datetime.date(0001,1,1), datetime.time(0,0))
         self.endBuildTime = self.endWaitTime
         self.endFleetWaitTime = self.endWaitTime
         self.endDefenseWaitTime = self.endWaitTime
@@ -250,8 +262,9 @@ class EnemyPlanet (Planet):
                         
         if not self.simulation:
             return 0
-        
-        flightTime = self.coords.flightTimeTo(fromCoords,speed).seconds # used inside formula
+
+        # create flightTime variable because it is used inside formula
+        flightTime = self.coords.flightTimeTo(fromCoords,speed).seconds 
         rentability = eval( EnemyPlanet.compiledFormula)
         
         if negativeIfDefended and self.getBestEspionageReport().isDefended():
@@ -260,7 +273,7 @@ class EnemyPlanet (Planet):
             return  rentability
 
     def toStringList(self):
-        return [str(self.coords), self.name, self.owner, self.alliance]
+        return [str(self.coords), self.name, self.owner.name, self.owner.alliance]
 
         
 class GameMessage(object):
