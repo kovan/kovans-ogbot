@@ -62,7 +62,6 @@ class Bot(object):
         def fatalException(self, exception):
             self.logAndPrint("Fatal error found, terminating. %s" % exception)
             self.dispatch("fatalException", exception)
-        # new GUI messages:
         def connected(self):
             self.logAndPrint("OK")
             self.dispatch("connected")
@@ -83,7 +82,7 @@ class Bot(object):
         self.config = BotConfiguration(FILE_PATHS['config'])                   
         self.web = None
         self.config.load()
-        self.player = Player()
+        self.ownPlayer = OwnPlayer("","")
         self.allTranslations = Translations()
         self.inactivePlanets = []
         self.sourcePlanetsDict = {}
@@ -132,21 +131,21 @@ class Bot(object):
 
 ########################################################################################## 
     def _connect(self):
-        self.eventMgr.activityMsg("Contacting server...")        
+        self.eventMgr.activityMsg("Contacting server...")
         self.web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue, self.gui)
         self.web.doLogin()
-        self.web.updatePlayerData(self.player)
+        self.web.updatePlayerData(self.ownPlayer)
 
         largeCargos = INGAME_TYPES_BY_NAME['largeCargo']
         smallCargos = INGAME_TYPES_BY_NAME['smallCargo']
 
-        largeCargos.speed =  int(7500 * (1 + (self.player.research['combustionDrive'] * 0.1)))
-        if self.player.research['impulseDrive'] < 5:
-            smallCargos.speed =  int(5000  * (1 + (self.player.research['combustionDrive'] * 0.1)))
+        largeCargos.speed =  int(7500 * (1 + (self.ownPlayer.research['combustionDrive'] * 0.1)))
+        if self.ownPlayer.research['impulseDrive'] < 5:
+            smallCargos.speed =  int(5000  * (1 + (self.ownPlayer.research['combustionDrive'] * 0.1)))
         else:
-            smallCargos.speed =  int(10000 * (1 + (self.player.research['impulseDrive'] * 0.2)))            
+            smallCargos.speed =  int(10000 * (1 + (self.ownPlayer.research['impulseDrive'] * 0.2)))            
 
-        ownedCoords = [repr(planet.coords) for planet in self.player.colonies]
+        ownedCoords = [repr(planet.coords) for planet in self.ownPlayer.colonies]
         for coords in self.config.sourcePlanets + [self.config.deuteriumSourcePlanet]:
             if coords and str(coords) not in ownedCoords:
                 raise BotFatalError("You do not own one or more planets you entered.")        
@@ -160,18 +159,18 @@ class Bot(object):
         self.loadFiles()
 
         # TODO. BAD note \ fix this
-        self.player.raidingColonies.append(self.player.colonies[0])
+        self.ownPlayer.raidingColonies.append(self.ownPlayer.colonies[0])
 
 
         # remove planets to avoid from target list
         for planet in self.inactivePlanets[:]:
-            if planet.owner in self.config.playersToAvoid or planet.alliance in self.config.alliancesToAvoid:
+            if planet.owner in self.config.playersToAvoid or planet.owner.alliance in self.config.alliancesToAvoid:
                 self.inactivePlanets.remove(planet)
                             
         # generate reachable solar systems list
         attackRadius = int(self.config.attackRadius)
         newReachableSolarSystems = [] # contains tuples of (galaxy,solarsystem)
-        for raidingPlanet in self.player.raidingColonies:
+        for raidingPlanet in self.ownPlayer.raidingColonies:
             galaxy = raidingPlanet.coords.galaxy
             firstSystem = max(1, raidingPlanet.coords.solarSystem - attackRadius)
             lastSystem = min(int(self.config.systemsPerGalaxy), raidingPlanet.coords.solarSystem + attackRadius)
@@ -229,7 +228,7 @@ class Bot(object):
 
         startTime = datetime.datetime.now()           
         if self.config.deuteriumSourcePlanet:
-            deuteriumSourcePlanet = (p for p in self.player.colonies if p.coords == self.config.deuteriumSourcePlanet).next()
+            deuteriumSourcePlanet = (p for p in self.ownPlayer.colonies if p.coords == self.config.deuteriumSourcePlanet).next()
         else:
             deuteriumSourcePlanet = None
         allInactives = []
@@ -241,7 +240,9 @@ class Bot(object):
         systems = len(self.reachableSolarSystems)
         
         self._planetDb.writeMany(allInactives)
-        allInactives = [p for p in allInactives if 'inactive' in p.ownerStatus and p.owner not in self.config.playersToAvoid and p.alliance not in self.config.alliancesToAvoid]
+        allInactives = [p for p in allInactives if p.owner.isInactive
+                        and p.owner.name     not in self.config.playersToAvoid
+                        and p.owner.alliance not in self.config.alliancesToAvoid]
     
             
         newInactives = PlanetList()
@@ -483,7 +484,7 @@ class Bot(object):
         ships = {'espionageProbe':probesToSend}
         mission = Mission(Mission.Types.spy, sourcePlanet, targetPlanet, ships)
 
-        self.web.launchMission(self.player, mission, True, slotsToReserve)
+        self.web.launchMission(self.ownPlayer, mission, True, slotsToReserve)
         self._notArrivedEspionages[targetPlanet] = mission
         self.eventMgr.activityMsg("%s %s from %s with %s" % (msg, targetPlanet, sourcePlanet, ships))
         mySleep(5)
@@ -497,7 +498,7 @@ class Bot(object):
         ships = math.ceil((resourcesToSteal + producedMeanwhile).total() / float(attackingShip.capacity))
         fleet = { attackingShip.name : ships }
         mission = Mission(Mission.Types.attack, sourcePlanet, targetPlanet, fleet)
-        self.web.launchMission(self.player, mission, abortIfNoShips, self.config.slotsToReserve)
+        self.web.launchMission(self.ownPlayer, mission, abortIfNoShips, self.config.slotsToReserve)
         targetPlanet.attackHistory.append(mission)
         self.eventMgr.activityMsg("ATTACKING %s from %s with %s" % (targetPlanet, sourcePlanet, fleet))
         shipsSent = mission.fleet[attackingShip.name]
@@ -562,7 +563,7 @@ class Bot(object):
   
 ########################################################################################## 
     def _calculateNearestSourcePlanet(self, coords):
-        tmpSourcePlanets = self.player.raidingColonies
+        tmpSourcePlanets = self.ownPlayer.raidingColonies
         minDistance = sys.maxint
         random.shuffle(tmpSourcePlanets)
         for sourcePlanet in tmpSourcePlanets:
