@@ -61,7 +61,7 @@ class OptionsDialog(baseclass,formclass):
         self.attackingShipButtonGroup.addButton(self.largeCargoRadioButton)        
         
         self.lineEdits = ['webpage','username','password','proxy','rentabilityFormula','userAgent','deuteriumSourcePlanet']
-        self.spinBoxes = ['universe','attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy','maxProbes']
+        self.spinBoxes = ['attackRadius','probesToSend','slotsToReserve','systemsPerGalaxy','maxProbes']
         self.textEdits = ['playersToAvoid','alliancesToAvoid']
         self.formulas = {
                     'defaultFormula': BotConfiguration('').rentabilityFormula,
@@ -259,8 +259,7 @@ class MainWindow(baseclass,formclass):
             self.showOptions()
             config.load()
 
-        #self.subscribeLabel.setText(urllib.unquote('<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick-subscriptions&business=jsceballos%40gmail%2ecom&item_name=Kovan%27s%20OGBot%20AUTO%20FLEETSAVE&item_number=1&no_shipping=1&no_note=1&currency_code=EUR&lc=ES&bn=PP%2dSubscriptionsBF&charset=UTF%2d8&a3=4%2e00&p3=1&t3=M&src=1&sra=1">Subscribe</a>'))
-        self.setWindowTitle("%s universe %s %s" %(self.windowTitle(),config.universe,config.webpage))
+        self.setWindowTitle("%s %s" %(self.windowTitle(),config.webpage))
         self.tabWidget.removeTab(2)
        
     

@@ -16,13 +16,13 @@
 from GameEntities import Ship, Defense, Building, Research
 
 FILE_PATHS = {
-    'config' : 'config/config.ini', 
-    'botstate' :  'botdata/bot.state.dat', 
-    'webstate' : 'botdata/webadapter.state.dat', 
-    'planetdb' :  'botdata/planets.db', 
-    'gamedata' : 'botdata/gamedata.dat',     
-    'newinactives': 'botdata/newinactives.dat',
-    'log' : 'log/ogbot.log', 
+    'config' : 'files/config/config.ini', 
+    'botstate' :  'files/botdata/bot.state.dat', 
+    'webstate' : 'files/botdata/webadapter.state.dat', 
+    'planetdb' :  'files/botdata/planets.db', 
+    'gamedata' : 'files/botdata/gamedata.dat',     
+    'newinactives': 'files/botdata/newinactives.dat',
+    'log' : 'files/log/ogbot.log', 
 }
 
 INGAME_TYPES = [

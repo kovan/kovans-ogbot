@@ -105,7 +105,6 @@ class WebAdapter(object):
             
 ##########################################################################################        
     def __init__(self, config, allTranslations, checkThreadMsgsMethod, gui = None):
-        self.server = ''
         self.lastFetchedUrl = ''
         self.serverCharset = ''        
         self.config = config
@@ -113,7 +112,6 @@ class WebAdapter(object):
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
         self._mutex = threading.RLock()
-        self.webpage = "http://"+ config.webpage + "/index.php"     
 
         if not self.loadState():
             self.session = '000000000000'  
@@ -137,16 +135,17 @@ class WebAdapter(object):
         headers = [('User-agent', self.config.userAgent),('Keep-Alive', "300")]            
         self.opener.addheaders = headers
         self.keepAliveOpener.addheaders = headers
-                    
-        cachedResponse = StringIO.StringIO(self._fetchValidResponse(self.webpage, True).read())
+        
+        url = '.'.join(self.config.webpage.split('.')[1:])
+        cachedResponse = StringIO.StringIO(self._fetchValidResponse("http://" + url, True).read())
 
         # check configured language equals ogame server language
         regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"', re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
-
+        self.serverLanguage =  regexpLanguage.findall(cachedResponse.getvalue())[0]
         try: self.translations = allTranslations[self.serverLanguage]
         except KeyError:
             raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage)
-        if int(self.translations['fileVersion']) < 0.1:
+        if float(self.translations['fileVersion']) < 0.2:
             raise BotFatalError("Server language (%s) needs to updated follow instructions in language/howtofix.fix" % self.serverLanguage)
         self.translationsByLocalText = dict([ (value, key) for key, value in self.translations.items() ])
         self.generateRegexps(self.translations)        
@@ -159,8 +158,6 @@ class WebAdapter(object):
         if self.serverLanguage == "tw":
             translation = translation.decode('gb2312').encode('utf-8')
 
-        self.server = select.get(label = self.config.universe +'. '+  translation, nr=0).name
-
 
 ##########################################################################################         
     def _fetchForm(self, form):
@@ -170,7 +167,7 @@ class WebAdapter(object):
 ########################################################################################## 
     def _fetchPhp(self, php, **params):
         params['session'] = self.session
-        url = "http://%s/game/%s?%s" % (self.server, php, urllib.urlencode(params))
+        url = "http://%s/game/%s?%s" % (self.config.webpage, php, urllib.urlencode(params))
         return self._fetchValidResponse(url)
 
 
@@ -242,13 +239,15 @@ class WebAdapter(object):
 ########################################################################################## 
     def doLogin(self):
         if self.serverTimeDelta and self.getServerTime().hour == 3 and self.getServerTime().minute == 0: # don't connect immediately after 3am server reset
-            mySleep(30)                
-        page = self._fetchValidResponse(self.webpage)
-        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]
-        form["uni_url"] = [self.server]
+            mySleep(30)
+
+        url = '.'.join(self.config.webpage.split('.')[1:])
+        page = self._fetchValidResponse("http://" + url)
+        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
+        form["uni_url"] = [self.config.webpage]
         form["login"] = self.config.username
         form["pass"]  = self.config.password
-        form.action = "http://"+self.server+"/game/reg/login2.php"
+        form.action = "http://"+self.config.webpage+"/game/reg/login2.php"
         page = self._fetchForm(form).read()
         try:
             self.session = re.findall(self.REGEXP_SESSION_STR, page)[0]
@@ -277,7 +276,6 @@ class WebAdapter(object):
     def saveState(self):
         file = open(FILE_PATHS['webstate'], 'wb')
         pickler = cPickle.Pickler(file, 2)        
-        pickler.dump(self.server)         
         pickler.dump(self.session)
         file.close()
 
@@ -287,7 +285,6 @@ class WebAdapter(object):
         try:
             file = open(FILE_PATHS['webstate'], 'rb')
             u = cPickle.Unpickler(file)            
-            self.server = u.load()            
             self.session = u.load()
             file.close()
         except (EOFError, IOError):
@@ -316,7 +313,7 @@ class WebAdapter(object):
         {
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
             'charset':re.compile(r'content="text/html; charset=(.*?)"', re.I), 
-            'serverTime':re.compile(r"<th>.*?%s.*?</th>.*?<th.*?>(?P<date>.*?)</th>" % (translations['serverTime']), re.DOTALL|re.I),
+            'serverTime':re.compile(r"var serverTime = new Date\((\d+)\)"),
             'report': 
             {
                 'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
@@ -377,8 +374,8 @@ class WebAdapter(object):
             planet = OwnPlanet(coords, name.strip(), code)
             player.colonies.append(planet)
         
-        strTime = self.REGEXPS['serverTime'].findall(page)[0]
-        serverTime = parseTime(strTime)
+        timestamp = self.REGEXPS['serverTime'].findall(page)[0]
+        serverTime = datetime.fromtimestamp(float(int(timestamp)/1000))
         self.serverTimeDelta = serverTime - datetime.datetime.now()
         self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
 
@@ -785,7 +782,7 @@ class WebAdapter(object):
         outputQueue = Queue()
         for galaxy, solarSystem in solarSystems:
             params = {'session':self.session, 'galaxy':galaxy, 'system':solarSystem }
-            url = "http://%s/game/index.php?page=galaxy&%s" % (self.server, urllib.urlencode(params))        
+            url = "http://%s/game/index.php?page=galaxy&%s" % (self.config.webpage, urllib.urlencode(params))        
             inputQueue.put(url)
        
         for dummy in range(1):
