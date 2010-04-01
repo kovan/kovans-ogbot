@@ -160,7 +160,7 @@ class Configuration(dict):
             if len(dict) > 1: 
                 dictionary = self._parseDictionary(dict)
                 list.append(dictionary) 
-        return list     
+        return list  
 
     def _parseDictionary(self, listStr):
         dictionary = {}
@@ -175,11 +175,11 @@ class Configuration(dict):
         return dictionary
 
     def _parseList(self,listStr):
-        list = []
+        mylist = []
         for item in listStr.split(','):
             item = item.strip('''[] ,'"''') #"
-            if item : list.append(item)
-        return list
+            if item : mylist.append(item)
+        return mylist
 
     def _parseTime(self,timeStr):
         return time(*strptime(timeStr,"%H:%M:%S")[3:6])
@@ -252,7 +252,8 @@ class BotConfiguration (Configuration):
         
         if self['attackingShip'] not in ("smallCargo","largeCargo"):
             raise BotError("Invalid attacking ship type.")
-        
+
+        # needed for exec statement
         from GameEntities import EnemyPlanet
 
         try:
@@ -346,8 +347,8 @@ class Struct(object):
         
 class Enum(object):
     @classmethod
-    def toStr(self, type):
-        return [i for i in self.__dict__ if getattr(self, i) == type][0]    
+    def toStr(klass, type):
+        return [i for i in klass.__dict__ if getattr(klass, i) == type][0]    
     
 
 def mySleep(seconds):

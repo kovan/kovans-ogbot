@@ -27,20 +27,16 @@ if os.getcwd().endswith("src"):
 
 import logging, logging.handlers
 import threading
-import traceback
 from Queue import *
 import copy
 import shutil
 import cPickle
 import urllib2
-import itertools
 import random
 import warnings
 import math
-import pprint
 from datetime import *
 from optparse import OptionParser
-from itertools import * 
 
 # bot classes:
 
@@ -69,7 +65,7 @@ class Bot(object):
             self.dispatch("simulationsUpdate", rentabilities)
         def activityMsg(self, msg):
             self.logAndPrint(msg)
-            msg = datetime.datetime.now().strftime("%X %x ") + msg
+            msg = datetime.now().strftime("%X %x ") + msg
             self.dispatch("activityMsg", msg)
         def statusMsg(self, msg):
             self.dispatch("statusMsg", msg)
@@ -82,7 +78,7 @@ class Bot(object):
         self.config = BotConfiguration(FILE_PATHS['config'])                   
         self.web = None
         self.config.load()
-        self.ownPlayer = OwnPlayer("","")
+        self.ownPlayer = OwnPlayer()
         self.allTranslations = Translations()
         self.inactivePlanets = []
         self.sourcePlanetsDict = {}
@@ -139,11 +135,11 @@ class Bot(object):
         largeCargos = INGAME_TYPES_BY_NAME['largeCargo']
         smallCargos = INGAME_TYPES_BY_NAME['smallCargo']
 
-        largeCargos.speed =  int(7500 * (1 + (self.ownPlayer.research['combustionDrive'] * 0.1)))
-        if self.ownPlayer.research['impulseDrive'] < 5:
-            smallCargos.speed =  int(5000  * (1 + (self.ownPlayer.research['combustionDrive'] * 0.1)))
+        largeCargos.speed =  int(7500 * (1 + (self.ownPlayer.researchLevels['combustionDrive'] * 0.1)))
+        if self.ownPlayer.researchLevels['impulseDrive'] < 5:
+            smallCargos.speed =  int(5000  * (1 + (self.ownPlayer.researchLevels['combustionDrive'] * 0.1)))
         else:
-            smallCargos.speed =  int(10000 * (1 + (self.ownPlayer.research['impulseDrive'] * 0.2)))            
+            smallCargos.speed =  int(10000 * (1 + (self.ownPlayer.researchLevels['impulseDrive'] * 0.2)))            
 
         ownedCoords = [repr(planet.coords) for planet in self.ownPlayer.colonies]
         for coords in self.config.sourcePlanets + [self.config.deuteriumSourcePlanet]:
@@ -175,9 +171,8 @@ class Bot(object):
             firstSystem = max(1, raidingPlanet.coords.solarSystem - attackRadius)
             lastSystem = min(int(self.config.systemsPerGalaxy), raidingPlanet.coords.solarSystem + attackRadius)
             for solarSystem in range(firstSystem, lastSystem +1):
-                tuple = (galaxy, solarSystem)
-                if tuple not in newReachableSolarSystems:
-                    newReachableSolarSystems.append(tuple)
+                if (galaxy, solarSystem) not in newReachableSolarSystems:
+                    newReachableSolarSystems.append((galaxy, solarSystem))
         self.updateSourcePlanetsDict() #note fix this probable not needed
                 
         if newReachableSolarSystems != self.reachableSolarSystems: # something changed in configuration (attack radius or attack sources)
@@ -202,10 +197,9 @@ class Bot(object):
             serverTime = self.web.getServerTime()
 
             if self.lastInactiveScanTime.date() != serverTime.date() and serverTime.time() >=  self.config.inactivesAppearanceTime:
-                oldInactivesList = self.inactivePlanets
                 newInactives = self.scanGalaxies()
-                if serverTime.time() < datetime.time(3, 30):#(datetime.datetime.combine(serverTime.date(),self.config.inactivesAppearanceTime) + datetime.timedelta(hours=3)).time():
-                    self.rushMode(newInactives.values(), oldInactivesList)               
+                if serverTime.time() < datetime.time(3, 30):#(datetime.combine(serverTime.date(),self.config.inactivesAppearanceTime) + datetime.timedelta(hours=3)).time():
+                    self.rushMode(newInactives.values())
                 self.spyPlanets(self.inactivePlanets, EspionageReport.DetailLevels.buildings) 
             else:
                 
@@ -226,7 +220,6 @@ class Bot(object):
     def scanGalaxies(self):
         self.eventMgr.activityMsg("Searching inactive planets in range (this may take up to some minutes)...")
 
-        startTime = datetime.datetime.now()           
         if self.config.deuteriumSourcePlanet:
             deuteriumSourcePlanet = (p for p in self.ownPlayer.colonies if p.coords == self.config.deuteriumSourcePlanet).next()
         else:
@@ -236,7 +229,6 @@ class Bot(object):
             for planet in foundPlanets:
                 allInactives.append(planet)
 
-        seconds = (datetime.datetime.now() - startTime).seconds
         systems = len(self.reachableSolarSystems)
         
         self._planetDb.writeMany(allInactives)
@@ -319,7 +311,7 @@ class Bot(object):
                         
                             sentMission = self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip, False)
                             notArrivedAttacks.append(sentMission)
-                        except NotEnoughShipsError, e2:
+                        except NotEnoughShipsError:
                             planetsWithoutShips[sourcePlanet] = serverTime
                             self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet, targetPlanet, e1))
                     else:
@@ -335,7 +327,7 @@ class Bot(object):
             mySleep(1)            
 
 ##########################################################################################             
-    def rushMode(self, newInactives, oldInactivesList = []):
+    def rushMode(self, newInactives):
         self.eventMgr.activityMsg("Changing to rush mode.")
         planetsWithoutShips = {}   
 
@@ -343,7 +335,7 @@ class Bot(object):
         
         self.spyPlanets(newInactives)
        
-        rentabilities =  self.generateRentabilityTable(newInactives, False)        
+        rentabilities =  self.generateRentabilityTable(newInactives)
         newInactives = [x.targetPlanet for x in rentabilities if x.rentability > rentabilityTreshold]
         self.spyPlanets(newInactives, EspionageReport.DetailLevels.defense)
         newInactives = [(x.sourcePlanet, x.targetPlanet) for x in rentabilities]
@@ -371,7 +363,7 @@ class Bot(object):
             targetPlanet, sourcePlanet = selectedAttack.targetPlanet, selectedAttack.sourcePlanet
             try:
                 self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip, False)
-            except NotEnoughShipsError, e1:
+            except NotEnoughShipsError:
                 try:
                     self.attackPlanet(sourcePlanet, targetPlanet, self.secondaryAttackingShip, False)
                     self.eventMgr.simulationsUpdate(rentabilities)                                  
@@ -545,7 +537,7 @@ class Bot(object):
 
                     
 ########################################################################################## 
-    def generateRentabilityTable(self, planetList, negativeIfDefended = True):
+    def generateRentabilityTable(self, planetList):
         rentabilities = []
 
         for planet in planetList:
@@ -679,9 +671,9 @@ class Bot(object):
     def runPlugin(self, plugin):
         execfile("plugins/%s.py" % plugin)
 
-##########################################################################################     
-if __name__ == "__main__":
+##########################################################################################
 
+def run():
     parser = OptionParser()
     parser.add_option("-c", "--console", action="store_true", help="Run in console mode'")
     parser.add_option("-a", "--autostart", action="store_true", help="Auto start bot, no need to click Start button")
@@ -691,7 +683,7 @@ if __name__ == "__main__":
         
     for dir in ('plugins', 'debug', 'output'):
         try: os.makedirs (dir)
-        except OSError, e: pass
+        except OSError: pass
             
     logging.getLogger().setLevel(logging.INFO)
     handler = logging.handlers.RotatingFileHandler(os.path.abspath(FILE_PATHS['log']), 'a', 100000, 10)
@@ -709,3 +701,7 @@ if __name__ == "__main__":
         from gui import guiMain
         guiMain(options)
 	
+
+if __name__ == "__main__":
+    run()
+
