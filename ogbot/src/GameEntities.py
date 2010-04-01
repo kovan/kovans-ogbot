@@ -167,35 +167,48 @@ class Resources(object):
         flightTime = flightTime.seconds
         return  eval(Resources.compiledFormula)
    
+
+class Player(object):
+    def __init__(self, name = "", alliance = ""):
+        self.name = ""
+        self.colonies = []
+        self.alliance = ""
+        self.rank = 0
+        self.points = 0
+        
+    def __repr__(self):
+        return self.name + ". " + self.alliance
+
+class OwnPlayer(Player):
+    def __init__(self):
+        self.raidingColonies = []
+        self.upgradeToRaid = []
+        self.upgradingColonies = []
+        self.attack = []
+        self.freeFleetSlots = 0
+        self.totalFleetSlots = 0
+        self.research = {}
+
+class EnemyPlayer(Player):
+    def __init__(self, name, alliance):
+        super(EnemyPlayer, self).__init__(name, alliance)
+        self.isInactive = False
+    
+
     
 class Planet(object):
-    def __init__(self, coords, name=""):
+    def __init__(self, coords, owner, name = ""):
         self.coords = coords
+        self.owner = owner
         self.name = name
+        
     def __repr__(self):
         return self.name + " " + str(self.coords)
 
 
-class Player(object):
-    def __init__(self):
-        self.main = 0
-        self.colonies = []
-        self.raidingColonies = []
-        self.upgradeToRaid = []
-        self.upgradingColonies = []
-        self.alliance = ""
-        self.attack = []
-        self.freeFleetSlots = 0
-        self.totalFleetSlots = 0
-        self.name = ""
-        self.rank = 0
-        self.research = {}
-        self.points = 0
-
-
 class OwnPlanet(Planet):
-    def __init__(self, coords, name="", code=0):
-        super(OwnPlanet, self).__init__(coords, name)
+    def __init__(self, coords, owner, name, code):
+        super(OwnPlanet, self).__init__(coords, owner, name)
         self.code = code
         self.point = 0
         self.buildings, self.allbuildings, self.defense, self.fleet = {}, {}, {}, {}
@@ -210,11 +223,10 @@ class OwnPlanet(Planet):
 
 class EnemyPlanet (Planet):
     compiledFormula = None
-    def __init__(self, coords, owner="", ownerstatus="", name="", alliance=""):
-        super(EnemyPlanet, self).__init__(coords, name)
-        self.owner = owner
-        self.alliance = alliance
-        self.ownerStatus = ownerstatus
+    def __init__(self, coords, owner):
+        super(EnemyPlanet, self).__init__(coords, owner)
+        self.hasMoon = False
+        self.hasDebris = False
         self.espionageHistory = []
         self.attackHistory = []
         self.simulation = None

@@ -30,7 +30,7 @@ import warnings
 import cookielib
 import StringIO
 import random
-
+from lxml import etree
 
 from Queue import *
 import datetime, time
@@ -343,7 +343,6 @@ class WebAdapter(object):
             'fleetSlots':re.compile(r"%s[\s]*([0-9]+) \/ ([0-9]+)" %(translations['fleets']), re.I),
             'myPlanets':re.compile('<option value="/game/index\.php\?page=overview&session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>', re.I),    
             'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(.*?(?P<level>[0-9]+)\s*?\)",re.I|re.LOCALE),            
-            'solarSystem':re.compile(r'<tr>.*?<a href="#"  tabindex="[0-9]+" >([0-9]+)</a>.*?<th width="130".*?>([^&<]+).*?<th width="150">.*?<span class="(\w+?)">(.*?)</span>.*?<th width="80">.*?> *([\w .]*?) *<.*?</tr>'),
             'stats': re.compile(r"style='color:lime;'.*?<!-- points -->.*?([0-9.]+).*?<!-- rank -->.*?([0-9.]+)", re.I|re.DOTALL),
             'statsOverview': re.compile(r"([0-9.]+)[\s]*\(%s.*?>([0-9.]+)</a>" %(translations['rank']), re.I)
         }
@@ -375,7 +374,7 @@ class WebAdapter(object):
             player.colonies.append(planet)
         
         timestamp = self.REGEXPS['serverTime'].findall(page)[0]
-        serverTime = datetime.fromtimestamp(float(int(timestamp)/1000))
+        serverTime = datetime.datetime.fromtimestamp(float(int(timestamp)/1000))
         self.serverTimeDelta = serverTime - datetime.datetime.now()
         self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
 
@@ -782,13 +781,13 @@ class WebAdapter(object):
         outputQueue = Queue()
         for galaxy, solarSystem in solarSystems:
             params = {'session':self.session, 'galaxy':galaxy, 'system':solarSystem }
-            url = "http://%s/game/index.php?page=galaxy&%s" % (self.config.webpage, urllib.urlencode(params))        
+            url = "http://%s/game/index.php?page=galaxyContent&%s" % (self.config.webpage, urllib.urlencode(params))        
             inputQueue.put(url)
        
         for dummy in range(1):
             thread = ScanThread(inputQueue, outputQueue, self.keepaliveopener, self.REGEXPS)
             thread.start() 
-            threads.append(thread)            
+            threads.append(thread)
  
 
         found = []
@@ -819,14 +818,18 @@ class ScanThread(threading.Thread):
         
     def run(self):
         socket.setdefaulttimeout(20)   
-
+        parser = etree.HTMLParser()
+        playersByName = {}
         error = False
+        
         while True:
             try:
                 if not error:
-                    url = self._inputQueue.get_nowait()
+                    solarSystemUrl = self._inputQueue.get_nowait()
                 
-                response = self.opener.open(url)
+                response = self.opener.open(solarSystemUrl)
+                tree = etree.parse(page,parser)
+                
                 page = response.read()
                 
                 if 'span class="error"' in page:
@@ -847,16 +850,32 @@ class ScanThread(threading.Thread):
                     if len(page) < 1000: 
                         print >>sys.stderr, page
 
-                galaxy      = re.findall('input type="text" name="galaxy" value="([0-9]+)"', page)[0]
-                solarSystem = re.findall('input type="text" name="system" value="([0-9]+)"', page)[0]
-                        
+                galaxy =      tree.xpath("//*[@id='system_input']/@value")[0]
+                solarSystem = tree.xpath("//*[@id='galaxy_input']/@value")[0]
+                
                 foundPlanets = []
-                for number, name, ownerStatus, owner, alliance in self.REGEXPS['solarSystem'].findall(page):
-                # Absolutely ALL EnemyPlanet objects of the bot are created here
-                    planet = EnemyPlanet(Coords(galaxy, solarSystem, number), owner, ownerStatus, name, alliance)
-                    foundPlanets.append(planet)
-                    self._outputQueue.put((galaxy, solarSystem, foundPlanets, htmlSource))
+                for row in  tree.xpath("//*[@id='galaxytable']//*[@class='row']"):
+                    # Absolutely ALL EnemyPlanet and EnemyPlayer objects of the bot are created here
                     
+                    ownerName =     row.xpath("string(//*[@class='TTgalaxy'])")[0].strip()
+                    ownerAlliance = row.xpath("string(//*[@class='allytag'])")[0].strip()
+                    # we want player objects to be unique:
+                    owner = playersByName.get(ownerName)
+                    if not owner:
+                        owner = EnemyPlayer(ownerName, ownerAlliance)
+                        playersByName[ownerName] = owner
+                    owner.isInactive = row.xpath("string(//*[@class='status'])")[0].strip().tolower() == "(i)"
+                    
+                    planetNumber =     row.xpath("//*[@class='position']")[0].strip()
+                    planet = EnemyPlanet(Coords(galaxy, solarSystem, planetNumber), owner)
+                    planet.name =      row.xpath("//*[@class='planetname']")[0].strip()
+                    planet.hasMoon =   row.xpath("//*[@class='moon']")[0].strip() != ""
+                    planet.hasDebris = row.xpath("//*[@class='debris']")[0].strip() != ""
+                    foundPlanets.append(planet)
+                    
+                self._outputQueue.put((galaxy, solarSystem, foundPlanets, htmlSource))
+
+
                 error = False
             except Empty:
                 break
