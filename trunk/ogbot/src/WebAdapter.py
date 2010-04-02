@@ -806,7 +806,7 @@ class WebAdapter(object):
        
         for dummy in range(1):
             thread = ScanThread(inputQueue, outputQueue, self.opener, self.REGEXPS)
-            thread.run()
+            thread.start()
             threads.append(thread)
  
 
@@ -873,22 +873,23 @@ class ScanThread(threading.Thread):
                 for row in   tree.xpath("//*[@id='galaxytable']//*[@class='row']"):
                     # Absolutely ALL EnemyPlanet and EnemyPlayer objects of the bot are created here
                     
-                    ownerName =     row.xpath("string(//*[@class='TTgalaxy'])")[0].strip()
-                    ownerAlliance = row.xpath("string(//*[@class='allytag'])")[0].strip()
+                    ownerName = row.xpath("string(*//*[@class='TTgalaxy'])").strip()
                     if not ownerName: # empty position
                         continue
+                    
+                    ownerAlliance = row.xpath("string(*[@class='allytag']/*//text())")
                     # we want player objects to be unique:
                     owner = playersByName.get(ownerName)
                     if not owner:
                         owner = EnemyPlayer(ownerName, ownerAlliance)
                         playersByName[ownerName] = owner
-                    owner.isInactive = row.xpath("string(//*[@class='status'])")[0].strip().tolower() == "(i)"
+                    owner.isInactive = row.xpath("string(*//*[@class='status'])").strip().lower() == "(i)"
                     
-                    planetNumber =     row.xpath("//*[@class='position']")[0].strip()
+                    planetNumber =     row.xpath("string(*[@class='position'])").strip()
                     planet = EnemyPlanet(Coords(galaxy, solarSystem, planetNumber), owner)
-                    planet.name =      row.xpath("//*[@class='planetname']")[0].strip()
-                    planet.hasMoon =   row.xpath("//*[@class='moon']")[0].strip() != ""
-                    planet.hasDebris = row.xpath("//*[@class='debris']")[0].strip() != ""
+                    planet.name =      row.xpath("string(*[@class='planetname'])").strip()
+                    planet.hasMoon =   row.xpath("string(*[@class='moon'])").strip() != ""
+                    planet.hasDebris = row.xpath("string(*[@class='debris'])").strip() != ""
                     
                     foundPlanets.append(planet)
                     
