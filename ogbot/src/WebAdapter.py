@@ -29,9 +29,9 @@ import traceback
 import httplib
 import warnings
 import cookielib
-import StringIO
 import random
 import time
+from StringIO import StringIO
 from datetime import *
 from lxml import etree
 from Queue import *
@@ -81,6 +81,30 @@ X       get planet list                 |getMyPlanets
 X       delete Messages                 |deleteMessages
 """
 
+
+class WebPage(object):
+    parser = etree.HTMLParser()
+    def __init__(self,response):
+        self.url = response.geturl()
+        self.stringio = StringIO(response.read())
+        self.stringio.seek(0)
+        self.text = self.stringio.read()
+        self.stringio.seek(0)
+        self.etree = etree.parse(self.stringio,WebPage.parser)
+
+    def saveToDisk(self):
+        files = os.listdir('debug')
+        if len(files) >= 30: #never allow more than 30 files
+            files.sort()
+            os.remove('debug/'+files[0])
+        try: php = re.findall("/(\w+\.php.*)", self.url)[0].replace('?',',').replace('&',',')
+        except IndexError: php = ''
+        date = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
+        f = open("debug/%s,%s.html" %(date, php), 'w')
+        f.write(self.text.replace('<script', '<noscript').replace('</script>', '</noscript>').replace('http-equiv="refresh"', 'http-equiv="kovan-rulez"'))
+        f.close()
+        
+
 class WebAdapter(object):
     """Encapsulates the details of the communication with the ogame servers. This involves
         HTTP protocol encapsulation and HTML parsing.
@@ -107,12 +131,13 @@ class WebAdapter(object):
             
 ##########################################################################################        
     def __init__(self, config, allTranslations, checkThreadMsgsMethod, gui = None):
-        self.lastFetchedUrl = ''
         self.serverCharset = ''        
         self.config = config
         self.checkThreadMsgsMethod = checkThreadMsgsMethod
         self._eventMgr = WebAdapter.EventManager(gui)
         self.serverTimeDelta = None
+        self.lastFetchedPage = None
+        
         self._mutex = threading.RLock()
 
         if not self.loadState():
@@ -139,11 +164,10 @@ class WebAdapter(object):
         self.keepAliveOpener.addheaders = headers
         
         url = '.'.join(self.config.webpage.split('.')[1:])
-        cachedResponse = StringIO.StringIO(self._fetchValidResponse("http://" + url, True).read())
+        page = self._fetchValidResponse("http://" + url, True)
 
         # check configured language equals ogame server language
-        regexpLanguage = re.compile(r'<meta name="language" content="(\w+)"', re.I) # outide the regexp definition block because we need it to get the language in which the rest of the regexps will be generated
-        self.serverLanguage =  regexpLanguage.findall(cachedResponse.getvalue())[0]
+        self.serverLanguage = re.findall(r'<meta name="language" content="(\w+)"', page.text)[0]
         try: self.translations = allTranslations[self.serverLanguage]
         except KeyError:
             raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage)
@@ -152,16 +176,11 @@ class WebAdapter(object):
         self.translationsByLocalText = dict([ (value, key) for key, value in self.translations.items() ])
         self.generateRegexps(self.translations)        
         # retrieve server based on universe number        
-        cachedResponse.seek(0)     
         translation = self.translations['universe']
         
         if self.serverLanguage == "tw":
             translation = translation.decode('gb2312').encode('utf-8')
 
-
-##########################################################################################         
-    def _fetchForm(self, form):
-        return self._fetchValidResponse(form.click())
 
 
 ########################################################################################## 
@@ -170,61 +189,52 @@ class WebAdapter(object):
         url = "http://%s/game/%s?%s" % (self.config.webpage, php, urllib.urlencode(params))
         return self._fetchValidResponse(url)
 
-
 ##########################################################################################     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
         self._mutex.acquire()
 
         if isinstance(request, str):
             request = urllib2.Request(request)
-        if self.lastFetchedUrl:
-            request.add_header('Referer',self.lastFetchedUrl)
+        if self.lastFetchedPage:
+            request.add_header('Referer',self.lastFetchedPage.url)
             
-        valid = False            
+        valid = False
         while not valid:
             self.checkThreadMsgsMethod()
 
             valid = True
             try:
-                response = self.opener.open(request)
-                self.lastFetchedUrl = response.geturl()
-                if __debug__: 
-                    print >>sys.stderr, "\t " + datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + self.lastFetchedUrl
-                cachedResponse = StringIO.StringIO(response.read())
-                p = cachedResponse.getvalue()
-                cachedResponse.seek(0)
+                page = WebPage(self.opener.open(request))
+                page.saveToDisk()
+                self.lastFetchedPage = page
                 
-                # store last 30 pages fetched in the debug directory:
-                files = os.listdir('debug')
-                if len(files) >= 30: #never allow more than 30 files
-                    files.sort()
-                    os.remove('debug/'+files[0])
-                try: php = re.findall("/(\w+\.php.*)", self.lastFetchedUrl)[0].replace('?',',').replace('&',',')
-                except IndexError: php = ''
-                date = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
-                f = open("debug/%s,%s.html" %(date, php), 'w')
-                f.write(p.replace('<script', '<noscript').replace('</script>', '</noscript>').replace('http-equiv="refresh"', 'http-equiv="kovan-rulez"'))
-                f.close()
+                if __debug__: 
+                    print >>sys.stderr, "\t " + datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + page.url
                 
                 if skipValidityCheck:
-                    return cachedResponse           
-                elif self.translations['youAttemptedToLogIn'] in p:         
+                    return page
+                
+                if self.translations['youAttemptedToLogIn'] in page.text:
                     raise BotFatalError("Invalid username and/or password.")
-                elif not p or 'errorcode=8' in self.lastFetchedUrl:
+                
+                if not page.text or 'errorcode=8' in page.text:
                     valid = False
+                    
                 #TODO \ FIX THIS if this fails then just comment it ???
-                elif self.translations['dbProblem'] in p or self.translations['untilNextTime'] in p or "Grund 5" in p:
+                if self.translations['dbProblem'] in page.text or self.translations['untilNextTime'] in page.text or "Grund 5" in page.text:
                     oldSession = self.session
                     self.doLogin()
                     url =  request.get_full_url().replace(oldSession, self.session)
                     data = request.get_data()
-                    if data: data = data.replace(oldSession, self.session)                    
+                    if data:
+                        data = data.replace(oldSession, self.session)                    
                     request = urllib2.Request(url,data)
                     valid = False
+                    
             except urllib2.HTTPError, e:
                 if e.code == 302: # happens once in a while when user and bot are playing simultaneusly.
                     raise BotError()
-                else: raise e
+                else: raise
             except (urllib2.URLError, httplib.IncompleteRead, httplib.BadStatusLine), e:
                 self._eventMgr.connectionError(e)
                 valid = False
@@ -232,11 +242,12 @@ class WebAdapter(object):
                 if "timed out" in str(e):
                     self._eventMgr.connectionError("timed out")
                     valid = False
-                else: raise e
+                else: raise
             if not valid: 
-                mySleep(10)                
+                mySleep(10)
+                
         self._mutex.release()
-        return cachedResponse
+        return page
     
 ########################################################################################## 
     def doLogin(self):
@@ -245,20 +256,22 @@ class WebAdapter(object):
 
         url = '.'.join(self.config.webpage.split('.')[1:])
         page = self._fetchValidResponse("http://" + url)
-        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
+        form = ParseFile(page.stringio, page.url, backwards_compat=False)[0]
         form["uni_url"] = [self.config.webpage]
         form["login"] = self.config.username
         form["pass"]  = self.config.password
         form.action = "http://"+self.config.webpage+"/game/reg/login2.php"
-        page = self._fetchForm(form).read()
+        page = self._fetchValidResponse(form.click())
+        
         try:
-            self.session = re.findall(self.REGEXP_SESSION_STR, page)[0]
+            self.session = re.findall(self.REGEXP_SESSION_STR, page.text)[0]
         except IndexError:
             raise BotFatalError(page)
+        
         self._eventMgr.loggedIn(self.config.username, self.session)
-        page = self._fetchPhp('index.php', lgn=1)                
+        self._fetchPhp('index.php', lgn=1)
         mySleep(5)
-        page = self._fetchPhp('index.php', page='overview', lgn=1)               
+        self._fetchPhp('index.php', page='overview', lgn=1)
         self.saveState()
 
 
@@ -314,7 +327,6 @@ class WebAdapter(object):
         self.REGEXPS = \
         {
             'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
-            'charset':re.compile(r'content="text/html; charset=(.*?)"', re.I), 
             'report': 
             {
                 'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
@@ -333,7 +345,6 @@ class WebAdapter(object):
                 'defense':re.compile(r'>(?P<name>[a-z ]*)</a></a> \((?P<quantity>[-0-9.]+) available\)', re.I),
                 'durationRemaining':re.compile(r"%s:[\s]?(([ 0-9]*) d)?(([ 0-9]*) h)?([ 0-9]*) m ([ 0-9]*) s" %(translations['durationRemaining']), re.I),
                 'ResearchLabPresent':re.compile(r'%s' %(translations['computerTechnology']), re.I),
-    
                 'resources':re.compile(r">(?P<quantity>[0-9.]+)</font></td>", re.I),
                 'resourceEnergy':re.compile(r">([0-9-.]+)</font>/([0-9.]+)</td>", re.I)
             },
@@ -341,7 +352,6 @@ class WebAdapter(object):
             'currentlyUpgradingResearch':re.compile(r'ss=([0-9]+);', re.I),
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>', re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
-            'myPlanets':re.compile('<option value="/game/index\.php\?page=overview&session='+self.REGEXP_SESSION_STR+'&cp=([0-9]+)&mode=&gid=&messageziel=&re=0" (?:selected)?>(.*?)<.*?\['+self.REGEXP_COORDS_STR+'].*?</option>', re.I),    
             'researchLevels':re.compile(r">(?P<techName>[^<]+)</a></a>\s*?\(.*?(?P<level>[0-9]+)\s*?\)",re.I|re.LOCALE),            
             'stats': re.compile(r"style='color:lime;'.*?<!-- points -->.*?([0-9.]+).*?<!-- rank -->.*?([0-9.]+)", re.I|re.DOTALL),
             'statsOverview': re.compile(r"([0-9.]+)[\s]*\(%s.*?>([0-9.]+)</a>" %(translations['rank']), re.I)
@@ -363,12 +373,11 @@ class WebAdapter(object):
 
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0').read()
+            page = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0')
         myPlanets = []
         
-        tree = etree.fromstring(page,etree.HTMLParser())
-        planetNames  = tree.xpath("//*[@class='planet-name']")
-        planetCoords = tree.xpath("//*[@class='planet-koords']")
+        planetNames  = page.etree.xpath("//*[@class='planet-name']")
+        planetCoords = page.etree.xpath("//*[@class='planet-koords']")
         for name, coord, in zip(planetNames, planetCoords):
             coords = Coords(coord.text)
             for planet in myPlanets:
@@ -376,10 +385,10 @@ class WebAdapter(object):
                     coords.coordsType = Coords.Types.moon
             planet = OwnPlanet(coords, player, name.text)
             
-        timestamp = re.findall("var serverTime = new Date\((\d+)\)",page)[0]
+        timestamp = re.findall("var serverTime = new Date\((\d+)\)",page.text)[0]
         serverTime = datetime.fromtimestamp(float(int(timestamp)/1000))
         self.serverTimeDelta = serverTime - datetime.now()
-        self.serverCharset = self.REGEXPS['charset'].findall(page)[0]
+        self.serverCharset = re.findall('content="text/html; charset=(.*?)"', page.text, re.I)[0]
 
 
 ########################################################################################## 
@@ -390,7 +399,7 @@ class WebAdapter(object):
 
 ########################################################################################## 
     def updatePlayerData(self, player):
-        overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0').read()
+        overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0')
         self.getFleetSlots(player)
         self.checkForAttack(player, overview)
         self.getMyPlanets(player, overview)
@@ -399,7 +408,7 @@ class WebAdapter(object):
         
 ########################################################################################## 
     def updatePlanetData(self, planet):
-#        overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0').read()
+#        overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0')
 #        self.checkResourcesOnPlanet(planet, overview)
 #        self.checkBuildingFields(planet, overview)
 #        self.getBuildingLevels(planet)
@@ -410,9 +419,9 @@ class WebAdapter(object):
     def checkForAttack(self, player, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0').read()
+            page = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0')
         player.attacks = []
-        for targetPlanet, missionType in self.REGEXPS['attack'].findall(page):
+        for targetPlanet, missionType in self.REGEXPS['attack'].findall(page.text):
             if missionType == self.translations['attack']:   
                 player.attacks.append(targetPlanet)
 
@@ -461,8 +470,8 @@ class WebAdapter(object):
     def _checkEndTimeOfBuildingUpgrade(self, planet, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='b_building', cp=planet.code).read()
-        upgradeTime = self.REGEXPS['planet']['currentlyUpgradingBuilding'].search(page)
+            page = self._fetchPhp('index.php', page='b_building', cp=planet.code)
+        upgradeTime = self.REGEXPS['planet']['currentlyUpgradingBuilding'].search(page.read)
         if upgradeTime:
             planet.endBuildTime = datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
         else:
@@ -472,7 +481,7 @@ class WebAdapter(object):
 
 ########################################################################################## 
     def upgradeBuilding(self, planet, building):
-        page = self._fetchPhp('index.php', page='b_building', modus='add', techid=building.code, cp=planet.code).read()
+        page = self._fetchPhp('index.php', page='b_building', modus='add', techid=building.code, cp=planet.code)
         mySleep(10)
         self._checkEndTimeOfBuildingUpgrade(planet, page)
     
@@ -489,16 +498,13 @@ class WebAdapter(object):
         #         player.research[self.translationsByLocalText[fullName]] = int(level)
         
         page = self._fetchPhp('index.php', page='research')
-        tree = etree.parse(page,etree.HTMLParser())
 
         technologies = [t for t in INGAME_TYPES if isinstance(t,Research)]
         for technology in technologies:
-
-
-            level = int(tree.xpath("//*[@class='research%s']//*[@class='level']/text()" % technology.code)[0])
+            level = int(page.etree.xpath("//*[@class='research%s']//*[@class='level']/text()" % technology.code)[0])
             player.researchLevels[technology.name] = level
-                
 
+        # TODO: uncomment this:
         # if player.researchLevels['impulseDrive'] == 0 or \
         #    player.researchLevels['combustionDrive'] == 0:
         #     raise BotFatalError("Not enough technologies researched to run the bot")
@@ -508,9 +514,9 @@ class WebAdapter(object):
     def _checkEndTimeOfResearchUpgrade(self, planet, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
-                page = self._fetchPhp('index.php', page='buildings', cp=planet.code).read()     
-        upgradeTime = self.REGEXPS['currentlyUpgradingResearch'].search(page)
-        labPresent  = self.REGEXPS['planet']['ResearchLabPresent'].search(page)
+                page = self._fetchPhp('index.php', page='buildings', cp=planet.code)
+        upgradeTime = self.REGEXPS['currentlyUpgradingResearch'].search(page.text)
+        labPresent  = self.REGEXPS['planet']['ResearchLabPresent'].search(page.text)
         if labPresent:
             if upgradeTime:
                 return datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
@@ -521,7 +527,7 @@ class WebAdapter(object):
 
 ########################################################################################## 
     def upgradeResearch(self, planet, research):
-        reply = self._fetchPhp('index.php', page='buildings', mode='Forschung', cp=planet.code, bau=research.code).read()
+        reply = self._fetchPhp('index.php', page='buildings', mode='Forschung', cp=planet.code, bau=research.code)
         mySleep(10)
         return self._checkEndTimeOfResearchUpgrade(planet, reply)
 
@@ -530,9 +536,9 @@ class WebAdapter(object):
     def getDefense(self, planet, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code).read()
+            page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code)
         planet.defense = {}
-        for name, quantity in self.REGEXPS['planet']['defense'].findall(page):
+        for name, quantity in self.REGEXPS['planet']['defense'].findall(page.text):
             planet.defense[name] = int(quantity.replace('.', ''))
         self.checkDefenseQueue(planet, page)
 
@@ -540,8 +546,8 @@ class WebAdapter(object):
     def checkDefenseQueue(self, planet, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code).read()
-        time = self.REGEXPS['planet']['durationRemaining'].search(page)
+            page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code)
+        time = self.REGEXPS['planet']['durationRemaining'].search(page.text)
         if time: 
             return True 
             planet.endDefenseWaitTime = datetime.now() + timedelta(days=time.group(2), hours=time.group(4), minutes=time.group(5), seconds=time.group(6))
@@ -552,29 +558,30 @@ class WebAdapter(object):
 ########################################################################################## 
     def buildDefense(self, planet, defense):
         page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code )
-        form = ParseFile( page, self.lastFetchedUrl, backwards_compat=False )[-1]
+        form = ParseFile( page.reponse, page.url, backwards_compat=False )[-1]
         for defenseType, quantity in defense.iteritems():
             try:
                 controlName = "fmenge[%s]" % INGAME_TYPES_BY_NAME[defenseType].code
                 form[controlName] = str( quantity )
             except ControlNotFoundError:
                 raise BotError( defenseType )
-        reply = self._fetchForm( form )
+            
+        reply = self._fetchValidResponse(form.click())
         self.checkDefenseQueue(planet, reply)
 
 ########################################################################################## 
     def getAvailableFleet(self, planet, alreadyFetchedPage = None):    
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='flotten1', mode='Flotte', cp=planet.code).read()
+            page = self._fetchPhp('index.php', page='fleet1') # TODO: management of various planets. cp=planet.code).read()
         planet.fleet = {}
-        for code, quantity in self.REGEXPS['planet']['availableFleet'].findall(page):
+        for code, quantity in self.REGEXPS['planet']['availableFleet'].findall(page.text):
             planet.fleet[INGAME_TYPES_BY_CODE[code].name] = int(quantity.replace('.', ''))
 
 
 # ########################################################################################## 
 #     def checkFleetQueue(self, planet, alreadyFetchedPage = None):
-#         time = self.REGEXPS['planet']['durationRemaining'].search(page.read())
+#         time = self.REGEXPS['planet']['durationRemaining'].search(page.text)
 #         if time: 
 #             return True 
 #             planet.endFleetWaitTime = datetime.now() + timedelta(days=time.group(2), hours=time.group(4), minutes=time.group(5), seconds=time.group(6))
@@ -586,32 +593,31 @@ class WebAdapter(object):
 #     def buildShips(self, planet, ships):
 #         if not ships: return
 #         page = self._fetchPhp('index.php', page='buildings', mode='Flotte', cp=planet.code )
-#         form = ParseFile( page, self.lastFetchedUrl, backwards_compat=False )[-1]
+#         form = ParseFile( page.response, page.url, backwards_compat=False )[-1]
 #         for shipType, quantity in ships.iteritems():
 #             try:
 #                 controlName = "fmenge[%s]" % INGAME_TYPES_BY_NAME[shipType].code[-3:]
 #                 form[controlName] = str( quantity )
 #             except ControlNotFoundError:
 #                 raise BotError( shipType )
-#         reply = self._fetchForm( form )
+#         reply = self._fetchValidResponse(form.click())
 #         self.checkFleetQueue(planet, reply)
 
 ########################################################################################## 
     def getFleetSlots(self, player, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='fleet1').read()
+            page = self._fetchPhp('index.php', page='fleet1')
             
-        tree = etree.fromstring(page,etree.HTMLParser())
-        used, total = re.findall("(\d+)/(\d+)",tree.xpath("string(//*[@id='slots'])"))[0]
+        used, total = re.findall("(\d+)/(\d+)",page.etree.xpath("string(//*[@id='slots'])"))[0]
         player.totalFleetSlots = int(total)
         player.freeFleetSlots = int(total) - int(used)
 
 ########################################################################################## 
     def getEspionageReports(self):
-        page = self._fetchPhp('index.php', page='messages').read()
+        page = self._fetchPhp('index.php', page='messages')
         rawMessages = {}
-        for match in self.REGEXPS['messages.php'].finditer(page):
+        for match in self.REGEXPS['messages.php'].finditer(page.text):
             rawMessages[match.group('code')] = match.group(0) 
             
         reports = []              
@@ -657,13 +663,11 @@ class WebAdapter(object):
                 mission.fleet[shipType] = int(quantity)
 
             # 1st step: select fleet
-            page = self._fetchPhp('index.php', page='flotten1', mode='Flotte', cp=mission.sourcePlanet.code)
-            pageText = page.read()
-            page.seek(0)            
+            page = self._fetchPhp('index.php', page='fleet1') # TODO: management of various planets cp=mission.sourcePlanet.code)
 
-            self.getFleetSlots(player, pageText)
-            availableFleet = self.getAvailableFleet(mission.sourcePlanet, pageText)
-            form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]        
+            self.getFleetSlots(player, page)
+            self.getAvailableFleet(mission.sourcePlanet, page)
+            form = ParseFile(page.stringio, page.url, backwards_compat=False)[-1]        
 
             for shipType, requested in mission.fleet.iteritems():
                 available = mission.sourcePlanet.fleet.get(shipType, 0)
@@ -677,9 +681,9 @@ class WebAdapter(object):
 
             mySleep(3)
             # 2nd step: select destination and speed  
-            page = self._fetchForm(form)
+            page = self._fetchValidResponse(form.click())
 
-            forms = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)
+            forms = ParseFile(page.stringio, page.url, backwards_compat=False)
             if not forms or 'flotten3' not in forms[0].action:
                 continue
             form = forms[0]
@@ -692,8 +696,8 @@ class WebAdapter(object):
 
             mySleep(3)
             # 3rd step:  select mission and resources to carry
-            page = self._fetchForm(form)
-            form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
+            page = self._fetchValidResponse(form.click())
+            form = ParseFile(page.stringio, page.url, backwards_compat=False)[0]
             try:
                 form['order']      = [str(mission.missionType)]
             except ControlNotFoundError:
@@ -706,12 +710,12 @@ class WebAdapter(object):
 
             mySleep(3)
             # 4th and final step: check result
-            page = self._fetchForm(form).read()
-            if self.translations['fleetCouldNotBeSent'] in page:
+            page = self._fetchValidResponse(form.click())
+            if self.translations['fleetCouldNotBeSent'] in page.text:
                 continue
             
-            errors = self.REGEXPS['fleetSendError'].findall(page)
-            if len(errors) > 0 or 'class="success"' not in page:
+            errors = self.REGEXPS['fleetSendError'].findall(page.text)
+            if len(errors) > 0 or 'class="success"' not in page.text:
                 errors = str(errors)
                 if self.translations['fleetLimitReached'] in errors:
                     raise NoFreeSlotsError()
@@ -721,7 +725,7 @@ class WebAdapter(object):
                     raise FleetSendError(errors)
 
             resultPage = {}
-            for resultType, value in self.REGEXPS['fleetSendResult'].findall(page):
+            for resultType, value in self.REGEXPS['fleetSendResult'].findall(page.text):
                 resultPage[resultType] = value
 
             # fill remaining mission fields
@@ -759,7 +763,7 @@ class WebAdapter(object):
 ##########################################################################################
     def deleteMessages(self, messages):
         page = self._fetchPhp('index.php', page='messages')
-        form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[0]
+        form = ParseFile(page.stringio, page.url, backwards_compat=False)[0]
         for message in messages:
             checkBoxName = "delmes" + message.code
             try:
@@ -769,24 +773,23 @@ class WebAdapter(object):
                 if __debug__:
                     print >> sys.stderr, "Could not delete message " + str(message)
             
-        self._fetchForm(form)
+        self._fetchValidResponse(form.click())
 
 
 ########################################################################################## 
     def getStats(self, player, statsType, alreadyFetchedPage = None): # type can be: pts for points, flt for fleets or res for research
         if statsType != "pts" :
             page = self._fetchPhp('index.php', page='statistics')
-            form = ParseFile(page, self.lastFetchedUrl, backwards_compat=False)[-1]
+            form = ParseFile(page.stringio, page.url, backwards_compat=False)[-1]
             form['type'] = [statsType]
             form['start'] = ['[Own position]']
-            page = self._fetchForm(form)
-            page = page.read()
-            stats = self.REGEXPS['stats'].search(page)
+            page = self._fetchValidResponse(form.click())
+            stats = self.REGEXPS['stats'].search(page.text)
         else:   
             page = alreadyFetchedPage
             if not page:
-                page = self._fetchPhp('index.php', page='overview').read()
-            stats = self.REGEXPS['statsOverview'].search(page)
+                page = self._fetchPhp('index.php', page='overview')
+            stats = self.REGEXPS['statsOverview'].search(page.text)
 
         player.rank = int(stats.group(1).replace('.',''))
         player.points = int(stats.group(2).replace('.',''))     
@@ -805,21 +808,22 @@ class WebAdapter(object):
             inputQueue.put((galaxy,solarSystem,url))
        
         for dummy in range(1):
-            thread = ScanThread(inputQueue, outputQueue, self.opener, self.REGEXPS)
+            thread = ScanThread(inputQueue, outputQueue, self.opener)
             thread.start()
             threads.append(thread)
  
 
         found = []
-        while filter(threading.Thread.isAlive, threads):
+        while True:
             try:
-                output = outputQueue.get_nowait()
+                output = outputQueue.get(True,1)
                 if output not in found:
                     found.append(output)
                     yield output
-            except Empty: 
-                mySleep(2)
-        
+            except Empty:
+                if not filter(threading.Thread.isAlive, threads):
+                    break
+                
         for thread in threads:
             if thread.exception:
                 raise thread.exception  
@@ -828,17 +832,15 @@ class WebAdapter(object):
 ########################################################################################## 
 class ScanThread(threading.Thread):
     ''' Scans solar systems from inputQueue'''
-    def __init__(self, inputQueue, outputQueue, opener, regexps):
+    def __init__(self, inputQueue, outputQueue, opener):
         threading.Thread.__init__(self, name="GalaxyScanThread")
         self._inputQueue = inputQueue
         self._outputQueue = outputQueue
         self.opener = opener
-        self.REGEXPS = regexps
         self.exception = None
         
     def run(self):
         socket.setdefaulttimeout(20)   
-        parser = etree.HTMLParser()
         playersByName = {}
         error = False
         
@@ -846,31 +848,24 @@ class ScanThread(threading.Thread):
             try:
                 if not error:
                     galaxy, solarSystem, solarSystemUrl = self._inputQueue.get_nowait()
+
+                page = WebPage(self.opener.open(solarSystemUrl))
+                page.saveToDisk()
                 
-                response = self.opener.open(solarSystemUrl)
-                page = response.read()
-                tree = etree.fromstring(page,parser)
+                if __debug__: 
+                    print >>sys.stderr, "\t" + datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + page.url
+                    print >>sys.stderr, "\t\t Page length : " + str(len(page.text))
                 
-                if 'span class="error"' in page:
-                    print >>sys.stderr, page
+                if 'span class="error"' in page.text:
+                    print >>sys.stderr, page.text
                     raise BotError("Probably there is not enough deuterium on planet.")
-                elif 'error' in  response.geturl():
+                
+                if 'error' in  page.url:
                     error = True
                     continue
                 
-                if __debug__: 
-                    print >>sys.stderr, "\t " + datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + solarSystemUrl                
-                
-                page = page.replace("\n", "")
-
-                if __debug__: 
-                    print >>sys.stderr, "         Page length : %s" %(len(page))  
-                    if len(page) < 1000: 
-                        print >>sys.stderr, page
-
-                
                 foundPlanets = []
-                for row in   tree.xpath("//*[@id='galaxytable']//*[@class='row']"):
+                for row in page.etree.xpath("//*[@id='galaxytable']//*[@class='row']"):
                     # Absolutely ALL EnemyPlanet and EnemyPlayer objects of the bot are created here
                     
                     ownerName = row.xpath("string(*//*[@class='TTgalaxy'])").strip()
@@ -885,7 +880,7 @@ class ScanThread(threading.Thread):
                         playersByName[ownerName] = owner
                     owner.isInactive = row.xpath("string(*//*[@class='status'])").strip().lower() == "(i)"
                     
-                    planetNumber =     row.xpath("string(*[@class='position'])").strip()
+                    planetNumber =  int(row.xpath("string(*[@class='position'])").strip())
                     planet = EnemyPlanet(Coords(galaxy, solarSystem, planetNumber), owner)
                     planet.name =      row.xpath("string(*[@class='planetname'])").strip()
                     planet.hasMoon =   row.xpath("string(*[@class='moon'])").strip() != ""
@@ -894,9 +889,8 @@ class ScanThread(threading.Thread):
                     foundPlanets.append(planet)
                     
                 self._outputQueue.put((galaxy, solarSystem, foundPlanets, page))
-
-
                 error = False
+                
             except Empty:
                 break
             except BotError, e:

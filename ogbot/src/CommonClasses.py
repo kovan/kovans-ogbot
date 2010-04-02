@@ -343,7 +343,15 @@ class Plugin(object):
         pass
 
 class Struct(object):
-    def __init__(self, **entries): self.__dict__.update(entries)    
+    """ Helper generic struct """
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
+        
+    def __repr__(self):
+        s = ""
+        for key, value in self.__dict__.items():
+            s += key, "=", value, " "
+        return s
         
 class Enum(object):
     @classmethod
