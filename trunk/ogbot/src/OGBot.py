@@ -401,7 +401,10 @@ class Bot(object):
             serverTime = self.web.getServerTime()                        
             
             for source, target in remainingPlanets[:]:
-                if (target.espionageHistory and target.getBestEspionageReport().hasAllNeededInfo(upToDetailLevel) and not target.espionageHistory[-1].hasExpired(serverTime)) or target not in self.inactivePlanets:
+                if (target.espionageHistory \
+                and target.getBestEspionageReport().hasAllNeededInfo(upToDetailLevel) \
+                and not target.espionageHistory[-1].hasExpired(serverTime)) \
+                or target not in self.inactivePlanets:
                     remainingPlanets.remove((source, target))
     
             if not remainingPlanets:
@@ -621,7 +624,7 @@ class Bot(object):
         file = open(path, 'wb')
         pickler = cPickle.Pickler(file, 2)
         for i in [self.inactivePlanets, self.reachableSolarSystems, self.lastInactiveScanTime, 
-                  self.config.webpage, self.config.universe, self.config.username]:
+                  self.config.webpage, self.config.username]:
                   pickler.dump(i)
         file.close()
 
@@ -639,8 +642,7 @@ class Bot(object):
             storedUniverse = u.load()
             file.close()
                  
-            if storedWebpage != self.config.webpage \
-            or storedUniverse != self.config.universe:
+            if storedWebpage != self.config.webpage:
                 raise BotError() # if any of those has changed, invalidate stored espionages
             
             # fix to reset old versions's botdata:
