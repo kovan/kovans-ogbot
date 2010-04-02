@@ -25,6 +25,7 @@ import socket
 import urllib2
 import copy
 import sys
+import traceback
 import httplib
 import warnings
 import cookielib
@@ -124,7 +125,7 @@ class WebAdapter(object):
         # set up a class to handle http cookies, passes that to http processor
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
         # set us a class to keep connections open, passas that to the http processor
-        self.keepAliveOpener = urllib2.build_opener(keepalive.HTTPHandler())        
+        self.keepAliveOpener = urllib2.build_opener(keepalive.HTTPHandler(),urllib2.HTTPCookieProcessor())
         
         if self.config.proxy:
             proxyHandler = urllib2.ProxyHandler({"http":"http://"+self.config.proxy})
@@ -490,17 +491,17 @@ class WebAdapter(object):
         page = self._fetchPhp('index.php', page='research')
         tree = etree.parse(page,etree.HTMLParser())
 
-        technologies = [t for t in INGAME_TYPES if isinstance(type,Research)]
+        technologies = [t for t in INGAME_TYPES if isinstance(t,Research)]
         for technology in technologies:
-            import pdb; pdb.set_trace()
 
-            level = int(tree.xpath("//*[@class='research%s']//*[@class='level']" % technology.code)[0].text)
+
+            level = int(tree.xpath("//*[@class='research%s']//*[@class='level']/text()" % technology.code)[0])
             player.researchLevels[technology.name] = level
                 
-                
-        if 'impulseDrive'    not in player.researchLevels \
-        or 'combustionDrive' not in player.researchLevels:
-            raise BotFatalError("Not enough technologies researched to run the bot")
+
+        # if player.researchLevels['impulseDrive'] == 0 or \
+        #    player.researchLevels['combustionDrive'] == 0:
+        #     raise BotFatalError("Not enough technologies researched to run the bot")
                 
 
 ########################################################################################## 
@@ -800,12 +801,12 @@ class WebAdapter(object):
         outputQueue = Queue()
         for galaxy, solarSystem in solarSystems:
             params = {'session':self.session, 'galaxy':galaxy, 'system':solarSystem }
-            url = "http://%s/game/index.php?page=galaxyContent&%s" % (self.config.webpage, urllib.urlencode(params))        
-            inputQueue.put(url)
+            url = "http://%s/game/index.php?page=galaxyContent&ajax=1&%s" % (self.config.webpage, urllib.urlencode(params))
+            inputQueue.put((galaxy,solarSystem,url))
        
         for dummy in range(1):
-            thread = ScanThread(inputQueue, outputQueue, self.keepAliveOpener, self.REGEXPS)
-            thread.start() 
+            thread = ScanThread(inputQueue, outputQueue, self.opener, self.REGEXPS)
+            thread.run()
             threads.append(thread)
  
 
@@ -837,19 +838,18 @@ class ScanThread(threading.Thread):
         
     def run(self):
         socket.setdefaulttimeout(20)   
-        parser = HTMLParser()
+        parser = etree.HTMLParser()
         playersByName = {}
         error = False
         
         while True:
             try:
                 if not error:
-                    solarSystemUrl = self._inputQueue.get_nowait()
+                    galaxy, solarSystem, solarSystemUrl = self._inputQueue.get_nowait()
                 
                 response = self.opener.open(solarSystemUrl)
-                tree = etree.parse(page,parser)
-                
                 page = response.read()
+                tree = etree.fromstring(page,parser)
                 
                 if 'span class="error"' in page:
                     print >>sys.stderr, page
@@ -859,9 +859,8 @@ class ScanThread(threading.Thread):
                     continue
                 
                 if __debug__: 
-                    print >>sys.stderr, "\t " + datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + url                
+                    print >>sys.stderr, "\t " + datetime.now().strftime("%m-%d, %H:%M:%S") + " Fetched " + solarSystemUrl                
                 
-                htmlSource = page
                 page = page.replace("\n", "")
 
                 if __debug__: 
@@ -869,15 +868,15 @@ class ScanThread(threading.Thread):
                     if len(page) < 1000: 
                         print >>sys.stderr, page
 
-                galaxy =      tree.xpath("//*[@id='system_input']/@value")[0]
-                solarSystem = tree.xpath("//*[@id='galaxy_input']/@value")[0]
                 
                 foundPlanets = []
-                for row in  tree.xpath("//*[@id='galaxytable']//*[@class='row']"):
+                for row in   tree.xpath("//*[@id='galaxytable']//*[@class='row']"):
                     # Absolutely ALL EnemyPlanet and EnemyPlayer objects of the bot are created here
                     
                     ownerName =     row.xpath("string(//*[@class='TTgalaxy'])")[0].strip()
                     ownerAlliance = row.xpath("string(//*[@class='allytag'])")[0].strip()
+                    if not ownerName: # empty position
+                        continue
                     # we want player objects to be unique:
                     owner = playersByName.get(ownerName)
                     if not owner:
@@ -893,7 +892,7 @@ class ScanThread(threading.Thread):
                     
                     foundPlanets.append(planet)
                     
-                self._outputQueue.put((galaxy, solarSystem, foundPlanets, htmlSource))
+                self._outputQueue.put((galaxy, solarSystem, foundPlanets, page))
 
 
                 error = False
@@ -905,7 +904,9 @@ class ScanThread(threading.Thread):
             except Exception, e:
                 error = True
                 if __debug__: 
-                    print >>sys.stderr, e
+                    print >>sys.stderr, repr(e)
+                    traceback.print_exc()
+                    
 
 
 ########################################################################################## 
