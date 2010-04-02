@@ -13,21 +13,17 @@
 #      *                                                                       *
 #      *************************************************************************
 #
-import codecs
-
 import re
-import shelve, bsddb,anydbm,dbhash,dumbdbm
+import shelve
 import copy
 import cPickle
 import logging
 import ConfigParser
-import sys
-import math
 import os.path
 import random
 import threading
 from time import strptime,sleep
-from datetime import *
+from datetime import time, datetime
 
 
 class BotError(Exception): pass
@@ -273,7 +269,7 @@ class Translations(dict):
             parser = ConfigParser.SafeConfigParser()
             parser.optionxform = str # prevent ini parser from converting names to lowercase           
             try:
-                #file = codecs.open('languages/'+fileName+extension, "r", "utf-8" ) # language files are codified in UTF-8
+                #file = codecs.open('languages/'+fileName+extension, "r", "utf-8" )
                 parser.read('languages/'+fileName+extension)
                 translation = {}
                 for section in parser.sections():

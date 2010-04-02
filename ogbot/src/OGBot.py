@@ -31,9 +31,7 @@ from Queue import *
 import copy
 import shutil
 import cPickle
-import urllib2
 import random
-import warnings
 import math
 from datetime import *
 from optparse import OptionParser
@@ -44,7 +42,6 @@ from CommonClasses import *
 from Constants import *
 from GameEntities import *
 from WebAdapter import WebAdapter
-
 
 class Bot(object):
     """Contains the bot logic, independent from the communications with the server.
@@ -130,6 +127,10 @@ class Bot(object):
         self.eventMgr.activityMsg("Contacting server...")
         self.web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue, self.gui)
         self.web.doLogin()
+        ogameVersion = self.web.serverData.version
+        if ogameVersion > SUPPORTED_OGAME_VERSION:
+            self.eventMgr.activityMsg("WARNING: the bot was designed for an older version of OGame. Some or all features might not work"
+                                      "(Designed for v%s, but v%s found" % ( SUPPORTED_OGAME_VERSION, ogameVersion))
         self.web.updatePlayerData(self.ownPlayer)
 
         largeCargos = INGAME_TYPES_BY_NAME['largeCargo']
@@ -190,11 +191,11 @@ class Bot(object):
         rentabilities = self.generateRentabilityTable(self.inactivePlanets)
         self.eventMgr.simulationsUpdate(rentabilities)                
 
-        print "main loop"
         # main loop:
+
         while True:
 
-            serverTime = self.web.getServerTime()
+            serverTime = self.web.serverData.currentTime
 
             if self.lastInactiveScanTime.date() != serverTime.date() and serverTime.time() >=  self.config.inactivesAppearanceTime:
                 newInactives = self.scanGalaxies()
@@ -247,7 +248,7 @@ class Bot(object):
                 if __debug__: print >>sys.stderr, "New inactive planet found: " + str(newPlanet)
                 newInactives.append(newPlanet)
 
-        self.lastInactiveScanTime = self.web.getServerTime()
+        self.lastInactiveScanTime = self.web.serverData.currentTime
         self.inactivePlanets = allInactives
         self.inactivePlanetsByCoords = dict([(str(p.coords), p) for p in self.inactivePlanets])              
         self.updateSourcePlanetsDict()
@@ -265,8 +266,8 @@ class Bot(object):
         planetsWithoutShips = {}
         notArrivedAttacks = []
         
-        while self.web.getServerTime().time() < self.config.preMidnightPauseTime:
-            serverTime = self.web.getServerTime()      
+        while self.web.serverData.currentTime.time() < self.config.preMidnightPauseTime:
+            serverTime = self.web.serverData.currentTime      
             self.checkIfEspionageReportsArrived()                  
             rentabilities = self.generateRentabilityTable(self.inactivePlanets)
             self.eventMgr.simulationsUpdate(rentabilities)
@@ -340,7 +341,7 @@ class Bot(object):
         self.spyPlanets(newInactives, EspionageReport.DetailLevels.defense)
         newInactives = [(x.sourcePlanet, x.targetPlanet) for x in rentabilities]
         while True:
-            serverTime = self.web.getServerTime()            
+            serverTime = self.web.serverData.currentTime            
             self._checkThreadQueue()
             rentabilities = self.generateRentabilityTable([x[1] for x in newInactives])
             self.eventMgr.simulationsUpdate(rentabilities)
@@ -354,7 +355,7 @@ class Bot(object):
                 if serverTime - checkedTime > timedelta(minutes=5):
                     del planetsWithoutShips[planet] 
                     
-            try: selectedAttack = (x for x in rentabilities if x.sourcePlanet not in planetsWithoutShips).next()
+            try: selectedAttack = [x for x in rentabilities if x.sourcePlanet not in planetsWithoutShips][0]
             except StopIteration:
                 self.eventMgr.statusMsg("Not enough ships")
                 mySleep(1)
@@ -398,7 +399,7 @@ class Bot(object):
             self._checkThreadQueue()            
             self.checkIfEspionageReportsArrived()
 
-            serverTime = self.web.getServerTime()                        
+            serverTime = self.web.serverData.currentTime                        
             
             for source, target in remainingPlanets[:]:
                 if (target.espionageHistory \
@@ -525,7 +526,7 @@ class Bot(object):
                     planet.espionageHistory.append(report)
                     arrivedReports.append(report)
                     self._planetDb.write(planet)
-                elif self.web.getServerTime() > espionage.arrivalTime + timedelta(minutes=2):
+                elif self.web.serverData.currentTime > espionage.arrivalTime + timedelta(minutes=2):
                     # probably due to buggy espionage report (containing only N;) or translation errors.
                     del self._notArrivedEspionages[planet]
                     try: self.inactivePlanets.remove(planet)
