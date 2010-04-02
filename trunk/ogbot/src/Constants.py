@@ -15,6 +15,8 @@
 #
 from GameEntities import Ship, Defense, Building, Research, Resources
 
+SUPPORTED_OGAME_VERSION = 1.1
+
 FILE_PATHS = {
     'config'       : 'files/config/config.ini', 
     'botstate'     : 'files/botdata/bot.state.dat', 
