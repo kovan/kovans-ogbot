@@ -495,7 +495,11 @@ class WebAdapter(object):
 
         technologies = [t for t in INGAME_TYPES if isinstance(t,Research)]
         for technology in technologies:
-            level = int(page.etree.xpath("//*[@class='research%s']//*[@class='level']/text()" % technology.code)[0])
+            found =     page.etree.xpath("//*[@class='research%s']//*[@class='level']/text()" % technology.code)
+            if not found: # it is being built, xpath changes:
+                found = page.etree.xpath("//*[@class='b_research%s']//*[@class='level']/text()" % technology.code)
+
+            level = int(found[0])
             player.researchLevels[technology.name] = level
 
         # TODO: uncomment this:
@@ -568,6 +572,10 @@ class WebAdapter(object):
         page = alreadyFetchedPage
         if not page:
             page = self._fetchPhp('index.php', page='fleet1') # TODO: management of various planets. cp=planet.code).read()
+
+        if page.etree.xpath("//div[@id='warning']"): # no fleet
+            return
+        
         planet.fleet = {}
         for code, quantity in self.REGEXPS['planet']['availableFleet'].findall(page.text):
             planet.fleet[INGAME_TYPES_BY_CODE[code].name] = int(quantity.replace('.', ''))
