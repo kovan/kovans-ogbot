@@ -526,7 +526,7 @@ class MainWindow(baseclass,formclass):
                     minesStr = "M: %s, C: %s D: %s" % (report.buildings.get('metalMine',0),report.buildings.get('crystalMine',0),report.buildings.get('deuteriumSynthesizer',0))
                      
                  
-            treeItem = MyTreeWidgetItem(["%.2f" % item.rentability,str(item.targetPlanet.coords),item.targetPlanet.name,item.targetPlanet.owner,item.targetPlanet.alliance,str(simulatedResources),defendedStr,minesStr,str(item.sourcePlanet),lastSpiedStr])
+            treeItem = MyTreeWidgetItem(["%.2f" % item.rentability,str(item.targetPlanet.coords),item.targetPlanet.name,item.targetPlanet.owner.name,item.targetPlanet.owner.alliance,str(simulatedResources),defendedStr,minesStr,str(item.sourcePlanet),lastSpiedStr])
             if item.targetPlanet.espionageHistory:
                 treeItem.setToolTip(6,str(report.fleet) + str(report.defense))
                 treeItem.setToolTip(7,str(report.buildings) + str(report.research))
