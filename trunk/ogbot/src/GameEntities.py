@@ -29,12 +29,15 @@ class IngameType(object):
         self.cost = cost
         
     def __repr__(self):
-        return self.name    
+        return self.name
     
 class Ship(IngameType):
-    def __init__(self, name, code, cost, capacity, consumption):
+    military = 0
+    civil = 1
+    def __init__(self, name, type, code, cost, capacity, consumption):
         super(Ship, self).__init__(name, code, cost)
-        self.capacity = capacity         
+        self.type = type
+        self.capacity = capacity
         self.consumption = consumption
 
 class Building(IngameType):
@@ -186,12 +189,9 @@ class Player(object):
 class OwnPlayer(Player):
     def __init__(self):
         super(OwnPlayer, self).__init__()
-        self.raidingColonies = []
         self.upgradeToRaid = []
         self.upgradingColonies = []
         self.attack = []
-        self.freeFleetSlots = 0
-        self.totalFleetSlots = 0
         self.research = {}
         self.researchLevels = {}
 
@@ -207,7 +207,6 @@ class Planet(object):
         self.coords = coords
         self.owner = owner
         self.name = name
-        owner.colonies.append(self)
         
     def __repr__(self):
         return self.name + " " + str(self.coords)
