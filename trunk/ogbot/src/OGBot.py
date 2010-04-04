@@ -136,14 +136,11 @@ class Bot(object):
             
         self.web.updatePlayerData(self.ownPlayer)
 
-        largeCargos = INGAME_TYPES_BY_NAME['largeCargo']
-        smallCargos = INGAME_TYPES_BY_NAME['smallCargo']
-
-        largeCargos.speed =  int(7500 * (1 + (self.ownPlayer.researchLevels['combustionDrive'] * 0.1)))
+        INGAME_TYPES_BY_NAME['largeCargo'].speed =  int(7500 * (1 + (self.ownPlayer.researchLevels['combustionDrive'] * 0.1)))
         if self.ownPlayer.researchLevels['impulseDrive'] < 5:
-            smallCargos.speed =  int(5000  * (1 + (self.ownPlayer.researchLevels['combustionDrive'] * 0.1)))
+            INGAME_TYPES_BY_NAME['smallCargo'].speed =  int(5000  * (1 + (self.ownPlayer.researchLevels['combustionDrive'] * 0.1)))
         else:
-            smallCargos.speed =  int(10000 * (1 + (self.ownPlayer.researchLevels['impulseDrive'] * 0.2)))            
+            INGAME_TYPES_BY_NAME['smallCargo'].speed =  int(10000 * (1 + (self.ownPlayer.researchLevels['impulseDrive'] * 0.2)))            
 
         ownedCoords = [repr(planet.coords) for planet in self.ownPlayer.colonies]
         for coords in self.config.sourcePlanets + [self.config.deuteriumSourcePlanet]:
