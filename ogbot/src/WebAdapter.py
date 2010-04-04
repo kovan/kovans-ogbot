@@ -190,7 +190,7 @@ class WebAdapter(object):
 #                if self.translations['dbProblem'] in page.text or self.translations['untilNextTime'] in page.text or "Grund 5" in page.text:
                 if self.translations['dbProblem'] in page.text \
                         or "Grund 5" in page.text\
-                        or re.search(r"^<noscript>document.location.href='http://.*?'</noscript>$", page.text):
+                        or re.search(r"^<(no)?script>document.location.href='http://.*?'</(no)?script>$", page.text):
                     oldSession = self.session
                     self.doLogin()
                     url =  request.get_full_url().replace(oldSession, self.session)
@@ -362,7 +362,7 @@ class WebAdapter(object):
 
 ########################################################################################## 
     def updatePlayerData(self, player):
-        overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0')
+        overview = self._fetchPhp('index.php', page='overview')
         self.checkForAttack(player, overview)
         self.getMyPlanets(player, overview)
         # TODO: fix: self.getStats(player, "pts", overview)
@@ -603,8 +603,6 @@ class WebAdapter(object):
             
         reports = []              
         for code, rawMessage in rawMessages.items():
-#            if 'class="combatreport"' in rawMessage:
-#                [2:444:6] (A:8.000)
             if 'class="espionagereport"' not in rawMessage:
                 continue
             
@@ -655,7 +653,7 @@ class WebAdapter(object):
                 if available == 0 or (abortIfNotEnough and available  < requested):
                     raise NotEnoughShipsError(mission.sourcePlanet.fleet, {shipType:requested}, available)
                 shipCode = INGAME_TYPES_BY_NAME[shipType].code
-                form["am"+shipCode] = str(requested)
+                form["am" + str(shipCode)] = str(requested)
 
             if freeFleetSlots <= int(fleetSlotsToReserve):
                 raise NoFreeSlotsError()
@@ -665,22 +663,25 @@ class WebAdapter(object):
             page = self._fetchValidResponse(form.click())
 
             forms = ParseFile(page.stringio, page.url, backwards_compat=False)
-            if not forms or 'flotten3' not in forms[0].action:
-                continue
+            if not forms or 'fleet3' not in forms[0].action:
+                continue # unkown error, retry
+            
             form = forms[0]
             destCoords = mission.targetPlanet.coords         
             form['galaxy']    = str(destCoords.galaxy)
             form['system']    = str(destCoords.solarSystem)
-            form['planet']    = str(destCoords.planet)
-            form['planettype']= [str(destCoords.coordsType)]
-            form['speed']      = [str(mission.speedPercentage / 10)]
+            form['position']  = str(destCoords.planet)
+            form.find_control('type').readonly = False
+            form['type']      = str(destCoords.coordsType)
+            form['speed']     = [str(mission.speedPercentage / 10)]
 
             mySleep(3)
             # 3rd step:  select mission and resources to carry
             page = self._fetchValidResponse(form.click())
             form = ParseFile(page.stringio, page.url, backwards_compat=False)[0]
             try:
-                form['order']      = [str(mission.missionType)]
+                form.find_control('mission').readonly = False
+                form['mission'] = str(mission.missionType)
             except ControlNotFoundError:
                 continue
 
@@ -689,11 +690,14 @@ class WebAdapter(object):
             form['resource2'] = str(resources.crystal)
             form['resource3'] = str(resources.deuterium)                   
 
+            hours, mins, secs = re.findall("(\d+):(\d+):(\d+)", page.etree.xpath("string(//*[@id='duration'])"))[0]
+            flightTime = timedelta(0, int(secs), 0, 0, int(mins), int(hours))
+
             mySleep(3)
             # 4th and final step: check result
             page = self._fetchValidResponse(form.click())
             if self.translations['fleetCouldNotBeSent'] in page.text:
-                continue
+                continue # unexpected error, retry
             
             errors = self.REGEXPS['fleetSendError'].findall(page.text)
             if len(errors) > 0 or 'class="success"' not in page.text:
@@ -709,34 +713,20 @@ class WebAdapter(object):
             for resultType, value in self.REGEXPS['fleetSendResult'].findall(page.text):
                 resultPage[resultType] = value
 
-            # fill remaining mission fields
-            arrivalTime = parseTime(resultPage[self.translations['arrivalTime']])
-            returnTime = parseTime(resultPage[self.translations['returnTime']])
-            mission.setTimes(arrivalTime, returnTime)
-            mission.distance =  int(resultPage[self.translations['distance']].replace('.', ''))
-            mission.consumption = int(resultPage[self.translations['consumption']].replace('.', ''))
-
-            #check simulation formulas are working correctly:
-#               assert mission.distance == mission.sourcePlanet.coords.distanceTo(mission.targetPlanet.coords)
-#               flightTime = mission.sourcePlanet.coords.flightTimeTo(mission.targetPlanet.coords, int(resultPage[self.translations['speed']].replace('.','')))
-#               margin = timedelta(seconds = 3)
-#               assert mission.flightTime > flightTime - margin and mission.flightTime < flightTime + margin
-#               check mission was sent as expected:
-#               assert str(mission.sourcePlanet.coords) in resultPage[self.translations['start']]
-#               assert str(mission.targetPlanet.coords) in resultPage[self.translations['target']] 
-
+            mission.launched(self.serverData.currentTime, flightTime)
+            
             # check the requested fleet was sent intact:
-            sentFleet = {}
-            for fullName, value in resultPage.items():
-                    name = self.translationsByLocalText.get(fullName)
-                    if name is None:
-                        continue
-                    if name in INGAME_TYPES_BY_NAME.keys():
-                        sentFleet[name] = int(value.replace('.', ''))
+            # sentFleet = {}
+            # for fullName, value in resultPage.items():
+            #         name = self.translationsByLocalText.get(fullName)
+            #         if name is None:
+            #             continue
+            #         if name in INGAME_TYPES_BY_NAME.keys():
+            #             sentFleet[name] = int(value.replace('.', ''))
 
-            if mission.fleet != sentFleet:
-                    warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % (mission.fleet, sentFleet))
-                    mission.fleet = sentFleet
+            # if mission.fleet != sentFleet:
+            #         warnings.warn("Not all requested fleet was sent. Requested: %s. Sent: %s" % (mission.fleet, sentFleet))
+            #         mission.fleet = sentFleet
 
             break
 
@@ -748,7 +738,7 @@ class WebAdapter(object):
         for message in messages:
             checkBoxName = "delmes" + message.code
             try:
-                form[checkBoxName]      = [None] # actually this marks the checbox as checked (!!)
+                form[checkBoxName]     = [None] # actually this marks the checbox as checked (!!)
                 form["deletemessages"] = ["deletemarked"]
             except ControlNotFoundError:
                 if __debug__:
