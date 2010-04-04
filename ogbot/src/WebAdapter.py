@@ -46,42 +46,6 @@ from GameEntities import *
 
 
 
-"""Ability to 
-tested? description                     |name
-
-        updatePlayer                    |updatePlayerData
-        updatePlanet                    |updatePlanetData
-x       check for attacks               |checkForAttack
-X       check resources                 |checkResourcesOnPlanet
-        check building fields           |checkBuildingFields
-X       get building levels             |getBuildingLevels
-X         find upgrade end time         |_checkEndTimeOfBuildingUpgrade
-X         build building                |upgradeBuilding
-X       check research levels           |getResearchLevels
-X         find upgrade end time         |_checkEndTimeOfResearchUpgrade
-X         upgrade research              |upgradeResearch
-X       check defense on planet         |getDefense
-X         check defense queue           |checkDefenseQueue
-X         upgrade defense on planet     |buildDefense
-X       check fleet on planet           |getAvailableFleet
-X         check fleet queue             |checkFleetQueue
-X         check total fleetslots        |getTotalFleetSlots
-X         check fleetslots available    |getFreeFleetSlots
-X         build ships                   |buildShips
-        scan galaxy                     |getSolarSystems
-X       parse espionage reports         |getEspionageReports
-X       send missions                   |launchMission
-        
-
-
-        
-X       login                           |doLogin
-X       switch planet                   |goToPlanet
-X       get planet list                 |getMyPlanets
-        get stats                       |getStats
-X       delete Messages                 |deleteMessages
-"""
-
 
 class WebPage(object):
     parser = etree.HTMLParser()
@@ -106,6 +70,8 @@ class WebPage(object):
         f.write(self.text.replace('<script', '<noscript').replace('</script>', '</noscript>').replace('http-equiv="refresh"', 'http-equiv="kovan-rulez"'))
         f.close()
 
+    def __repr__(self):
+        return self.url
 
 class ServerData(object):
     def __init__(self):
@@ -174,9 +140,9 @@ class WebAdapter(object):
         url = '.'.join(self.config.webpage.split('.')[1:])
         page = self._fetchValidResponse("http://" + url, True)
 
-        # check configured language equals ogame server language
         self.serverData.language = re.findall(r'<meta name="language" content="(\w+)"', page.text)[0]
-        try: self.translations = allTranslations[self.serverData.language]
+        try:
+            self.translations = allTranslations[self.serverData.language]
         except KeyError:
             raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage)
 
@@ -221,7 +187,10 @@ class WebAdapter(object):
                     valid = False
                     
                 #TODO \ FIX THIS if this fails then just comment it ???
-                if self.translations['dbProblem'] in page.text or self.translations['untilNextTime'] in page.text or "Grund 5" in page.text:
+#                if self.translations['dbProblem'] in page.text or self.translations['untilNextTime'] in page.text or "Grund 5" in page.text:
+                if self.translations['dbProblem'] in page.text \
+                        or "Grund 5" in page.text\
+                        or re.search(r"^<noscript>document.location.href='http://.*?'</noscript>$", page.text):
                     oldSession = self.session
                     self.doLogin()
                     url =  request.get_full_url().replace(oldSession, self.session)
@@ -244,7 +213,7 @@ class WebAdapter(object):
                     valid = False
                 else: raise
             if not valid: 
-                mySleep(10)
+                mySleep(1)
                 
         return page
     
@@ -341,7 +310,6 @@ class WebAdapter(object):
             },
             'planet':
             {
-                'availableFleet':re.compile(r'name="max(?P<type>ship[0-9]{3})" value="(?P<quantity>[-0-9.]+)"', re.I), 
                 'buildingLevels':re.compile(r">(?P<buildingName>[^<]+)</a></a>\s*?\(level\s*(?P<level>[0-9]+)\)<br>",re.I|re.LOCALE),   
                 'buildingFields':re.compile(r">([0-9]+)[\s]*</a>.*?>([0-9]+)[\s]*</a>[\s]*%s" %(translations['fields']),re.I),
                 'currentlyUpgradingBuilding':re.compile(r'pp=\'([0-9]+)\';', re.I),
@@ -371,21 +339,22 @@ class WebAdapter(object):
 
         page = alreadyFetchedPage
         if not page:
-            page = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0')
-        myPlanets = []
-        
+            page = self._fetchPhp('index.php', page='overview')
+            
+        player.colonies = []
         planetNames  = page.etree.xpath("//*[@class='planet-name']")
         planetCoords = page.etree.xpath("//*[@class='planet-koords']")
         for name, coord, in zip(planetNames, planetCoords):
             coords = Coords(coord.text)
-            for planet in myPlanets:
+            for planet in player.colonies:
                 if planet.coords == coords: # we found a moon for this planet
                     coords.coordsType = Coords.Types.moon
-            planet = OwnPlanet(coords, player, name.text)
+            player.colonies.append(OwnPlanet(coords, player, name.text))
             
 
 
-########################################################################################## 
+##########################################################################################
+# r371: function unused            
     def updateAllData(self, player):
         self.updatePlayerData(player)
         for planet in player.colonies:
@@ -394,7 +363,6 @@ class WebAdapter(object):
 ########################################################################################## 
     def updatePlayerData(self, player):
         overview = self._fetchPhp('index.php', page='overview', mode='', gid='', messageziel='', re='0')
-        self.getFleetSlots(player)
         self.checkForAttack(player, overview)
         self.getMyPlanets(player, overview)
         # TODO: fix: self.getStats(player, "pts", overview)
@@ -481,7 +449,7 @@ class WebAdapter(object):
     
 
 ########################################################################################## 
-    def getResearchLevels(self, player):
+    def getResearchLevels(self, player, alreadyFetchedPage = None):
 
         # TODO: make automatic research work:
         # for planet in planetList:
@@ -490,8 +458,10 @@ class WebAdapter(object):
         #     player.research['CompletionTime'] = self._checkEndTimeOfResearchUpgrade(planet, page)
         #     for fullName, level in self.REGEXPS['researchLevels'].findall(page):
         #         player.research[self.translationsByLocalText[fullName]] = int(level)
-        
-        page = self._fetchPhp('index.php', page='research')
+
+        page = alreadyFetchedPage
+        if not page:
+            page = self._fetchPhp('index.php', page='research')
 
         technologies = [t for t in INGAME_TYPES if isinstance(t,Research)]
         for technology in technologies:
@@ -568,17 +538,22 @@ class WebAdapter(object):
         self.checkDefenseQueue(planet, reply)
 
 ########################################################################################## 
-    def getAvailableFleet(self, planet, alreadyFetchedPage = None):    
+    def getAvailableFleet(self, alreadyFetchedPage = None):    
         page = alreadyFetchedPage
         if not page:
             page = self._fetchPhp('index.php', page='fleet1') # TODO: management of various planets. cp=planet.code).read()
 
         if page.etree.xpath("//div[@id='warning']"): # no fleet
             return
-        
-        planet.fleet = {}
-        for code, quantity in self.REGEXPS['planet']['availableFleet'].findall(page.text):
-            planet.fleet[INGAME_TYPES_BY_CODE[code].name] = int(quantity.replace('.', ''))
+
+        fleet = {}
+        for ship in [t for t in INGAME_TYPES if isinstance(t,Ship)]:
+            if ship.name == 'solarSatellite': # these don't count as fleet, and don't appear in the page
+                continue
+            quantity = page.etree.xpath("string(//*[@id='button%s']//*[@class='level']/text())" % ship.code)
+            fleet[INGAME_TYPES_BY_CODE[ship.code].name] = int(quantity.replace('.', ''))
+            
+        return fleet
 
 
 # ########################################################################################## 
@@ -606,14 +581,18 @@ class WebAdapter(object):
 #         self.checkFleetQueue(planet, reply)
 
 ########################################################################################## 
-    def getFleetSlots(self, player, alreadyFetchedPage = None):
+    def getFreeFleetSlots(self, player, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
             page = self._fetchPhp('index.php', page='fleet1')
             
         used, total = re.findall("(\d+)/(\d+)",page.etree.xpath("string(//*[@id='slots'])"))[0]
-        player.totalFleetSlots = int(total)
-        player.freeFleetSlots = int(total) - int(used)
+
+        #TODO:
+        # if "admiral_ikon.gif" in page:
+        #     maxFleets += 2
+        
+        return int(total) - int(used)
 
 ########################################################################################## 
     def getEspionageReports(self):
@@ -657,7 +636,7 @@ class WebAdapter(object):
 
    
 ##########################################################################################         
-    def launchMission(self, player, mission, abortIfNotEnough = True, fleetSlotsToReserve = 0):
+    def launchMission(self, mission, abortIfNotEnough = True, fleetSlotsToReserve = 0):
 
         while True:
             # assure cuantities are integers
@@ -667,18 +646,18 @@ class WebAdapter(object):
             # 1st step: select fleet
             page = self._fetchPhp('index.php', page='fleet1') # TODO: management of various planets cp=mission.sourcePlanet.code)
 
-            self.getFleetSlots(player, page)
-            self.getAvailableFleet(mission.sourcePlanet, page)
+            freeFleetSlots = self.getFreeFleetSlots(page)
+            availableFleet = self.getAvailableFleet(page)
             form = ParseFile(page.stringio, page.url, backwards_compat=False)[-1]        
 
             for shipType, requested in mission.fleet.iteritems():
-                available = mission.sourcePlanet.fleet.get(shipType, 0)
+                available = availableFleet.get(shipType, 0)
                 if available == 0 or (abortIfNotEnough and available  < requested):
                     raise NotEnoughShipsError(mission.sourcePlanet.fleet, {shipType:requested}, available)
                 shipCode = INGAME_TYPES_BY_NAME[shipType].code
-                form[shipCode] = str(requested)
+                form["am"+shipCode] = str(requested)
 
-            if player.freeFleetSlots <= int(fleetSlotsToReserve):
+            if freeFleetSlots <= int(fleetSlotsToReserve):
                 raise NoFreeSlotsError()
 
             mySleep(3)
@@ -896,7 +875,9 @@ class ScanThread(threading.Thread):
                     planet.hasMoon =   row.xpath("string(*[@class='moon'])").strip() != ""
                     planet.hasDebris = row.xpath("string(*[@class='debris'])").strip() != ""
                     
+                    owner.colonies.append(planet)                    
                     foundPlanets.append(planet)
+
                     
                 self._outputQueue.put((galaxy, solarSystem, foundPlanets, page))
                 error = False

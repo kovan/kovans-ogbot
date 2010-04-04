@@ -39,7 +39,7 @@ class NotEnoughShipsError (FleetSendError):
         self.requested = requested
         self.available = available
     def __str__(self):
-        return 'Requested: %s. Available: %s' %(self.requested,self.available)
+        return 'Requested: %s. Available: %s' %(self.requested,self.available)
     
 
 
@@ -194,7 +194,6 @@ class BotConfiguration (Configuration):
         super(BotConfiguration, self).loadDefaults() 
         self['username'] = ''
         self['password'] = ''
-        self['waitBetweenAttackChecks'] = 45
         self['webpage'] = 'uni1.ogame.org'
         self['attackRadius'] = 10
         self['slotsToReserve'] = 0
@@ -211,6 +210,7 @@ class BotConfiguration (Configuration):
         self['inactivesAppearanceTime'] = '0:06:00'        
         self['deuteriumSourcePlanet'] = ''
         self['maxProbes'] = 15  
+        self['waitBetweenAttackChecks'] = 45
         self['fleetPoint'] = '[{}]'
         self['buildingPoint'] = '[{}]'      
         self['defensePoint'] = '[{}]'
