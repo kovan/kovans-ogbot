@@ -206,7 +206,7 @@ class Bot(object):
 
             if self.lastInactiveScanTime.date() != serverTime.date() and serverTime.time() >=  self.config.inactivesAppearanceTime:
                 newInactives = self.scanGalaxies()
-                if serverTime.time() < datetime.time(3, 30):#(datetime.combine(serverTime.date(),self.config.inactivesAppearanceTime) + datetime.timedelta(hours=3)).time():
+                if serverTime.time() < datetime.time(3, 30):
                     self.rushMode(newInactives.values())
                 self.spyPlanets(self.inactivePlanets, EspionageReport.DetailLevels.buildings) 
             else:
@@ -520,7 +520,9 @@ class Bot(object):
     def checkIfEspionageReportsArrived(self):
         arrivedReports = []
         if self._notArrivedEspionages:
-            displayedReports = self.web.getEspionageReports()
+            #displayedReports = self.web.getEspionageReports()
+            msgs = self.web.getGameMessages()
+            displayedReports = msgs.values() # TODO
             for planet, espionage in self._notArrivedEspionages.items():
                 reports = [report for report in displayedReports if report.coords == espionage.targetPlanet.coords and report.date >= espionage.launchTime]
                 reports.sort(key=lambda x:x.date, reverse=True)

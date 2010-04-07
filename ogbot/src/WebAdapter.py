@@ -71,7 +71,7 @@ class WebPage(object):
         f.close()
 
     def __repr__(self):
-        return self.url
+        return "WebPage: " + self.url
 
 class ServerData(object):
     def __init__(self):
@@ -114,15 +114,19 @@ class WebAdapter(object):
         self._eventMgr = WebAdapter.EventManager(gui)
         self.lastFetchedPage = None
         self.serverData = ServerData()
-        if not self.loadState():
-            self.session = '000000000000'  
+        self.session = ""
+        self.cookies = cookielib.MozillaCookieJar(FILE_PATHS["cookies"])
+        self.loadState()
+
+        
 
         # setup urllib2:
         socket.setdefaulttimeout(10.0)
         #httplib.HTTPConnection.debuglevel = 1
 
         # set up a class to handle http cookies, passes that to http processor
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
+
+        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookies))
         # set us a class to keep connections open, passas that to the http processor
         self.keepAliveOpener = urllib2.build_opener(keepalive.HTTPHandler(),urllib2.HTTPCookieProcessor())
         
@@ -149,6 +153,16 @@ class WebAdapter(object):
         self.translationsByLocalText = dict([ (value, key) for key, value in self.translations.items() ])
         self.generateRegexps(self.translations)
 
+        page = self._fetchPhp ("index.php", page="overview")
+        timestamp = re.findall("var serverTime = new Date\((\d+)\)",page.text)[0]
+        serverTime = datetime.fromtimestamp(float(int(timestamp)/1000))
+        self.serverData.timeDelta = serverTime - datetime.now()
+        self.serverData.charset = re.findall('content="text/html; charset=(.*?)"', page.text, re.I)[0]
+        self.serverData.version = float(page.etree.xpath("//a[@href=\"index.php?page=changelog&session=%s\"]//text()" % self.session)[-1].strip())
+        self.saveState()
+
+
+
 
 
 ########################################################################################## 
@@ -157,6 +171,12 @@ class WebAdapter(object):
         url = "http://%s/game/%s?%s" % (self.config.webpage, php, urllib.urlencode(params))
         return self._fetchValidResponse(url)
 
+    def _fetchPhpPost(self, php, postData, **params):
+        params['session'] = self.session
+        url = "http://%s/game/%s?%s" % (self.config.webpage, php, urllib.urlencode(params))
+        request = urllib2.Request(url, urllib.urlencode(postData))
+        return self._fetchValidResponse(request)
+    
 ##########################################################################################     
     def _fetchValidResponse(self, request, skipValidityCheck = False):
         if isinstance(request, str):
@@ -235,6 +255,7 @@ class WebAdapter(object):
         
         try:
             self.session = re.findall("[0-9A-Fa-f]{12}", page.text)[0]
+            self.saveState ()
         except IndexError:
             raise BotFatalError(page)
         
@@ -243,33 +264,13 @@ class WebAdapter(object):
         mySleep(5)
         page = self._fetchPhp('index.php', page='overview', lgn=1)
 
-        timestamp = re.findall("var serverTime = new Date\((\d+)\)",page.text)[0]
-        serverTime = datetime.fromtimestamp(float(int(timestamp)/1000))
-        self.serverData.timeDelta = serverTime - datetime.now()
-        self.serverData.charset = re.findall('content="text/html; charset=(.*?)"', page.text, re.I)[0]
-        self.serverData.version = float(page.etree.xpath("//a[@href=\"index.php?page=changelog&session=%s\"]//text()" % self.session)[-1].strip())
-        self.saveState()
-
-
-########################################################################################## 
-    def setSession(self, value):
-        self._session = value
-        self.saveState()
-
-
-########################################################################################## 
-    def getSession(self): 
-        return self._session
-    session = property(getSession, setSession)    
-
-
 ########################################################################################## 
     def saveState(self):
         f = open(FILE_PATHS['webstate'], 'wb')
         pickler = cPickle.Pickler(f, 2)        
         pickler.dump(self.session)
         f.close()
-
+        self.cookies.save()
 
 ##########################################################################################      
     def loadState(self):
@@ -282,9 +283,10 @@ class WebAdapter(object):
             try:
                 os.remove(FILE_PATHS['webstate'])              
             except Exception : pass
-            return False
-        return True   
+            self.session = '000000000000'
 
+        if os.path.exists (FILE_PATHS ["cookies"]):
+            self.cookies.load ()
 
 ##########################################################################################     
     def generateRegexps(self, translations):
@@ -632,7 +634,26 @@ class WebAdapter(object):
             
         return reports
 
-   
+    def getGameMessages(self):
+        postData = {        
+            "displayCategory": "9",
+            "displayPage": "1",
+            "siteType": None,
+            "ajax": "1"
+            }
+                            
+        page = self._fetchPhpPost('index.php', postData, page='messages')
+        messages = {}
+
+        for message in page.etree.xpath("//table[@id='mailz']//tr[@class != 'first' and @class != 'last']"):
+            code    = message.xpath("string(/td[@class='check']/input/@id)")
+            sender  = message.xpath("string(/td[@class='from'])")
+            subject = message.xpath("string(/td[@class='subject']//text())")
+            date    = message.xpath("string(/td[@class='date'])")
+            messages [code]= GameMessage(code, date, subject, sender)
+        return messages
+
+        
 ##########################################################################################         
     def launchMission(self, mission, abortIfNotEnough = True, fleetSlotsToReserve = 0):
 
@@ -715,6 +736,8 @@ class WebAdapter(object):
 
             mission.launched(self.serverData.currentTime, flightTime)
             
+
+
             # check the requested fleet was sent intact:
             # sentFleet = {}
             # for fullName, value in resultPage.items():

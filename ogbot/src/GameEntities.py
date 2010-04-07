@@ -275,9 +275,11 @@ class EnemyPlanet (Planet):
 
         
 class GameMessage(object):
-    def __init__(self, code, date):
+    def __init__(self, code, date, subject, sender):
         self.code = code
         self.date = date # always server time not local time
+        self.subject = subject
+        self.sender = sender
 
 class CombatReport(GameMessage): # just a mockup
     def __init__(self, code, date, coords):
