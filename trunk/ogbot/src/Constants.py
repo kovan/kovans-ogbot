@@ -24,7 +24,8 @@ FILE_PATHS = {
     'planetdb'     : 'files/botdata/planets.db', 
     'gamedata'     : 'files/botdata/gamedata.dat',     
     'newinactives' : 'files/botdata/newinactives.dat',
-    'log'          : 'files/log/ogbot.log', 
+    'cookies'      : 'files/botdata/cookies.txt',
+    'log'          : 'files/log/ogbot.log'
 }
 
 INGAME_TYPES = [
