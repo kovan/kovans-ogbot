@@ -221,8 +221,8 @@ class Bot(object):
                         raise BotFatalError("There are no inactive and undefended planets in range. Increase range.")
                                             
                     self.attackMode()
-            self._checkThreadQueue()                     
-
+            self._checkThreadQueue()
+            
  
 ##########################################################################################    
     def scanGalaxies(self):

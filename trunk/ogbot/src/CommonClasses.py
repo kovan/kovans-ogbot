@@ -335,7 +335,7 @@ class PlanetList(dict):
         self.update(loaded)
         
 class Plugin(object):
-    def __init__(self):
+    def step(self):
         pass
 
 class Struct(object):
