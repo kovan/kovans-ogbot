@@ -389,7 +389,7 @@
             </item>
             <item>
              <property name="text" >
-              <string>Owner status</string>
+              <string>Owner inactive</string>
              </property>
             </item>
            </widget>
@@ -450,7 +450,7 @@
            </column>
            <column>
             <property name="text" >
-             <string>Owner status</string>
+             <string>Owner inactive</string>
             </property>
            </column>
            <column>
