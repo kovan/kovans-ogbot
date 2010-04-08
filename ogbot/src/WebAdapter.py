@@ -454,15 +454,15 @@ class WebAdapter(object):
         for technology in technologies:
             found =     page.etree.xpath("//*[@class='research%s']//*[@class='level']/text()" % technology.code)
             if not found: # it is being built, xpath changes:
-                found = page.etree.xpath("//*[@class='b_research%s']//*[@class='level']/text()" % technology.code)
+                found = page.etree.xpath("//*[@class='research%s tips']//*[@class='level']/text()" % technology.code)
 
             level = int(found[0])
             player.researchLevels[technology.name] = level
 
-        # TODO: uncomment this:
-        # if player.researchLevels['impulseDrive'] == 0 or \
-        #    player.researchLevels['combustionDrive'] == 0:
-        #     raise BotFatalError("Not enough technologies researched to run the bot")
+        
+        if player.researchLevels['impulseDrive'] == 0 or \
+           player.researchLevels['combustionDrive'] == 0:
+            raise BotFatalError("Not enough technologies researched to run the bot")
                 
 
 ########################################################################################## 
@@ -581,69 +581,29 @@ class WebAdapter(object):
         
         return int(total) - int(used)
 
-########################################################################################## 
-    def getEspionageReports(self):
-        page = self._fetchPhp('index.php', page='messages')
-        rawMessages = {}
-        for match in self.REGEXPS['messages.php'].finditer(page.text):
-            rawMessages[match.group('code')] = match.group(0) 
-            
-        reports = []              
-        for code, rawMessage in rawMessages.items():
-            if 'class="espionagereport"' not in rawMessage:
-                continue
-            
-            m = self.REGEXPS['report']['all'].search(rawMessage)
-            if m == None: #theorically should never happen
-                warnings.warn("Error parsing espionage report.")
-                continue
-            planetName = m.group('planetName')
-            coords = Coords(m.group('coords'))
-            date = parseTime(m.group('date'), "%m-%d %H:%M:%S")
-            resources = Resources(m.group('metal').replace('.', ''), m.group('crystal').replace('.', ''), m.group('deuterium').replace('.', ''))
-
-            report = EspionageReport(coords, planetName, date, resources, code)
-            
-            for i in "fleet", "defense", "buildings", "research":
-                dictionary = None
-                match = self.REGEXPS['report'][i].search(rawMessage)
-                if match:
-                    dictionary, text = {}, match.group(1)
-                    for fullName, quantity in self.REGEXPS['report']['details'].findall(text):
-                        dictionary[self.translationsByLocalText[fullName.strip()]] = int(quantity.replace('.', ''))
-                        
-                    setattr(report, i, dictionary)
-                
-            report.rawHtml = rawMessage
-            reports.append(report)
-            
-        return reports
-
-    def getGameMessages(self, msgType = None):
+    def getGameMessages(self, msgClass = None):
         postData = { "ajax": "1" }
         page = self._fetchPhpPost('index.php', postData, page='messages')
 
         messages = []
         for message in page.etree.xpath("//table[@id='mailz']//tr[@class != 'first' and @class != 'last']"):
-            code                   = message.xpath("string(td[@class='check']/input/@id)").strip ()
-            sender                 = message.xpath("string(td[@class='from'])").strip ()
-            subject                = message.xpath("td[@class='subject']//text()")[1].strip()
-            date                   = parseTime(message.xpath("string(td[@class='date'])").strip())
+            code    = message.xpath("string(td[@class='check']/input/@id)").strip ()
+            sender  = message.xpath("string(td[@class='from'])").strip ()
+            subject = message.xpath("td[@class='subject']//text()")[1].strip()
+            date    = parseTime(message.xpath("string(td[@class='date'])").strip())
             
-            msgPage                = self._fetchPhp ("index.php", page="showmessage", ajax=1, msg_id=code)
+            msgPage = self._fetchPhp ("index.php", page="showmessage", ajax=1, msg_id=code)
             
-#            rawContents            = msgPage.etree.xpath ("string(//*[@class='textWrapper'])").strip ()
+            rawHtml = msgPage.etree.xpath ("string(//*[@class='textWrapper'])").strip ()
             
-#            espionageReportFields = msgPage.etree.xpath ("//*[@class='material spy' or @class='fleetdefbuildings spy']")
-
-            resourcesTxt              = msgPage.etree.xpath ("//*[@class='fragment spy2']//td[not(@class)]")
+            resourcesTxt = msgPage.etree.xpath ("//*[@class='fragment spy2']//td[not(@class)]")
             if resourcesTxt: # message is of type espionage
                 msg = EspionageReport (code, date, Coords (subject))
 
-                msg.resources.metal                  = int(resourcesTxt [0].text.replace ('.',''))
-                msg.resources.crystal                = int(resourcesTxt [1].text.replace ('.',''))
-                msg.resources.deuterium              = int(resourcesTxt [2].text.replace ('.',''))
-                msg.resources.energy                 = int(resourcesTxt [3].text.replace ('.',''))
+                msg.resources.metal     = int(resourcesTxt [0].text.replace ('.',''))
+                msg.resources.crystal   = int(resourcesTxt [1].text.replace ('.',''))
+                msg.resources.deuterium = int(resourcesTxt [2].text.replace ('.',''))
+                msg.resources.energy    = int(resourcesTxt [3].text.replace ('.',''))
 
 
                 keys   = msgPage.etree.xpath ("//*[@class='fleetdefbuildings spy']//td[@class='key']")
@@ -665,8 +625,8 @@ class WebAdapter(object):
             messages.append (msg)
 
         # apply filter:
-        if msgType:
-            messages = [msg for msg in messages if type (msg) == msgType]
+        if msgClass:
+            messages = [msg for msg in messages if type (msg) == msgClass]
         return messages
 
         
@@ -772,20 +732,9 @@ class WebAdapter(object):
                 
 ##########################################################################################
     def deleteMessages(self, messages):
-        return
-        page = self._fetchPhp('index.php', page='messages')
-        form = ParseFile(page.stringio, page.url, backwards_compat=False)[0]
         for message in messages:
-            checkBoxName = "delmes" + message.code
-            try:
-                form[checkBoxName]     = [None] # actually this marks the checbox as checked (!!)
-                form["deletemessages"] = ["deletemarked"]
-            except ControlNotFoundError:
-                if __debug__:
-                    print >> sys.stderr, "Could not delete message " + str(message)
-            
-        self._fetchValidResponse(form.click())
-
+            postData = { "ajax": "1", "deleteMessageIds[]" : message.code }
+            self._fetchPhpPost('index.php', postData, page='messages')
         
         
 ##########################################################################################
