@@ -521,8 +521,7 @@ class Bot(object):
         arrivedReports = []
         if self._notArrivedEspionages:
             #displayedReports = self.web.getEspionageReports()
-            msgs = self.web.getGameMessages()
-            displayedReports = msgs.values() # TODO
+            displayedReports = self.web.getGameMessages(EspionageReport)
             for planet, espionage in self._notArrivedEspionages.items():
                 reports = [report for report in displayedReports if report.coords == espionage.targetPlanet.coords and report.date >= espionage.launchTime]
                 reports.sort(key=lambda x:x.date, reverse=True)

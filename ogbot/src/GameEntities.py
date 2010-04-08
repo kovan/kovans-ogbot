@@ -24,7 +24,8 @@ from CommonClasses import Enum, addCommas
 
 class IngameType(object):
     def __init__(self, name, code, cost):
-        self.name = name         
+        self.name = name
+        self.localName = "" # filled later
         self.code = code
         self.cost = cost
         
@@ -140,10 +141,11 @@ class Cost(object):
 
 class Resources(object):
     compiledFormula = None
-    def __init__(self, metal=0, crystal=0, deuterium=0):
+    def __init__(self, metal=0, crystal=0, deuterium=0, energy=0):
         self.metal = int(metal)
         self.crystal = int(crystal)
         self.deuterium = int(deuterium)
+        self.energy = int(energy)
         
     def total(self):
         return self.metal + self.crystal + self.deuterium
@@ -275,7 +277,7 @@ class EnemyPlanet (Planet):
 
         
 class GameMessage(object):
-    def __init__(self, code, date, subject, sender):
+    def __init__(self, code, date, subject = "", sender = ""):
         self.code = code
         self.date = date # always server time not local time
         self.subject = subject
@@ -290,21 +292,19 @@ class EspionageReport(GameMessage):
     class DetailLevels(Enum):
         resources, fleet, defense, buildings, research = range(5)
             
-    def __init__(self, coords, planetName, date, resources, code, fleet=None, defense=None, buildings=None, research=None, rawHtml = ''):
-        GameMessage.__init__(self, code,date)
+    def __init__(self, code, date, coords):
+        GameMessage.__init__(self, code, date)
         self.coords = coords
-        self.planetName = planetName
-        self.resources = resources
-        self.fleet = fleet
-        self.defense = defense
-        self.buildings = buildings
-        self.research = research
+        self.resources = Resources()
+        self.fleet = {}
+        self.defense = {}
+        self.buildings = {}
+        self.research = {}
         self.probesSent = 0
-        self.rawHtml = rawHtml
 
             
     def __repr__(self):
-        return "%s %s %s %s %s %s %s %s" % (self.planetName, self.coords, self.date, self.resources, self.fleet, self.defense, self.buildings, self.research)
+        return "%s %s %s %s %s %s %s %s" % ("Planet", self.coords, self.date, self.resources, self.fleet, self.defense, self.buildings, self.research)
     
     def hasFleet(self): 
         return self.fleet == None or len(self.fleet) > 0

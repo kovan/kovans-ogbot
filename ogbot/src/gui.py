@@ -408,7 +408,7 @@ class MainWindow(baseclass,formclass):
                 reportCount = str(len(planet.espionageHistory))
                 if reportCount == '0' : reportCount = '-'
                 if filterText.lower() in columnValue.lower():
-                    item = MyTreeWidgetItem(planet.toStringList() + [planet.ownerStatus, reportCount])
+                    item = MyTreeWidgetItem(planet.toStringList() + ["yes" if planet.owner.isInactive else "no", reportCount])
                     self.planetsTree.addTopLevelItem(item)
            
     def _planetDb_updateReportsTree(self,planetTreeSelectedItem):

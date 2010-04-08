@@ -116,6 +116,7 @@ class WebAdapter(object):
         self.serverData = ServerData()
         self.session = ""
         self.cookies = cookielib.MozillaCookieJar(FILE_PATHS["cookies"])
+        self.translationsByLocalText = {}
         self.loadState()
 
         
@@ -150,7 +151,10 @@ class WebAdapter(object):
         except KeyError:
             raise BotFatalError("Server language (%s) not supported by bot" % self.serverLanguage)
 
-        self.translationsByLocalText = dict([ (value, key) for key, value in self.translations.items() ])
+        for englishName, localName in self.translations.iteritems ():
+            self.translationsByLocalText [localName] = englishName
+            if englishName in INGAME_TYPES_BY_NAME:
+                INGAME_TYPES_BY_NAME [englishName].localName = localName
         self.generateRegexps(self.translations)
 
         page = self._fetchPhp ("index.php", page="overview")
@@ -291,25 +295,8 @@ class WebAdapter(object):
 ##########################################################################################     
     def generateRegexps(self, translations):
 
-        reportTmp  = r'%s (?P<planetName>[^<]*?) .*?(?P<coords>\[[0-9:]+\]).*?<br[\s]*/>.*? (?P<date>[0-9].*?)</td></tr>\n' %  translations['resourcesOn']
-        reportTmp += r'.*?<tr><td>.*?</td><td>(?P<metal>[-0-9.]+)</td>\n'
-        reportTmp += r'<td>.*?</td><td>(?P<crystal>[-0-9.]+)</td></tr>\n'
-        reportTmp += r'<tr><td>.*?</td><td>(?P<deuterium>[-0-9.]+)</td>\n'
-        reportTmp += r'<td>.*?</td><td>(?P<energy>[-0-9.]+)</td></tr>'  
-        reportTmp2 = r'<table width=[0-9]+><tr><td class=c colspan=4>%s(.*?)</table>'
-
         self.REGEXPS = \
         {
-            'messages.php': re.compile(r'<input type="checkbox" name="delmes(?P<code>[0-9]+)".*?(?=<input type="checkbox")', re.DOTALL |re.I), 
-            'report': 
-            {
-                'all'  :    re.compile(reportTmp, re.LOCALE|re.I), 
-#TODO                'fleet':    re.compile(reportTmp2 % translations['fleets'], re.DOTALL|re.I), 
-                'defense':  re.compile(reportTmp2 % translations['defense'], re.DOTALL|re.I), 
-                'buildings':re.compile(reportTmp2 % translations['buildings'], re.DOTALL|re.I), 
-                'research': re.compile(reportTmp2 % translations['research'], re.DOTALL|re.I), 
-                'details':  re.compile(r"<td>(?P<type>.*?)</td><td>(?P<quantity>[-0-9.]+)</td>", re.DOTALL|re.I)
-            },
             'planet':
             {
                 'buildingLevels':re.compile(r">(?P<buildingName>[^<]+)</a></a>\s*?\(level\s*(?P<level>[0-9]+)\)<br>",re.I|re.LOCALE),   
@@ -329,8 +316,6 @@ class WebAdapter(object):
             'statsOverview': re.compile(r"([0-9.]+)[\s]*\(%s.*?>([0-9.]+)</a>" %(translations['rank']), re.I)
         }
         
-        
-
 ########################################################################################## 
     def goToPlanet(self, planet):
         self._fetchPhp('index.php', page='overview', cp=planet.code)
@@ -346,7 +331,7 @@ class WebAdapter(object):
         player.colonies = []
         planetNames  = page.etree.xpath("//*[@class='planet-name']")
         planetCoords = page.etree.xpath("//*[@class='planet-koords']")
-        for name, coord, in zip(planetNames, planetCoords):
+        for name, coord in zip(planetNames, planetCoords):
             coords = Coords(coord.text)
             for planet in player.colonies:
                 if planet.coords == coords: # we found a moon for this planet
@@ -634,23 +619,54 @@ class WebAdapter(object):
             
         return reports
 
-    def getGameMessages(self):
-        postData = {        
-            "displayCategory": "9",
-            "displayPage": "1",
-            "siteType": None,
-            "ajax": "1"
-            }
-                            
+    def getGameMessages(self, msgType = None):
+        postData = { "ajax": "1" }
         page = self._fetchPhpPost('index.php', postData, page='messages')
-        messages = {}
 
+        messages = []
         for message in page.etree.xpath("//table[@id='mailz']//tr[@class != 'first' and @class != 'last']"):
-            code    = message.xpath("string(/td[@class='check']/input/@id)")
-            sender  = message.xpath("string(/td[@class='from'])")
-            subject = message.xpath("string(/td[@class='subject']//text())")
-            date    = message.xpath("string(/td[@class='date'])")
-            messages [code]= GameMessage(code, date, subject, sender)
+            code                   = message.xpath("string(td[@class='check']/input/@id)").strip ()
+            sender                 = message.xpath("string(td[@class='from'])").strip ()
+            subject                = message.xpath("td[@class='subject']//text()")[1].strip()
+            date                   = parseTime(message.xpath("string(td[@class='date'])").strip())
+            
+            msgPage                = self._fetchPhp ("index.php", page="showmessage", ajax=1, msg_id=code)
+            
+#            rawContents            = msgPage.etree.xpath ("string(//*[@class='textWrapper'])").strip ()
+            
+#            espionageReportFields = msgPage.etree.xpath ("//*[@class='material spy' or @class='fleetdefbuildings spy']")
+
+            resourcesTxt              = msgPage.etree.xpath ("//*[@class='fragment spy2']//td[not(@class)]")
+            if resourcesTxt: # message is of type espionage
+                msg = EspionageReport (code, date, Coords (subject))
+
+                msg.resources.metal                  = int(resourcesTxt [0].text.replace ('.',''))
+                msg.resources.crystal                = int(resourcesTxt [1].text.replace ('.',''))
+                msg.resources.deuterium              = int(resourcesTxt [2].text.replace ('.',''))
+                msg.resources.energy                 = int(resourcesTxt [3].text.replace ('.',''))
+
+
+                keys   = msgPage.etree.xpath ("//*[@class='fleetdefbuildings spy']//td[@class='key']")
+                values = msgPage.etree.xpath ("//*[@class='fleetdefbuildings spy']//td[@class='value']")
+                for key, value in zip (keys, values):
+                    englishName = self.translationsByLocalText [key.text]
+                    itemType = INGAME_TYPES_BY_NAME [englishName]
+                    quantity = int (value.text.replace ('.',''))
+                    if   isinstance (itemType, Ship):
+                        msg.fleet     [englishName] = quantity
+                    elif isinstance (itemType, Defense):
+                        msg.defense   [englishName] = quantity
+                    elif isinstance (itemType, Building):
+                        msg.buildings [englishName] = quantity
+                    elif isinstance (itemType, Research):
+                        msg.research  [englishName] = quantity
+            else:
+                msg = GameMessage (code, date, subject, sender)
+            messages.append (msg)
+
+        # apply filter:
+        if msgType:
+            messages = [msg for msg in messages if type (msg) == msgType]
         return messages
 
         
@@ -756,6 +772,7 @@ class WebAdapter(object):
                 
 ##########################################################################################
     def deleteMessages(self, messages):
+        return
         page = self._fetchPhp('index.php', page='messages')
         form = ParseFile(page.stringio, page.url, backwards_compat=False)[0]
         for message in messages:
@@ -884,7 +901,7 @@ class ScanThread(threading.Thread):
                     
                     planetNumber = int(row.xpath("string(*[@class='position'])").strip())
                     planet = EnemyPlanet(Coords(galaxy, solarSystem, planetNumber), owner)
-                    planet.name =      row.xpath("string(*[@class='planetname'])").strip()
+                    planet.name =      row.xpath("string(*[@class='planetname'])").replace ("(*)","").strip()
                     planet.hasMoon =   row.xpath("string(*[@class='moon'])").strip() != ""
                     planet.hasDebris = row.xpath("string(*[@class='debris'])").strip() != ""
                     
@@ -909,11 +926,8 @@ class ScanThread(threading.Thread):
 
 
 ########################################################################################## 
-def parseTime(strTime, format = "%a %b %d %H:%M:%S"):# example: Mon Aug 7 21:08:52                        
+def parseTime(strTime, format = "%d.%m.%Y %H:%M:%S"):
     ''' parses a time string formatted in OGame most usual format and 
     converts it to a datetime object'''
     
-    format = "%Y " + format
-    strTime = str(datetime.now().year) + " " +strTime
-    date = datetime.strptime(strTime, format) 
-    return date
+    return datetime.strptime(strTime, format) 
