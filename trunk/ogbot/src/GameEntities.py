@@ -277,23 +277,24 @@ class EnemyPlanet (Planet):
 
         
 class GameMessage(object):
-    def __init__(self, code, date, subject = "", sender = ""):
+    def __init__(self, code, date, rawHtml, subject = "", sender = ""):
         self.code = code
         self.date = date # always server time not local time
         self.subject = subject
         self.sender = sender
+        self.rawHtml = rawHtml
 
 class CombatReport(GameMessage): # just a mockup
-    def __init__(self, code, date, coords):
-        GameMessage.__init__(self, code, date)
+    def __init__(self, code, date, coords, rawHtml):
+        GameMessage.__init__(self, code, date, rawHtml)
         self.coords = coords
 
 class EspionageReport(GameMessage):
     class DetailLevels(Enum):
         resources, fleet, defense, buildings, research = range(5)
             
-    def __init__(self, code, date, coords):
-        GameMessage.__init__(self, code, date)
+    def __init__(self, code, date, coords, rawHtml):
+        GameMessage.__init__(self, code, date, rawHtml)
         self.coords = coords
         self.resources = Resources()
         self.fleet = {}

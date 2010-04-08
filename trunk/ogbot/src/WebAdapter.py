@@ -594,11 +594,11 @@ class WebAdapter(object):
             
             msgPage = self._fetchPhp ("index.php", page="showmessage", ajax=1, msg_id=code)
             
-            rawHtml = msgPage.etree.xpath ("string(//*[@class='textWrapper'])").strip ()
+            rawHtml = etree.tostring (msgPage.etree.xpath ("//*[@class='textWrapper']") [0]) 
             
             resourcesTxt = msgPage.etree.xpath ("//*[@class='fragment spy2']//td[not(@class)]")
             if resourcesTxt: # message is of type espionage
-                msg = EspionageReport (code, date, Coords (subject))
+                msg = EspionageReport (code, date, Coords (subject), rawHtml)
 
                 msg.resources.metal     = int(resourcesTxt [0].text.replace ('.',''))
                 msg.resources.crystal   = int(resourcesTxt [1].text.replace ('.',''))
