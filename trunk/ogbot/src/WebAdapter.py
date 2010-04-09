@@ -594,7 +594,7 @@ class WebAdapter(object):
             
             msgPage = self._fetchPhp ("index.php", page="showmessage", ajax=1, msg_id=code)
             
-            rawHtml = etree.tostring (msgPage.etree.xpath ("//*[@class='textWrapper']") [0]) 
+            rawHtml = etree.tostring (msgPage.etree.xpath ("//*[@class='textWrapper' or @class='textWrapperSmall']") [0]) 
             
             resourcesTxt = msgPage.etree.xpath ("//*[@class='fragment spy2']//td[not(@class)]")
             if resourcesTxt: # message is of type espionage
@@ -613,12 +613,20 @@ class WebAdapter(object):
                     itemType = INGAME_TYPES_BY_NAME [englishName]
                     quantity = int (value.text.replace ('.',''))
                     if   isinstance (itemType, Ship):
+                        if msg.fleet is None:
+                            msg.fleet = {}
                         msg.fleet     [englishName] = quantity
                     elif isinstance (itemType, Defense):
+                        if msg.defense is None:
+                            msg.defense = {}
                         msg.defense   [englishName] = quantity
                     elif isinstance (itemType, Building):
+                        if msg.buildings is None:
+                            msg.buildings = {}
                         msg.buildings [englishName] = quantity
                     elif isinstance (itemType, Research):
+                        if msg.research is None:
+                            msg.research = {}
                         msg.research  [englishName] = quantity
             else:
                 msg = GameMessage (code, date, subject, sender)
@@ -706,14 +714,8 @@ class WebAdapter(object):
                 else: 
                     raise FleetSendError(errors)
 
-            resultPage = {}
-            for resultType, value in self.REGEXPS['fleetSendResult'].findall(page.text):
-                resultPage[resultType] = value
-
             mission.launched(self.serverData.currentTime, flightTime)
             
-
-
             # check the requested fleet was sent intact:
             # sentFleet = {}
             # for fullName, value in resultPage.items():
@@ -840,13 +842,13 @@ class ScanThread(threading.Thread):
                     if not ownerName: # empty position
                         continue
                     
-                    ownerAlliance = row.xpath("string(*[@class='allytag']/*//text())")
                     # we want player objects to be unique:
                     owner = playersByName.get(ownerName)
                     if not owner:
-                        owner = EnemyPlayer(ownerName, ownerAlliance)
+                        owner = EnemyPlayer(ownerName)
                         playersByName[ownerName] = owner
                     owner.isInactive = row.xpath("string(*//*[@class='status'])").strip().lower() == "(i)"
+                    owner.alliance = row.xpath("string(*[@class='allytag']/*//text())")
                     
                     planetNumber = int(row.xpath("string(*[@class='position'])").strip())
                     planet = EnemyPlanet(Coords(galaxy, solarSystem, planetNumber), owner)

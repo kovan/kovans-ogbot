@@ -197,8 +197,8 @@ class OwnPlayer(Player):
         self.researchLevels = {}
 
 class EnemyPlayer(Player):
-    def __init__(self, name, alliance):
-        super(EnemyPlayer, self).__init__(name, alliance)
+    def __init__(self, name):
+        super(EnemyPlayer, self).__init__(name)
         self.isInactive = False
     
 
@@ -297,10 +297,10 @@ class EspionageReport(GameMessage):
         GameMessage.__init__(self, code, date, rawHtml)
         self.coords = coords
         self.resources = Resources()
-        self.fleet = {}
-        self.defense = {}
-        self.buildings = {}
-        self.research = {}
+        self.fleet = None
+        self.defense = None
+        self.buildings = None
+        self.research = None
         self.probesSent = 0
 
             
