@@ -450,6 +450,7 @@ class WebAdapter(object):
         if not page:
             page = self._fetchPhp('index.php', page='research')
 
+        player.researchLevels = {}
         technologies = [t for t in INGAME_TYPES if isinstance(t,Research)]
         for technology in technologies:
             found =     page.etree.xpath("//*[@class='research%s']//*[@class='level']/text()" % technology.code)
@@ -605,28 +606,30 @@ class WebAdapter(object):
                 msg.resources.deuterium = int(resourcesTxt [2].text.replace ('.',''))
                 msg.resources.energy    = int(resourcesTxt [3].text.replace ('.',''))
 
+                sectionCount = len(msgPage.etree.xpath ("//*[@class='fleetdefbuildings spy']"))
+                keys         =     msgPage.etree.xpath ("//*[@class='fleetdefbuildings spy']//td[@class='key']")
+                values       =     msgPage.etree.xpath ("//*[@class='fleetdefbuildings spy']//td[@class='value']")
 
-                keys   = msgPage.etree.xpath ("//*[@class='fleetdefbuildings spy']//td[@class='key']")
-                values = msgPage.etree.xpath ("//*[@class='fleetdefbuildings spy']//td[@class='value']")
+                if sectionCount >= 1:
+                    msg.fleet = {}
+                    if sectionCount >= 2:
+                        msg.defense = {}
+                        if sectionCount >= 3:
+                            msg.buildings = {}
+                            if sectionCount >= 4:
+                                msg.research = {}
+                                
                 for key, value in zip (keys, values):
                     englishName = self.translationsByLocalText [key.text]
                     itemType = INGAME_TYPES_BY_NAME [englishName]
                     quantity = int (value.text.replace ('.',''))
                     if   isinstance (itemType, Ship):
-                        if msg.fleet is None:
-                            msg.fleet = {}
                         msg.fleet     [englishName] = quantity
                     elif isinstance (itemType, Defense):
-                        if msg.defense is None:
-                            msg.defense = {}
                         msg.defense   [englishName] = quantity
                     elif isinstance (itemType, Building):
-                        if msg.buildings is None:
-                            msg.buildings = {}
                         msg.buildings [englishName] = quantity
                     elif isinstance (itemType, Research):
-                        if msg.research is None:
-                            msg.research = {}
                         msg.research  [englishName] = quantity
             else:
                 msg = GameMessage (code, date, subject, sender)
@@ -684,6 +687,9 @@ class WebAdapter(object):
             # 3rd step:  select mission and resources to carry
             page = self._fetchValidResponse(form.click())
             form = ParseFile(page.stringio, page.url, backwards_compat=False)[0]
+            if not forms or 'fleet3' not in forms[0].action:
+                continue # unkown error, retry
+            
             try:
                 form.find_control('mission').readonly = False
                 form['mission'] = str(mission.missionType)

@@ -534,7 +534,6 @@ class Bot(object):
     def checkIfEspionageReportsArrived(self):
         arrivedReports = []
         if self._notArrivedEspionages:
-            #displayedReports = self.web.getEspionageReports()
             displayedReports = self.web.getGameMessages(EspionageReport)
             for planet, espionage in self._notArrivedEspionages.items():
                 reports = [report for report in displayedReports if report.coords == espionage.targetPlanet.coords and report.date >= espionage.launchTime]
@@ -546,6 +545,7 @@ class Bot(object):
                     
                     planet.simulation = ResourceSimulation(report.resources, report.buildings)
                     planet.espionageHistory.append(report)
+                    planet.owner.researchLevels = planet.getBestEspionageReport().research
                     arrivedReports.append(report)
                     self._planetDb.write(planet)
                 elif self.web.serverData.currentTime > espionage.arrivalTime + timedelta(minutes=2):

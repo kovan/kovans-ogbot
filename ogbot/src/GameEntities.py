@@ -183,6 +183,7 @@ class Player(object):
         self.alliance = alliance
         self.rank = 0
         self.points = 0
+        self.researchLevels = None
         
     def __repr__(self):
         return self.name + ". " + self.alliance
@@ -194,7 +195,6 @@ class OwnPlayer(Player):
         self.upgradingColonies = []
         self.attack = []
         self.research = {}
-        self.researchLevels = {}
 
 class EnemyPlayer(Player):
     def __init__(self, name):
