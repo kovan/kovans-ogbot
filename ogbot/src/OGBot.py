@@ -43,6 +43,23 @@ from Constants import *
 from GameEntities import *
 from WebAdapter import WebAdapter
 
+
+class PluginSystem (object):
+    
+    def __init__ (self, config, webAdapter):
+        self.plugins = []
+        if not FILE_PATHS ["plugins"] in sys.path:
+            sys.path.insert (0, FILE_PATHS ["plugins"])
+        for plugin in os.path.listdir (FILE_PATHS ["plugins"]):
+            __import__ (os.path.basename (plugin), None, None, [""])
+        for plugin in Plugin.__subclasses__:
+            self.plugins.append [plugin ()]
+            
+    def runPlugins (self):
+        for plugin in self.plugins:
+            plugin.step()
+
+
 class Bot(object):
     """Contains the bot logic, independent from the communications with the server.
     Theorically speaking if ogame switches from being web-based to being p.e. telnet-based
@@ -128,7 +145,6 @@ class Bot(object):
     def _connect(self):
         self.eventMgr.activityMsg("Contacting server...")
         self.web = WebAdapter(self.config, self.allTranslations, self._checkThreadQueue, self.gui)
-#        self.web.doLogin()
         ogameVersion = self.web.serverData.version
         if ogameVersion > SUPPORTED_OGAME_VERSION:
             self.eventMgr.activityMsg("WARNING: the bot was designed for an older version of OGame. Some or all features might not work"
@@ -314,17 +330,15 @@ class Bot(object):
                     factor = e1.available / float(e1.requested.values()[0])
                     resourcesToSteal = targetPlanet.simulation.simulatedResources.half() * factor
                     newRentability = (resourcesToSteal * 2).rentability(sourcePlanet.coords.flightTimeTo(targetPlanet.coords, self.attackingShip.speed), self.config.rentabilityFormula)
-                    if newRentability > rentabilityTreshold:
-                        try:
-                        
-                            sentMission = self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip, False)
-                            notArrivedAttacks.append(sentMission)
-                        except NotEnoughShipsError:
-                            planetsWithoutShips[sourcePlanet] = serverTime
-                            self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet, targetPlanet, e1))
-                    else:
+                    try:
+                        if newRentability <= rentabilityTreshold:
+                            raise 
+                        sentMission = self.attackPlanet(sourcePlanet, targetPlanet, self.attackingShip, False)
+                        notArrivedAttacks.append(sentMission)
+                    except NotEnoughShipsError, e2:
                         planetsWithoutShips[sourcePlanet] = serverTime
-                        self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet, targetPlanet, e1))
+                        self.eventMgr.activityMsg("Not enough ships for mission from %s to %s. %s" %(sourcePlanet, targetPlanet, e2))
+                        
             except NoFreeSlotsError: 
                 self.eventMgr.statusMsg("Fleet limit hit")
                 mySleep(100)
@@ -678,9 +692,6 @@ class Bot(object):
             except Exception : pass
 
 
-##########################################################################################      
-    def runPlugin(self, plugin):
-        execfile("plugins/%s.py" % plugin)
 
 ##########################################################################################
 
@@ -688,7 +699,6 @@ def run():
     parser = OptionParser()
     parser.add_option("-c", "--console", action="store_true", help="Run in console mode'")
     parser.add_option("-a", "--autostart", action="store_true", help="Auto start bot, no need to click Start button")
-    parser.add_option("-p", "--plugin", help="Run the specified plugin from the plugins folder, and exit.")    
     (options, args) = parser.parse_args()
     
         
@@ -702,10 +712,7 @@ def run():
     handler.setFormatter(logging.Formatter('%(message)s'))
     logging.getLogger().addHandler(handler)
 
-    if options.plugin:
-        bot = Bot()
-        bot.runPlugin(options.plugin)
-    elif options.console:
+    if options.console:
         bot = Bot()
         bot.run()
     else:
