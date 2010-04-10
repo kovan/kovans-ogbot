@@ -776,8 +776,11 @@ class WebAdapter(object):
             params = {'session':self.session, 'galaxy':galaxy, 'system':solarSystem }
             url = "http://%s/game/index.php?page=galaxyContent&ajax=1&%s" % (self.config.webpage, urllib.urlencode(params))
             inputQueue.put((galaxy,solarSystem,url))
-       
-        for dummy in range(1):
+
+        # Each day, all the new inactive planets appear at midnight, usually with plenty
+        # of resources, as nobody has attacked them yet. In order to find and
+        # attack them before others do, spawn a thread per 50 solar systems to scan:
+        for dummy in range(len(solarSystems) / 50):
             thread = ScanThread(inputQueue, outputQueue, self.opener)
             thread.start()
             threads.append(thread)

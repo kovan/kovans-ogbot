@@ -225,7 +225,6 @@ class MainWindow(baseclass,formclass):
         QObject.connect(self.reloadDbButton,SIGNAL("clicked()"),self._planetDb_filter)                        
         QObject.connect(self.botActivityTree,SIGNAL(" itemDoubleClicked (QTreeWidgetItem *,int)"),self.botActivityTreePlanetClicked)
         QObject.connect(self.botActivityTree,SIGNAL("customContextMenuRequested (QPoint)"),self.botActivityTreeRightClicked)
-        #QObject.connect(self.validateButton,SIGNAL("clicked()"),self.validateButtonClicked)                        
                 
         self.splitter.setSizes([230,111,0])
         self.setStatusBar(None)
@@ -375,21 +374,6 @@ class MainWindow(baseclass,formclass):
             self.bot.msgQueue.put(GuiToBotMsg(GuiToBotMsg.spy,selectedCoordsStr))
             
             
-    def validateButtonClicked(self):
-        config = Configuration(FILE_PATHS['config'])
-        config.load()   
-        if config.proxy:     
-            proxy = {"http":config.proxy}
-        else: proxy = {}
-        file = "fleetsave.pyc"
-        #urllib.URLopener(proxy).retrieve("http://kovansogbot.info/paypal/k.php?txn_id=%s" % self.lineEdit.text() ,file)
-#        import fleetsave, new
-#        new.instancemethod(fleetsave.analyzeEnemyMissions,self.bot,Bot)
-#        new.instancemethod(fleetsave.getEnemyMissions,self.bot.web,WebAdapter)
-
-#        os.remove(file)
-
-            
     def _planetDb_filter(self):    
         filterText    = str(self.planetFilterLineEdit.text())
         columnToFilter = str(self.planetFilterComboBox.currentText())
@@ -446,6 +430,7 @@ class MainWindow(baseclass,formclass):
         planet =  self._planetDb.read(coordsStr)
         report = [report for report in planet.espionageHistory if str(report.code) == codeStr][0]
         
+        translations = Translations()
         for i in ["fleet","defense","buildings","research"]:
             tree = getattr(self,i + "Tree")
             tree.clear()
@@ -453,7 +438,7 @@ class MainWindow(baseclass,formclass):
             if var == "Yes " + i:
                 items = []
                 for type, cuantity in  getattr(report,i).items():
-                    items.append(MyTreeWidgetItem([type,str(cuantity)]))
+                    items.append(MyTreeWidgetItem([translations['en'][type],str(cuantity)]))
             else: items = [MyTreeWidgetItem([var])]
             tree.addTopLevelItems(items)
 
