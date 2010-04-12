@@ -526,7 +526,7 @@ class Bot(object):
         else:
             targetPlanet.simulation.simulatedResources -= resourcesToSteal       
         self.saveFiles()              
-        mySleep(20)
+        mySleep(8)
         return mission
 
         

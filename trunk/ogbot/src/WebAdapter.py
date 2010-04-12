@@ -119,16 +119,12 @@ class WebAdapter(object):
         self.translationsByLocalText = {}
         self.loadState()
 
-        
-
         # setup urllib2:
         socket.setdefaulttimeout(10.0)
         #httplib.HTTPConnection.debuglevel = 1
 
         # set up a class to handle http cookies, passes that to http processor
-
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookies))
-        # set us a class to keep connections open, passas that to the http processor
         self.keepAliveOpener = urllib2.build_opener(keepalive.HTTPHandler(),urllib2.HTTPCookieProcessor())
         
         if self.config.proxy:
@@ -137,7 +133,7 @@ class WebAdapter(object):
             self.keepAliveOpener.add_handler(proxyHandler)
         
 
-        #defines what broswer your "using" and how long to keep http connections alive
+        #defines what broswer you are "using" and how long to keep http connections alive
         headers = [('User-agent', self.config.userAgent),('Keep-Alive', "300")]            
         self.opener.addheaders = headers
         self.keepAliveOpener.addheaders = headers
@@ -162,7 +158,7 @@ class WebAdapter(object):
         serverTime = datetime.fromtimestamp(float(int(timestamp)/1000))
         self.serverData.timeDelta = serverTime - datetime.now()
         self.serverData.charset = re.findall('content="text/html; charset=(.*?)"', page.text, re.I)[0]
-        self.serverData.version = float(page.etree.xpath("//a[@href=\"index.php?page=changelog&session=%s\"]//text()" % self.session)[-1].strip())
+        self.serverData.version = float(page.etree.xpath("//a[@href='index.php?page=changelog&session=%s']//text()" % self.session)[-1].strip())
         self.saveState()
 
 
@@ -210,8 +206,6 @@ class WebAdapter(object):
                 if not page.text or 'errorcode=8' in page.text:
                     valid = False
                     
-                #TODO \ FIX THIS if this fails then just comment it ???
-#                if self.translations['dbProblem'] in page.text or self.translations['untilNextTime'] in page.text or "Grund 5" in page.text:
                 if self.translations['dbProblem'] in page.text \
                         or "Grund 5" in page.text\
                         or re.search(r"^<(no)?script>document.location.href='http://.*?'</(no)?script>$", page.text):
@@ -312,8 +306,6 @@ class WebAdapter(object):
             'currentlyUpgradingResearch':re.compile(r'ss=([0-9]+);', re.I),
             'fleetSendError':re.compile(r'<span class="error">(?P<error>.*?)</span>', re.I), 
             'fleetSendResult':re.compile(r"<tr.*?>\s*<th.*?>(?P<name>.*?)</th>\s*<th.*?>(?P<value>.*?)</th>", re.I), 
-            'stats': re.compile(r"style='color:lime;'.*?<!-- points -->.*?([0-9.]+).*?<!-- rank -->.*?([0-9.]+)", re.I|re.DOTALL),
-            'statsOverview': re.compile(r"([0-9.]+)[\s]*\(%s.*?>([0-9.]+)</a>" %(translations['rank']), re.I)
         }
         
 ########################################################################################## 
@@ -375,7 +367,12 @@ class WebAdapter(object):
                 player.attacks.append(targetPlanet)
 
 
-########################################################################################## 
+##########################################################################################
+     def getResourcesOnPlanet(self, planetCode, alreadyFetchedPage = None):
+        page = alreadyFetchedPage
+        if not page:
+            page = self._fetchPhp('index.php', page='overview',cp=planetCode).read()
+         
 # TODO: not working:        
     # def checkResourcesOnPlanet(self, planet, alreadyFetchedPage = None):
     #     page = alreadyFetchedPage
@@ -637,7 +634,7 @@ class WebAdapter(object):
 
         # apply filter:
         if msgClass:
-            messages = [msg for msg in messages if type (msg) == msgClass]
+            messages =  [msg for msg in messages if type (msg) == msgClass]
         return messages
 
         
@@ -746,24 +743,14 @@ class WebAdapter(object):
         
         
 ##########################################################################################
-# TODO : not working        
-    # def getStats(self, player, statsType, alreadyFetchedPage = None): # type can be: pts for points, flt for fleets or res for research
-    #     if statsType != "pts" :
-    #         page = self._fetchPhp('index.php', page='statistics')
-    #         form = ParseFile(page.stringio, page.url, backwards_compat=False)[-1]
-    #         form['type'] = [statsType]
-    #         form['start'] = ['[Own position]']
-    #         page = self._fetchValidResponse(form.click())
-    #         stats = self.REGEXPS['stats'].search(page.text)
-    #     else:   
-    #         page = alreadyFetchedPage
-    #         if not page:
-    #             page = self._fetchPhp('index.php', page='overview')
-    #         stats = self.REGEXPS['statsOverview'].search(page.text)
+    def getStats(self, player, alreadyFetchedPage = None): 
+        page = alreadyFetchedPage
+        if not page:
+            page = self._fetchPhp('index.php', page='statistics')
 
-    #     player.rank = int(stats.group(1).replace('.',''))
-    #     player.points = int(stats.group(2).replace('.',''))     
-
+        position = int (page.etree,xpath("string(//*[@class='myrank']//*[class='position'//text())"))
+        points   = int (page.etree,xpath("string(//*[@class='myrank']//*[class='points'//text())"))
+        return position, points
 
 ########################################################################################## 
     def getSolarSystems(self, solarSystems, deuteriumSourcePlanet = None): # solarsytems is an iterable of tuples
@@ -780,7 +767,7 @@ class WebAdapter(object):
         # Each day, all the new inactive planets appear at midnight, usually with plenty
         # of resources, as nobody has attacked them yet. In order to find and
         # attack them before others do, spawn a thread per 50 solar systems to scan:
-        for dummy in range(len(solarSystems) / 50):
+        for dummy in range((len(solarSystems) / 50) +1 ):
             thread = ScanThread(inputQueue, outputQueue, self.opener)
             thread.start()
             threads.append(thread)
@@ -877,12 +864,6 @@ class ScanThread(threading.Thread):
             except BotError, e:
                 self.exception = e
                 break
-            except Exception, e:
-                error = True
-                if __debug__: 
-                    print >>sys.stderr, repr(e)
-                    traceback.print_exc()
-                    
 
 
 ########################################################################################## 
