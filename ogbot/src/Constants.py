@@ -62,7 +62,7 @@ INGAME_TYPES = [
     Research('ionTechnology'                , 121 , Resources(1000    , 300     , 100))     , 
     Research('plasmaTechnology'             , 122 , Resources(2000    , 4000    , 100))     , 
     Research('intergalacticResearchNetwork' , 123 , Resources(240000  , 400000  , 160000))  , 
-    Research('expeditionTechnology'         , 124 , Resources(4000    , 8000    , 4000))    ,
+    Research('astrophysics'                 , 124 , Resources(4000    , 8000    , 4000))    ,
     Research('gravitonTechnology'           , 199 , Resources(0       , 0       , 0))       ,
  
     Ship('smallCargo'                      , 202 , Resources(2000    , 2000    , 0)        , 5000    , 20)   , 
