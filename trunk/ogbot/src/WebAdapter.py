@@ -309,8 +309,8 @@ class WebAdapter(object):
         }
         
 ########################################################################################## 
-    def goToPlanet(self, planet):
-        self._fetchPhp('index.php', page='overview', cp=planet.code)
+    def goToPlanet(self, ownPlanet):
+        self._fetchPhp('index.php', page='overview')
 
 
 ########################################################################################## 
@@ -368,7 +368,7 @@ class WebAdapter(object):
 
 
 ##########################################################################################
-     def getResourcesOnPlanet(self, planetCode, alreadyFetchedPage = None):
+    def getResourcesOnPlanet(self, planetCode, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
             page = self._fetchPhp('index.php', page='overview',cp=planetCode).read()
@@ -412,24 +412,26 @@ class WebAdapter(object):
         #         planet.allBuildings[item] = 0
 
 
-########################################################################################## 
-    def _checkEndTimeOfBuildingUpgrade(self, planet, alreadyFetchedPage = None):
-        page = alreadyFetchedPage
-        if not page:
-            page = self._fetchPhp('index.php', page='b_building', cp=planet.code)
-        upgradeTime = self.REGEXPS['planet']['currentlyUpgradingBuilding'].search(page.text)
-        if upgradeTime:
-            planet.endBuildTime = datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
-        else:
-            #guarentuees all time comparisons will work
+##########################################################################################
+# TODO: not working            
+    # def _checkEndTimeOfBuildingUpgrade(self, planet, alreadyFetchedPage = None):
+    #     page = alreadyFetchedPage
+    #     if not page:
+    #         page = self._fetchPhp('index.php', page='b_building', cp=planet.code)
+    #     upgradeTime = self.REGEXPS['planet']['currentlyUpgradingBuilding'].search(page.text)
+    #     if upgradeTime:
+    #         planet.endBuildTime = datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
+    #     else:
+    #         #guarentuees all time comparisons will work
             planet.endBuildTime = datetime.now() - timedelta(days=10000)
         
 
 ########################################################################################## 
-    def upgradeBuilding(self, planet, building):
-        page = self._fetchPhp('index.php', page='b_building', modus='add', techid=building.code, cp=planet.code)
-        mySleep(10)
-        self._checkEndTimeOfBuildingUpgrade(planet, page)
+# TODO: not working            
+    # def upgradeBuilding(self, planet, building):
+    #     page = self._fetchPhp('index.php', page='b_building', modus='add', techid=building.code, cp=planet.code)
+    #     mySleep(10)
+    #     self._checkEndTimeOfBuildingUpgrade(planet, page)
     
 
 ########################################################################################## 
@@ -464,63 +466,69 @@ class WebAdapter(object):
                 
 
 ########################################################################################## 
-    def _checkEndTimeOfResearchUpgrade(self, planet, alreadyFetchedPage = None):
-        page = alreadyFetchedPage
-        if not page:
-                page = self._fetchPhp('index.php', page='buildings', cp=planet.code)
-        upgradeTime = self.REGEXPS['currentlyUpgradingResearch'].search(page.text)
-        labPresent  = self.REGEXPS['planet']['ResearchLabPresent'].search(page.text)
-        if labPresent:
-            if upgradeTime:
-                return datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
-            else:
-                #guarentuees all time comparisons will work
-                return datetime.now() - timedelta(days=10000)
+# TODO: not working            
+        # def _checkEndTimeOfResearchUpgrade(self, planet, alreadyFetchedPage = None):
+    #     page = alreadyFetchedPage
+    #     if not page:
+    #             page = self._fetchPhp('index.php', page='buildings', cp=planet.code)
+    #     upgradeTime = self.REGEXPS['currentlyUpgradingResearch'].search(page.text)
+    #     labPresent  = self.REGEXPS['planet']['ResearchLabPresent'].search(page.text)
+    #     if labPresent:
+    #         if upgradeTime:
+    #             return datetime.now() + timedelta(seconds=int(upgradeTime.group(1)))
+    #         else:
+    #             #guarentuees all time comparisons will work
+    #            return datetime.now() - timedelta(days=10000)
 
 
 ########################################################################################## 
-    def upgradeResearch(self, planet, research):
-        reply = self._fetchPhp('index.php', page='buildings', mode='Forschung', cp=planet.code, bau=research.code)
-        mySleep(10)
-        return self._checkEndTimeOfResearchUpgrade(planet, reply)
+# TODO: not working            
+
+#     def upgradeResearch(self, planet, research):
+#         reply = self._fetchPhp('index.php', page='buildings', mode='Forschung', cp=planet.code, bau=research.code)
+#         mySleep(10)
+#         return self._checkEndTimeOfResearchUpgrade(planet, reply)
 
 
-########################################################################################## 
-    def getDefense(self, planet, alreadyFetchedPage = None):
-        page = alreadyFetchedPage
-        if not page:
-            page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code)
-        planet.defense = {}
-        for name, quantity in self.REGEXPS['planet']['defense'].findall(page.text):
-            planet.defense[name] = int(quantity.replace('.', ''))
-        self.checkDefenseQueue(planet, page)
+# ########################################################################################## 
+# TODO: not working            
+#     def getDefense(self, planet, alreadyFetchedPage = None):
+#         page = alreadyFetchedPage
+#         if not page:
+#             page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code)
+#         planet.defense = {}
+#         for name, quantity in self.REGEXPS['planet']['defense'].findall(page.text):
+#             planet.defense[name] = int(quantity.replace('.', ''))
+#         self.checkDefenseQueue(planet, page)
 
-########################################################################################## 
-    def checkDefenseQueue(self, planet, alreadyFetchedPage = None):
-        page = alreadyFetchedPage
-        if not page:
-            page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code)
-        time = self.REGEXPS['planet']['durationRemaining'].search(page.text)
-        if time: 
-            return True 
-            planet.endDefenseWaitTime = datetime.now() + timedelta(days=time.group(2), hours=time.group(4), minutes=time.group(5), seconds=time.group(6))
-        else: 
-            return False    
+# ########################################################################################## 
+# TODO: not working            
+#     def checkDefenseQueue(self, planet, alreadyFetchedPage = None):
+#         page = alreadyFetchedPage
+#         if not page:
+#             page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code)
+#         time = self.REGEXPS['planet']['durationRemaining'].search(page.text)
+#         if time: 
+#             return True 
+#             planet.endDefenseWaitTime = datetime.now() + timedelta(days=time.group(2), hours=time.group(4), minutes=time.group(5), seconds=time.group(6))
+#         else: 
+#             return False    
 
 
-########################################################################################## 
-    def buildDefense(self, planet, defense):
-        page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code )
-        form = ParseFile( page.reponse, page.url, backwards_compat=False )[-1]
-        for defenseType, quantity in defense.iteritems():
-            try:
-                controlName = "fmenge[%s]" % INGAME_TYPES_BY_NAME[defenseType].code
-                form[controlName] = str( quantity )
-            except ControlNotFoundError:
-                raise BotError( defenseType )
+# ########################################################################################## 
+# TODO: not working            
+#     def buildDefense(self, planet, defense):
+#         page = self._fetchPhp('index.php', page='buildings', mode='Verteidigung', cp=planet.code )
+#         form = ParseFile( page.reponse, page.url, backwards_compat=False )[-1]
+#         for defenseType, quantity in defense.iteritems():
+#             try:
+#                 controlName = "fmenge[%s]" % INGAME_TYPES_BY_NAME[defenseType].code
+#                 form[controlName] = str( quantity )
+#             except ControlNotFoundError:
+#                 raise BotError( defenseType )
             
-        reply = self._fetchValidResponse(form.click())
-        self.checkDefenseQueue(planet, reply)
+#         reply = self._fetchValidResponse(form.click())
+#         self.checkDefenseQueue(planet, reply)
 
 ########################################################################################## 
     def getAvailableFleet(self, alreadyFetchedPage = None):    
@@ -542,6 +550,7 @@ class WebAdapter(object):
 
 
 # ########################################################################################## 
+# TODO: not working            
 #     def checkFleetQueue(self, planet, alreadyFetchedPage = None):
 #         time = self.REGEXPS['planet']['durationRemaining'].search(page.text)
 #         if time: 
@@ -552,6 +561,7 @@ class WebAdapter(object):
 
 
 # ########################################################################################## 
+# TODO: not working            
 #     def buildShips(self, planet, ships):
 #         if not ships: return
 #         page = self._fetchPhp('index.php', page='buildings', mode='Flotte', cp=planet.code )
@@ -565,7 +575,9 @@ class WebAdapter(object):
 #         reply = self._fetchValidResponse(form.click())
 #         self.checkFleetQueue(planet, reply)
 
-########################################################################################## 
+##########################################################################################
+
+    
     def getFreeFleetSlots(self, player, alreadyFetchedPage = None):
         page = alreadyFetchedPage
         if not page:
