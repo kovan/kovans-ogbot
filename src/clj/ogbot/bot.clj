@@ -150,14 +150,15 @@
   (let [attack-radius (:attack-radius (:config state))
         systems-per-galaxy (:systems-per-galaxy (:config state))
         source-planets (:source-planets state)]
-    (distinct
-     (for [source-planet source-planets
-           :let [galaxy (:galaxy (:coords source-planet))
-                 center-system (:solar-system (:coords source-planet))
-                 first-system (max 1 (- center-system attack-radius))
-                 last-system (min systems-per-galaxy (+ center-system attack-radius))]
-           system (range first-system (inc last-system))]
-       [galaxy system]))))
+    (vec
+     (distinct
+      (for [source-planet source-planets
+            :let [galaxy (:galaxy (:coords source-planet))
+                  center-system (:solar-system (:coords source-planet))
+                  first-system (max 1 (- center-system attack-radius))
+                  last-system (min systems-per-galaxy (+ center-system attack-radius))]
+            system (range first-system (inc last-system))]
+        [galaxy system])))))
 
 (defn scan-galaxies [state]
   (log-activity (:event-mgr state) "Searching inactive planets...")

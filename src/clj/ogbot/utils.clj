@@ -42,11 +42,13 @@
 (defn add-commas
   "Add thousand separators to a number"
   [n]
-  (let [s (str n)
-        len (count s)]
-    (if (< len 4)
+  (let [s (str n)]
+    (if (< (count s) 4)
       s
-      (str/join "," (reverse (map str/join (partition-all 3 (reverse s))))))))
+      (let [reversed (reverse s)
+            groups (partition-all 3 reversed)
+            joined (map #(apply str (reverse %)) groups)]
+        (str/join "," (reverse joined))))))
 
 (def ^Random rng (Random.))
 
@@ -93,11 +95,14 @@
   [dict-list-str]
   (let [cleaned (-> dict-list-str
                     (str/replace "\n" "")
+                    (str/replace #"^\[" "")
+                    (str/replace #"\]$" "")
                     (str/trim))]
-    (if (or (empty? cleaned) (= cleaned "[]"))
+    (if (empty? cleaned)
       []
       (->> (str/split cleaned #"\}")
            (map str/trim)
+           (map #(str/replace % #"^\{" ""))
            (remove empty?)
            (map parse-dictionary)
            vec))))

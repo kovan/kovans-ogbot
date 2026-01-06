@@ -1,8 +1,7 @@
 (ns ogbot.db
   "SQLite database for planet storage"
   (:require [clojure.java.jdbc :as jdbc]
-            [clojure.edn :as edn]
-            [ogbot.entities :as entities])
+            [ogbot.entities :as e])
   (:import [java.util.concurrent.locks ReentrantLock]))
 
 (def ^:private db-lock (ReentrantLock.))
@@ -13,12 +12,21 @@
    :subname db-file})
 
 (defn init-planet-db!
-  "Initialize planet database with schema"
+  "Initialize planet database with proper SQL schema"
   [db-spec]
   (jdbc/execute! db-spec
                  ["CREATE TABLE IF NOT EXISTS planets (
                     coords TEXT PRIMARY KEY,
-                    data TEXT NOT NULL,
+                    galaxy INTEGER NOT NULL,
+                    solar_system INTEGER NOT NULL,
+                    planet INTEGER NOT NULL,
+                    coords_type INTEGER NOT NULL,
+                    name TEXT,
+                    owner_name TEXT NOT NULL,
+                    owner_alliance TEXT,
+                    owner_is_inactive INTEGER NOT NULL,
+                    has_moon INTEGER NOT NULL,
+                    has_debris INTEGER NOT NULL,
                     last_updated INTEGER NOT NULL
                   )"]))
 
@@ -29,28 +37,70 @@
     (finally
       (.unlock db-lock))))
 
-(defn serialize-planet
-  "Serialize planet to EDN string"
+(defn planet->row
+  "Convert planet entity to database row"
   [planet]
-  (pr-str planet))
+  (let [coords (:coords planet)
+        owner (:owner planet)]
+    {:coords (str coords)
+     :galaxy (:galaxy coords)
+     :solar_system (:solar-system coords)
+     :planet (:planet coords)
+     :coords_type (:coords-type coords)
+     :name (or (:name planet) "")
+     :owner_name (:name owner)
+     :owner_alliance (or (:alliance owner) "")
+     :owner_is_inactive (if (:is-inactive owner) 1 0)
+     :has_moon (if (:has-moon planet) 1 0)
+     :has_debris (if (:has-debris planet) 1 0)
+     :last_updated (System/currentTimeMillis)}))
 
-(defn deserialize-planet
-  "Deserialize planet from EDN string"
-  [edn-str]
-  (edn/read-string edn-str))
+(defn row->planet
+  "Convert database row to planet entity"
+  [row]
+  (let [coords (e/coords (:galaxy row)
+                         (:solar_system row)
+                         (:planet row))
+        owner (e/->EnemyPlayer (:owner_name row)
+                               (:owner_alliance row)
+                               []
+                               0
+                               0
+                               nil
+                               (= 1 (:owner_is_inactive row)))]
+    (e/->EnemyPlanet coords
+                     owner
+                     (:name row)
+                     (= 1 (:has_moon row))
+                     (= 1 (:has_debris row))
+                     []
+                     []
+                     nil)))
 
 (defn write-planet!
   "Write a single planet to database"
   [db-spec planet]
   (with-lock
     (fn []
-      (let [coords-str (str (:coords planet))
-            data (serialize-planet planet)
-            now (System/currentTimeMillis)]
+      (let [row (planet->row planet)]
         (jdbc/execute! db-spec
-                      ["INSERT OR REPLACE INTO planets (coords, data, last_updated)
-                        VALUES (?, ?, ?)"
-                       coords-str data now])))))
+                      ["INSERT OR REPLACE INTO planets
+                        (coords, galaxy, solar_system, planet, coords_type, name,
+                         owner_name, owner_alliance, owner_is_inactive,
+                         has_moon, has_debris, last_updated)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                       (:coords row)
+                       (:galaxy row)
+                       (:solar_system row)
+                       (:planet row)
+                       (:coords_type row)
+                       (:name row)
+                       (:owner_name row)
+                       (:owner_alliance row)
+                       (:owner_is_inactive row)
+                       (:has_moon row)
+                       (:has_debris row)
+                       (:last_updated row)])))))
 
 (defn write-many-planets!
   "Write multiple planets to database in a transaction"
@@ -58,14 +108,26 @@
   (with-lock
     (fn []
       (jdbc/with-db-transaction [tx db-spec]
-        (let [now (System/currentTimeMillis)]
-          (doseq [planet planets
-                  :let [coords-str (str (:coords planet))
-                        data (serialize-planet planet)]]
+        (doseq [planet planets]
+          (let [row (planet->row planet)]
             (jdbc/execute! tx
-                          ["INSERT OR REPLACE INTO planets (coords, data, last_updated)
-                            VALUES (?, ?, ?)"
-                           coords-str data now])))))))
+                          ["INSERT OR REPLACE INTO planets
+                            (coords, galaxy, solar_system, planet, coords_type, name,
+                             owner_name, owner_alliance, owner_is_inactive,
+                             has_moon, has_debris, last_updated)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                           (:coords row)
+                           (:galaxy row)
+                           (:solar_system row)
+                           (:planet row)
+                           (:coords_type row)
+                           (:name row)
+                           (:owner_name row)
+                           (:owner_alliance row)
+                           (:owner_is_inactive row)
+                           (:has_moon row)
+                           (:has_debris row)
+                           (:last_updated row)])))))))
 
 (defn read-planet
   "Read a planet by coordinates string"
@@ -73,17 +135,17 @@
   (with-lock
     (fn []
       (when-let [row (first (jdbc/query db-spec
-                                       ["SELECT data FROM planets WHERE coords = ?"
+                                       ["SELECT * FROM planets WHERE coords = ?"
                                         coords-str]))]
-        (deserialize-planet (:data row))))))
+        (row->planet row)))))
 
 (defn read-all-planets
   "Read all planets from database"
   [db-spec]
   (with-lock
     (fn []
-      (let [rows (jdbc/query db-spec ["SELECT data FROM planets"])]
-        (mapv #(deserialize-planet (:data %)) rows)))))
+      (let [rows (jdbc/query db-spec ["SELECT * FROM planets"])]
+        (mapv row->planet rows)))))
 
 (defn search-planets
   "Search planets matching a predicate function"
@@ -133,15 +195,16 @@
   (assoc-in pl [:planets (str (:coords planet))] planet))
 
 (defn save-planet-list!
-  "Save planet list to EDN file"
-  [^PlanetList pl file-path]
-  (spit file-path (pr-str (:planets pl))))
+  "Save planet list to database"
+  [db-spec ^PlanetList pl]
+  (let [planets (vals (:planets pl))]
+    (write-many-planets! db-spec planets)))
 
 (defn load-planet-list
-  "Load planet list from EDN file"
-  [file-path]
+  "Load planet list from database"
+  [db-spec]
   (try
-    (let [data (edn/read-string (slurp file-path))]
-      (->PlanetList data))
+    (let [planets (read-all-planets db-spec)]
+      (create-planet-list planets))
     (catch Exception _
       (->PlanetList {}))))
