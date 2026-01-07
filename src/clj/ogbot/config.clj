@@ -71,7 +71,11 @@
 
     ;; Convert keys from INI format to kebab-case
     (doseq [[k v] raw-config]
-      (let [kebab-key (keyword (str/replace k #"(?<!^)(?=[A-Z])" "-"))]
+      (let [k-str (if (keyword? k) (name k) (str k))
+            kebab-key (-> k-str
+                         (str/replace #"(?<!^)(?=[A-Z])" "-")
+                         str/lower-case
+                         keyword)]
         (swap! config assoc kebab-key v)))
 
     ;; Parse special fields
