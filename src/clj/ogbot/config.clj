@@ -47,7 +47,7 @@
    :systems-per-galaxy 499
    :proxy ""
    :user-agent "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)"
-   :rentability-formula "(metal + 1.5 * crystal + 3 * deuterium) / flightTime"
+   :rentability-formula "(/ (+ metal (* 1.5 crystal) (* 3 deuterium)) flightTime)"
    :pre-midnight-pause-time "22:00:00"
    :inactives-appearance-time "0:06:00"
    :deuterium-source-planet ""
@@ -66,17 +66,19 @@
 (defn load-bot-configuration
   "Load bot configuration from file with validation"
   [file-path]
-  (let [raw-config (merge default-config (load-ini-file file-path))
-        config (atom {})]
+  (let [loaded-config (load-ini-file file-path)
+        converted-config (atom {})]
 
-    ;; Convert keys from INI format to kebab-case
-    (doseq [[k v] raw-config]
-      (let [k-str (if (keyword? k) (name k) (str k))
-            kebab-key (-> k-str
+    ;; Convert loaded keys from INI format to kebab-case
+    (doseq [[k v] loaded-config]
+      (let [kebab-key (-> k
                          (str/replace #"(?<!^)(?=[A-Z])" "-")
                          str/lower-case
                          keyword)]
-        (swap! config assoc kebab-key v)))
+        (swap! converted-config assoc kebab-key v)))
+
+    ;; Merge with defaults (loaded config takes precedence)
+    (let [config (atom (merge default-config @converted-config))]
 
     ;; Parse special fields
     (swap! config update :pre-midnight-pause-time utils/parse-time)
@@ -116,12 +118,14 @@
 
     ;; Validate rentability formula
     (try
-      (let [metal 1 crystal 1 deuterium 1 flight-time 1]
-        (eval (read-string (:rentability-formula @config))))
+      (eval (read-string
+              (str "(let [metal 1 crystal 1 deuterium 1 flightTime 1] "
+                   (:rentability-formula @config)
+                   ")")))
       (catch Exception e
         (throw (utils/bot-error (str "Invalid rentability formula: " (.getMessage e))))))
 
-    @config))
+    @config)))
 
 (defn load-translations
   "Load all translation files from languages directory"

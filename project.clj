@@ -20,7 +20,7 @@
                  [aero "1.1.6"]
                  ;; Logging
                  [org.clojure/tools.logging "1.2.4"]
-                 [ch.qos.logback/logback-classic "1.4.14"]
+                 [ch.qos.logback/logback-classic "1.2.12"]
                  ;; Web UI
                  [ring/ring-core "1.10.0"]
                  [ring/ring-jetty-adapter "1.10.0"]

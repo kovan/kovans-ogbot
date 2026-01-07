@@ -52,8 +52,11 @@
   (let [metal (:metal res)
         crystal (:crystal res)
         deuterium (:deuterium res)
-        flight-time (double flight-time-seconds)]
-    (eval (read-string rentability-formula))))
+        flightTime (double flight-time-seconds)]
+    (eval (read-string
+            (str "(let [metal " metal " crystal " crystal " deuterium " deuterium " flightTime " flightTime "] "
+                 rentability-formula
+                 ")")))))
 
 ;; ============================================================================
 ;; Coordinates
