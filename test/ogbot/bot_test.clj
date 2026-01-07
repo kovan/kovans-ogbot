@@ -157,4 +157,45 @@
       (catch Exception e
         nil))))
 
+;; ============================================================================
+;; Espionage Report Checking Tests
+;; ============================================================================
+
+(deftest test-check-espionage-reports-arrived-empty
+  (testing "Checking espionage reports with no pending espionages"
+    (let [state {:not-arrived-espionages {}}
+          [updated-state arrived-reports] (bot/check-espionage-reports-arrived state)]
+      (is (= state updated-state))
+      (is (empty? arrived-reports)))))
+
+(deftest test-check-espionage-reports-structure
+  (testing "Check espionage reports returns correct structure"
+    (let [state {:not-arrived-espionages {}
+                 :web-adapter nil
+                 :planet-db nil
+                 :event-mgr (bot/->ConsoleEventManager)
+                 :inactive-planets (atom [])}
+          [updated-state arrived-reports] (bot/check-espionage-reports-arrived state)]
+      (is (map? updated-state))
+      (is (vector? arrived-reports))
+      (is (contains? updated-state :not-arrived-espionages)))))
+
+;; ============================================================================
+;; Spy Planets Tests
+;; ============================================================================
+
+(deftest test-spy-planets-structure
+  (testing "Spy planets function structure"
+    (let [source (e/own-planet (e/coords 1 240 3) (e/own-player) "Home")
+          target1 (e/enemy-planet (e/coords 1 240 5) (e/enemy-player "E1"))
+          target2 (e/enemy-planet (e/coords 1 240 7) (e/enemy-player "E2"))
+          state {:source-planets [source]
+                 :config {:probes-to-send 5}
+                 :web-adapter nil
+                 :event-mgr (bot/->ConsoleEventManager)}
+          planets [target1 target2]]
+      ;; This will attempt to send spies (may fail due to nil adapter)
+      ;; but tests the function structure
+      (is (nil? (bot/spy-planets state planets 1))))))
+
 (run-tests)
