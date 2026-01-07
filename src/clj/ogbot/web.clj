@@ -181,27 +181,67 @@
 
 (defn get-research-levels [adapter player]
   (let [page (fetch-php adapter "index.php" {:page "research"})
-        research-levels (atom {})]
-    (when page
-      (doseq [tech constants/ingame-types
-              :when (instance? ogbot.entities.Research tech)]
-        (let [class-selector (str "research" (:code tech))
-              ;; This is simplified - actual implementation would parse HTML properly
-              level 0]
-          (swap! research-levels assoc (:name tech) level))))
-    (assoc player :research-levels @research-levels)))
+        hickory (:hickory page)
+        research-levels (reduce (fn [levels tech]
+                                 (if (not (instance? ogbot.entities.Research tech))
+                                   levels
+                                   (let [code (:code tech)
+                                         ;; Try normal class first
+                                         class-name (str "research" code)
+                                         nodes (s/select (s/descendant
+                                                         (s/class class-name)
+                                                         (s/class "level"))
+                                                        hickory)
+                                         ;; If not found, try with "tips" suffix (being built)
+                                         nodes (if (empty? nodes)
+                                                (s/select (s/descendant
+                                                          (s/class (str class-name " tips"))
+                                                          (s/class "level"))
+                                                         hickory)
+                                                nodes)
+                                         level-text (when (seq nodes)
+                                                     (-> nodes first :content first))
+                                         level (if level-text
+                                                (try
+                                                  (Integer/parseInt (str level-text))
+                                                  (catch Exception _ 0))
+                                                0)]
+                                     (assoc levels (:name tech) level))))
+                               {}
+                               constants/ingame-types)
+        ;; Validate critical technologies
+        impulse-drive (get research-levels "impulseDrive" 0)
+        combustion-drive (get research-levels "combustionDrive" 0)]
+    (when (or (zero? impulse-drive) (zero? combustion-drive))
+      (throw (utils/bot-fatal-error "Not enough technologies researched to run the bot")))
+    (assoc player :research-levels research-levels)))
 
 (defn get-available-fleet [adapter page]
-  (let [hickory (:hickory page)
-        fleet (atom {})]
-    (doseq [ship constants/ingame-types
-            :when (instance? ogbot.entities.Ship ship)
-            :when (not= "solarSatellite" (:name ship))]
-      (let [button-id (str "button" (:code ship))
-            ;; Simplified - actual implementation would extract from HTML
-            quantity 0]
-        (swap! fleet assoc (:name ship) quantity)))
-    @fleet))
+  (let [hickory (:hickory page)]
+    ;; Check if there's a warning div indicating no fleet
+    (if (seq (s/select (s/id "warning") hickory))
+      {}
+      ;; Extract fleet quantities for each ship type
+      (reduce (fn [fleet ship]
+                (if (or (not (instance? ogbot.entities.Ship ship))
+                       (= "solarSatellite" (:name ship)))
+                  fleet
+                  (let [button-id (str "button" (:code ship))
+                        ;; Select the quantity from: #button{code} .level
+                        level-nodes (s/select (s/descendant
+                                               (s/id button-id)
+                                               (s/class "level"))
+                                             hickory)
+                        quantity-text (when (seq level-nodes)
+                                       (-> level-nodes first :content first))
+                        quantity (if quantity-text
+                                  (try
+                                    (Integer/parseInt (str/replace (str quantity-text) "." ""))
+                                    (catch Exception _ 0))
+                                  0)]
+                    (assoc fleet (:name ship) quantity))))
+              {}
+              constants/ingame-types))))
 
 (defn get-free-fleet-slots [adapter player page]
   (let [text (:text page)
@@ -258,29 +298,154 @@
 ;; Fleet Operations
 ;; ============================================================================
 
-(defn launch-mission [adapter mission abort-if-not-enough? fleet-slots-to-reserve]
-  ;; Step 1: Select fleet
-  (let [page (fetch-php adapter "index.php" {:page "fleet1"})
-        free-slots (get-free-fleet-slots adapter nil page)
-        available-fleet (get-available-fleet adapter page)]
+;; ============================================================================
+;; Fleet Mission Launch - Multi-step Process
+;; ============================================================================
 
-    (when (<= free-slots fleet-slots-to-reserve)
-      (throw (utils/no-free-slots-error)))
+(defn validate-fleet-availability
+  "Validate that we have enough ships and free fleet slots."
+  [available-fleet mission-fleet abort-if-not-enough? free-slots fleet-slots-to-reserve]
+  (when (<= free-slots fleet-slots-to-reserve)
+    (throw (utils/no-free-slots-error)))
 
-    ;; Validate fleet availability
-    (doseq [[ship-type requested] (:fleet mission)]
-      (let [available (get available-fleet ship-type 0)]
-        (when (or (zero? available)
-                 (and abort-if-not-enough? (< available requested)))
-          (throw (utils/not-enough-ships-error
-                 available-fleet
-                 {ship-type requested}
-                 available)))))
+  (doseq [[ship-type requested] mission-fleet]
+    (let [available (get available-fleet ship-type 0)]
+      (when (or (zero? available)
+               (and abort-if-not-enough? (< available requested)))
+        (throw (utils/not-enough-ships-error
+               available-fleet
+               {ship-type requested}
+               available))))))
 
-    ;; This is simplified - actual implementation would submit forms
-    ;; through multiple steps like the Python version
-    (println "Launching mission:" mission)
-    mission))
+(defn build-fleet-form
+  "Build form data for fleet selection (step 1)."
+  [mission-fleet]
+  (reduce (fn [form [ship-type quantity]]
+            (let [ship-code (:code (constants/get-by-name ship-type))]
+              (assoc form (str "am" ship-code) (str (int quantity)))))
+          {}
+          mission-fleet))
+
+(defn build-destination-form
+  "Build form data for destination and speed (step 2)."
+  [mission]
+  (let [coords (:coords (:target-planet mission))]
+    {:galaxy (str (:galaxy coords))
+     :system (str (:solar-system coords))
+     :position (str (:planet coords))
+     :type (str (get entities/coord-types (:coords-type coords) 1))
+     :speed (str (quot (:speed-percentage mission) 10))}))
+
+(defn extract-flight-time
+  "Extract flight time from page HTML."
+  [page-text]
+  (when-let [match (re-find #"(\d+):(\d+):(\d+)" page-text)]
+    (let [hours (Integer/parseInt (nth match 1))
+          mins (Integer/parseInt (nth match 2))
+          secs (Integer/parseInt (nth match 3))]
+      (* 1000 (+ (* hours 3600) (* mins 60) secs)))))
+
+(defn build-mission-form
+  "Build form data for mission type and resources (step 3)."
+  [mission]
+  (let [resources (:resources mission)]
+    {:mission (str (get entities/mission-types (:mission-type mission) 3))
+     :resource1 (str (:metal resources))
+     :resource2 (str (:crystal resources))
+     :resource3 (str (:deuterium resources))}))
+
+(defn check-mission-result
+  "Check the result of mission submission and handle errors."
+  [page-text translations available-fleet mission-fleet]
+  (cond
+    ;; Generic failure message
+    (str/includes? page-text (get translations "fleetCouldNotBeSent" "could not be sent"))
+    {:status :retry :reason "Fleet could not be sent"}
+
+    ;; Check for specific errors
+    :else
+    (let [error-matches (re-seq #"<span class=\"error\">(.*?)</span>" page-text)]
+      (if (seq error-matches)
+        (let [errors (map second error-matches)
+              error-text (str/join " " errors)]
+          (cond
+            (some #(str/includes? % (get translations "fleetLimitReached" "limit")) errors)
+            (throw (utils/no-free-slots-error))
+
+            (some #(str/includes? % (get translations "noShipSelected" "no ship")) errors)
+            (throw (utils/not-enough-ships-error available-fleet mission-fleet 0))
+
+            :else
+            (throw (utils/fleet-send-error (str "Fleet send error: " error-text)))))
+        ;; No errors, check for success
+        (if (str/includes? page-text "class=\"success\"")
+          {:status :success}
+          {:status :retry :reason "No success message"})))))
+
+(defn launch-mission
+  "Launch a fleet mission through OGame's 4-step form process.
+  Returns the mission object with launch time and flight duration set."
+  [adapter mission abort-if-not-enough? fleet-slots-to-reserve]
+  (loop [retry-count 0]
+    (when (> retry-count 5)
+      (throw (utils/fleet-send-error "Too many retries launching mission")))
+
+    ;; Ensure fleet quantities are integers
+    (let [mission (update mission :fleet
+                         (fn [fleet]
+                           (into {} (map (fn [[k v]] [k (int v)]) fleet))))]
+
+      ;; Step 1: Select fleet (fleet1 page)
+      (let [page1 (fetch-php adapter "index.php" {:page "fleet1"})
+            free-slots (get-free-fleet-slots adapter nil page1)
+            available-fleet (get-available-fleet adapter page1)]
+
+        ;; Validate we have enough ships and slots
+        (validate-fleet-availability available-fleet (:fleet mission)
+                                    abort-if-not-enough? free-slots fleet-slots-to-reserve)
+
+        ;; Build and submit fleet selection form
+        (let [fleet-form (build-fleet-form (:fleet mission))]
+          (Thread/sleep 3000) ; Delay between steps
+
+          ;; Step 2: Select destination and speed (fleet2 page)
+          (let [page2 (fetch-php-post adapter "index.php" fleet-form {:page "fleet2"})]
+
+            ;; Check if we reached fleet2 (should have "fleet3" in action)
+            (if-not (str/includes? (:text page2) "fleet3")
+              (recur (inc retry-count))
+
+              ;; Build and submit destination form
+              (let [dest-form (build-destination-form mission)]
+                (Thread/sleep 3000) ; Delay between steps
+
+                ;; Step 3: Select mission type and resources (fleet3 page)
+                (let [page3 (fetch-php-post adapter "index.php" dest-form {:page "fleet3"})]
+
+                  ;; Check if we reached fleet3
+                  (if-not (str/includes? (:text page3) "fleet3")
+                    (recur (inc retry-count))
+
+                    ;; Extract flight time and build mission form
+                    (let [flight-time (extract-flight-time (:text page3))
+                          mission-form (build-mission-form mission)]
+                      (Thread/sleep 3000) ; Delay between steps
+
+                      ;; Step 4: Confirm and check result (fleet4 page)
+                      (let [page4 (fetch-php-post adapter "index.php" mission-form {:page "fleet4"})
+                            result (check-mission-result (:text page4)
+                                                        (:translations adapter)
+                                                        available-fleet
+                                                        (:fleet mission))]
+
+                        (case (:status result)
+                          :retry (recur (inc retry-count))
+                          :success (let [server-time (current-server-time (:server-data adapter))
+                                        launched-mission (entities/mark-launched mission server-time flight-time)]
+                                    (activity-msg (:event-mgr adapter)
+                                                 (format "Mission launched to %s"
+                                                        (str (:coords (:target-planet mission)))))
+                                    launched-mission))))))))))))))
 
 ;; ============================================================================
 ;; Galaxy Scanning

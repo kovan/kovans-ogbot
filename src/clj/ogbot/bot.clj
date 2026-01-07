@@ -215,6 +215,73 @@
           :let [source-planet (first (:source-planets state))]]
     (spy-planet state source-planet planet (:probes-to-send (:config state)))))
 
+(defn check-espionage-reports-arrived
+  "Check if pending espionage missions have returned with reports.
+  Returns [updated-state arrived-reports]."
+  [state]
+  (let [not-arrived (:not-arrived-espionages state)
+        web-adapter (:web-adapter state)
+        planet-db (:planet-db state)]
+    (if (empty? not-arrived)
+      [state []]
+      (let [displayed-reports (web/get-game-messages web-adapter :espionage-report)
+            server-time (web/current-server-time (:server-data web-adapter))
+            results (reduce
+                     (fn [[arrived remaining] [planet espionage]]
+                       (let [target-coords (:coords (:target-planet espionage))
+                             launch-time (:launch-time espionage)
+                             arrival-time (:arrival-time espionage)
+                             ;; Find matching reports
+                             matching-reports (filter
+                                              (fn [report]
+                                                (and (= (:coords report) target-coords)
+                                                     (>= (:date report) launch-time)))
+                                              displayed-reports)
+                             ;; Sort by date (newest first)
+                             sorted-reports (reverse (sort-by :date matching-reports))]
+                         (cond
+                           ;; Report arrived
+                           (seq sorted-reports)
+                           (let [report (first sorted-reports)
+                                 ;; Update report with probes sent
+                                 report (assoc report :probes-sent
+                                             (get (:fleet espionage) "espionageProbe" 0))
+                                 ;; Update planet with simulation and history
+                                 planet (-> planet
+                                          (assoc :simulation
+                                                 {:resources (:resources report)
+                                                  :mines (:buildings report)})
+                                          (update :espionage-history conj report))]
+                             ;; Save to database
+                             (db/write-planet! planet-db planet)
+                             [(conj arrived report) remaining])
+
+                           ;; Report never arrived (timeout after 2 minutes)
+                           (> server-time (+ arrival-time (* 2 60 1000)))
+                           (do
+                             (web/activity-msg (:event-mgr state)
+                                              (format "Espionage report from %s never arrived. Deleting planet."
+                                                     (str target-coords)))
+                             ;; Remove from inactive planets
+                             (swap! (:inactive-planets state)
+                                   (fn [planets] (remove #(= % planet) planets)))
+                             [arrived remaining])
+
+                           ;; Still waiting
+                           :else
+                           [arrived (assoc remaining planet espionage)])))
+                     [[] {}]
+                     not-arrived)
+            [arrived-reports remaining-espionages] results]
+
+        ;; Delete arrived reports from game
+        (when (seq arrived-reports)
+          (web/delete-messages web-adapter arrived-reports)
+          (save-bot-state! state))
+
+        ;; Return updated state and arrived reports
+        [(assoc state :not-arrived-espionages remaining-espionages) arrived-reports]))))
+
 ;; ============================================================================
 ;; Attack Mode
 ;; ============================================================================
