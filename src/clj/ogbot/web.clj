@@ -89,7 +89,8 @@
    :socket-timeout 10000
    :conn-timeout 10000
    :throw-exceptions false
-   :follow-redirects true})
+   :follow-redirects true
+   :redirect-strategy :lax})
 
 (defn fetch-url [adapter url]
   (try
@@ -111,7 +112,8 @@
                     webpage
                     php
                     (http/generate-query-string query-params))]
-     (fetch-url adapter url))))
+     (fetch-url adapter url)
+     (save-page-to-disk webpage))))
 
 (defn fetch-php-post [adapter php post-data params]
   (let [session (:session adapter)
