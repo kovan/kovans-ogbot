@@ -1,0 +1,201 @@
+; Jacking in...
+; Connecting using "Leiningen" project type.
+; Starting Jack-in: (cd /home/k/kovans-ogbot; lein update-in :dependencies conj '[nrepl,"1.5.1"]' -- update-in :plugins conj '[cider/cider-nrepl,"0.58.0"]' -- update-in '[:repl-options,:nrepl-middleware]' conj '["cider.nrepl/cider-middleware"]' -- repl :headless)
+; Using host:port 127.0.0.1:44081 ...
+; Hooking up nREPL sessions on port 44081...
+; Connected session: clj, port: 44081
+; Evaluating code from settings: 'calva.autoEvaluateCode.onConnect.clj'
+nil
+clj꞉ogbot.core꞉> 
+"Please see https://calva.io/output/#about-stdout-in-the-repl-window
+about why stdout printed to this file is prepended with `;` to be line comments."
+clj꞉ogbot.core꞉> 
+; Jack-in done.
+clj꞉ogbot.core꞉> 
+#'ogbot.web/do-login!
+clj꞉ogbot.web꞉> 
+#'ogbot.core/-main
+clj꞉ogbot.core꞉> (-main "--no-gui")
+; ╔═══════════════════════════════════════════╗
+; ║   Kovan's OGBot - Clojure Edition v3.1   ║
+; ║                                           ║
+; ║   Automated OGame Bot                    ║
+; ║   Translated from Python to Clojure      ║
+; ╚═══════════════════════════════════════════╝
+; 
+; Starting bot in console mode...
+; 2026-01-07T22:11:15.304Z Bot started
+; 2026-01-07T22:11:15.305Z Contacting server...
+; [FATAL] Cannot invoke "java.lang.Thread.stop()"
+; 2026-01-07T22:12:21.398Z Bot stopped
+nil
+clj꞉ogbot.core꞉> 
+(-main "--no-gui")
+; ╔═══════════════════════════════════════════╗
+; ║   Kovan's OGBot - Clojure Edition v3.1   ║
+; ║                                           ║
+; ║   Automated OGame Bot                    ║
+; ║   Translated from Python to Clojure      ║
+; ╚═══════════════════════════════════════════╝
+; 
+; Starting bot in console mode...
+; 2026-01-07T22:12:42.077Z Bot started
+; 2026-01-07T22:12:42.077Z Contacting server...
+((clojure.stacktrace/print-stack-trace)
+; clojure.lang.ArityException: Wrong number of args (0) passed to: clojure.stacktrace/print-stack-trace
+clj꞉ogbot.core꞉> eduction
+#function[clojure.core/eduction]
+clj꞉ogbot.core꞉> (e)
+(clojure.stacktrace/print-stack-trace (Exception. "foo"))
+; java.lang.Exception: foo
+;  at ogbot.web$eval30271.invokeStatic (repl.calva-repl:33)
+;     ogbot.web$eval30271.invoke (repl.calva-repl:33)
+;     clojure.lang.Compiler.eval (Compiler.java:7194)
+;     clojure.lang.Compiler.eval (Compiler.java:7149)
+;     clojure.core$eval.invokeStatic (core.clj:3215)
+;     clojure.core$eval.invoke (core.clj:3211)
+;     cider.nrepl.middleware.debug$eval_with_locals.invokeStatic (debug.clj:264)
+;     cider.nrepl.middleware.debug$eval_with_locals.invoke (debug.clj:254)
+;    cider.nrepl.middleware.debug$read_eval_expression.invokeStatic (debug.clj:280)
+;     cider.nrepl.middleware.debug$read_eval_expression.invoke (debug.clj:274)
+;     cider.nrepl.middleware.debug$read_debug_command$fn__28852.invoke (debug.clj:393)
+;     cider.nrepl.middleware.debug$read_debug_command.invokeStatic (debug.clj:393)
+;     cider.nrepl.middleware.debug$read_debug_command.invoke (debug.clj:322)
+;     cider.nrepl.middleware.debug$break.invokeStatic (debug.clj:557)
+;     cider.nrepl.middleware.debug$break.invoke (debug.clj:535)
+;    clojure.lang.Var.invoke (Var.java:399)
+;     cider.nrepl.middleware.DebugSupport.doBreak (DebugSupport.java:23)
+;     ogbot.web$do_login_BANG_.invokeStatic (web.clj:159)
+;     ogbot.web$do_login_BANG_.invoke (web.clj:138)
+;     ogbot.web$create_web_adapter.invokeStatic (web.clj:508)
+;     ogbot.web$create_web_adapter.invoke (web.clj:495)
+;     ogbot.bot$connect_BANG_.invokeStatic (bot.clj:120)
+;     ogbot.bot$connect_BANG_.invoke (bot.clj:117)
+;     ogbot.bot$start_BANG_.invokeStatic (bot.clj:367)
+;    ogbot.bot$start_BANG_.invoke (bot.clj:364)
+;     ogbot.bot$run_bot.invokeStatic (bot.clj:381)
+;     ogbot.bot$run_bot.invoke (bot.clj:377)
+;     ogbot.core$run_console_mode.invokeStatic (core.clj:27)
+;     ogbot.core$run_console_mode.invoke (core.clj:24)
+;     ogbot.core$_main.invokeStatic (core.clj:53)
+;     ogbot.core$_main.doInvoke (core.clj:40)
+;     clojure.lang.RestFn.invoke (RestFn.java:408)
+;     ogbot.core$eval30219.invokeStatic (repl.calva-repl:33)
+;     ogbot.core$eval30219.invoke (repl.calva-repl:33)
+nil
+clj꞉ogbot.core꞉> (adapter
+                  )
+#WebAdapter{:config {:user-agent "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)", :players-to-avoid nil, :inactives-appearance-time {:hour 0, :minute 6, :second 0}, :password "iPhBFXjIh6mSQp", :webpage "s269-es.ogame.gameforge.com", :username "dadahe7215@cameltok.com", :max-probes "15", :probes-to-send "1", :slots-to-reserve "0", :alliances-to-avoid nil, :wait-between-attack-checks "45", :defense-point [], :systems-per-galaxy "499", :source-planets nil, :proxy "", :building-point [], :research-point [], :rentability-formula "(/ (+ metal (* 1.5 crystal) (* 3 deuterium)) flightTime)", :attacking-ship "smallCargo", :pre-midnight-pause-time {:hour 22, :minute 0, :second 0}, :fleet-point [], :attack-radius "10", :deuterium-source-planet ""}, :translations {}, :translations-by-local-text {}, :server-data #ServerData{:charset "", :version 0.0, :language "", :time-delta #object[org.joda.time.Hours 0x43e95934 "PT0H"]}, :session "000000000000", :cookie-store #object[org.apache.http.impl.client.BasicCookieStore 0x6c7f55dd "[[version: 0][name: GTPINGRESSCOOKIE][value: ae4739a60560fc9a43bd9378d639e360][domain: gameforge.com][path: /][expiry: null], [version: 0][name: __cf_bm][value: 11Bpd82NX3j4R8DLOt5420oZQmkhZfvTB6tHmVWKOJw-1767823963-1.0.1.1-VKslYMXFkPfJ6UB2F1hg4DT6gSYy.pucz5OfD5Rq5FSTXb36VRpmHf_DdNSjlfyvm04OR4r_DQIFOgfbphqZjUBHz3kwg828TvT9zQ..5dY][domain: gameforge.com][path: /][expiry: Wed Jan 07 23:42:43 CET 2026]]"], :last-fetched-page nil, :check-thread-msgs-fn #function[ogbot.bot/connect!/check-msgs-fn--19510], :event-mgr #ConsoleEventManager#ogbot.bot.ConsoleEventManager{}, :regexps {}}
+clj꞉ogbot.core꞉> (response
+                  )
+{:cached nil, :request-time 108, :repeatable? false, :protocol-version {:name "HTTP", :major 1, :minor 1}, :streaming? true, :http-client #object[org.apache.http.impl.client.InternalHttpClient 0x477de036 "org.apache.http.impl.client.InternalHttpClient@477de036"], :chunked? true, :reason-phrase "Moved Permanently", :headers {"Server" "nginx", "Date" "Wed, 07 Jan 2026 22:12:43 GMT", "Content-Type" "text/html; charset=iso-8859-1", "Transfer-Encoding" "chunked", "Connection" "close", "Location" "https://s269-es.ogame.gameforge.com/game/reg/login2.php"}, :orig-content-encoding nil, :status 301, :length -1, :body "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n<html><head>\n<title>301 Moved Permanently</title>\n</head><body>\n<h1>Moved Permanently</h1>\n<p>The document has moved <a href=\"https://s269-es.ogame.gameforge.com/game/reg/login2.php\">here</a>.</p>\n</body></html>\n", :trace-redirects []}
+clj꞉ogbot.core꞉> (spit "asdf.html" (:body response))
+nil
+clj꞉ogbot.core꞉> 
+;    clojure.lang.Compiler.eval (Compiler.java:7194)
+;     cider.nrepl.middleware.util.eval$eval_dispatcher$fn__28574.invoke (eval.clj:15)
+;     nrepl.middleware.interruptible_eval$evaluator$run__21674$fn__21688.invoke (interruptible_eval.clj:130)
+;     nrepl.middleware.interruptible_eval$evaluator$run__21674.invoke (interruptible_eval.clj:128)
+;     nrepl.middleware.session$session_exec$session_loop__21779.invoke (session.clj:251)
+;     nrepl.SessionThread.run (SessionThread.java:21)
+; [FATAL] Invalid username and/or password
+; 2026-01-07T23:36:43.370Z Bot stopped
+nil
+clj꞉ogbot.core꞉> (-main)
+; ╔═══════════════════════════════════════════╗
+; ║   Kovan's OGBot - Clojure Edition v3.1   ║
+; ║                                           ║
+; ║   Automated OGame Bot                    ║
+; ║   Translated from Python to Clojure      ║
+; ╚═══════════════════════════════════════════╝
+; 
+; Starting bot with Web UI...
+; Starting web UI on http://localhost:3000
+; 
+; ╔════════════════════════════════════════════════╗
+; ║          OGBot Web Interface Started          ║
+; ║                                                ║
+; ║   → Open http://localhost:3000               ║
+; ║                                                ║
+; ║   The web UI is now running.                   ║
+; ║   Use your browser to control the bot.        ║
+; ╚════════════════════════════════════════════════╝
+; 00:37:11.490 [qtp1132957969-81] WARN  org.eclipse.jetty.server.HttpChannel - /api/events
+; java.lang.IllegalArgumentException: No implementation of method: :write-body-to-stream of protocol: #'ring.core.protocols/StreamableResponseBody found for class: clojure.core.async.impl.channels.ManyToManyChannel
+; 	at clojure.core$_cache_protocol_fn.invokeStatic(core_deftype.clj:584)
+; 	at clojure.core$_cache_protocol_fn.invoke(core_deftype.clj:576)
+; 	at ring.core.protocols$eval373$fn__374$G__364__383.invoke(protocols.clj:8)
+; 	at ring.util.servlet$update_servlet_response.invokeStatic(servlet.clj:109)
+; 	at ring.util.servlet$update_servlet_response.invoke(servlet.clj:94)
+; 	at ring.util.servlet$update_servlet_response.invokeStatic(servlet.clj:98)
+; 	at ring.util.servlet$update_servlet_response.invoke(servlet.clj:94)
+; 	at ring.adapter.jetty$proxy_handler$fn__502.invoke(jetty.clj:28)
+; 	at ring.adapter.jetty.proxy$org.eclipse.jetty.server.handler.AbstractHandler$ff19274a.handle(Unknown Source)
+; 	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)
+; 	at org.eclipse.jetty.server.Server.handle(Server.java:516)
+; 	at org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)
+; 	at org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)
+; 	at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)
+; 	at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)
+; 	at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)
+; 	at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)
+; 	at org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)
+; 	at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)
+; 	at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)
+; 	at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)
+; 	at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.produce(EatWhatYouKill.java:137)
+; 	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)
+; 	at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)
+; 	at java.base/java.lang.Thread.run(Thread.java:1474)
+; Jacking in...
+; Connecting using "Leiningen" project type.
+; Starting Jack-in: (cd /home/k/kovans-ogbot; lein update-in :dependencies conj '[nrepl,"1.5.1"]' -- update-in :plugins conj '[cider/cider-nrepl,"0.58.0"]' -- update-in '[:repl-options,:nrepl-middleware]' conj '["cider.nrepl/cider-middleware"]' -- repl :headless)
+; Using host:port 127.0.0.1:36733 ...
+; Hooking up nREPL sessions on port 36733...
+; Connected session: clj, port: 36733
+; Evaluating code from settings: 'calva.autoEvaluateCode.onConnect.clj'
+nil
+clj꞉ogbot.core꞉> 
+; Jack-in done.
+clj꞉ogbot.core꞉> (-main "--no-gui")
+; Syntax error compiling at (.calva/repl.calva-repl:160:18).
+; Unable to resolve symbol: -main in this context
+clj꞉ogbot.core꞉> (-)
+; Execution error (ArityException) at ogbot.core/eval29551 (repl.calva-repl:163).
+; Wrong number of args (0) passed to: clojure.core/-
+clj꞉ogbot.core꞉> 
+(-main "--no-gui")
+; Syntax error compiling at (.calva/repl.calva-repl:167:1).
+; Unable to resolve symbol: -main in this context
+clj꞉ogbot.core꞉>(-main "--no-gui")
+; Syntax error compiling at (.calva/repl.calva-repl:170:17).
+; Unable to resolve symbol: -main in this context
+clj꞉ogbot.core꞉> 
+; Syntax error compiling at (src/clj/ogbot/core.clj:43:3).
+; Unable to resolve symbol: print-banner in this context
+clj꞉ogbot.core꞉> 
+; Syntax error compiling at (src/clj/ogbot/core.clj:43:3).
+; Unable to resolve symbol: print-banner in this context
+clj꞉ogbot.core꞉> 
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
+; TypeError: Cannot read properties of undefined (reading 'label')
+; Aborting connect.
