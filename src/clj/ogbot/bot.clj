@@ -8,7 +8,7 @@
             [ogbot.constants :as constants]
             [ogbot.config :as config]
             [ogbot.db :as db]
-            [ogbot.web :as web]
+            [ogbot.web-selenium :as web]
             [ogbot.utils :as utils])
   (:import [java.time Duration]))
 

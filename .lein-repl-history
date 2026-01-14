@@ -23,3 +23,7 @@
 (println "Creating adapter (launching Chrome)...")
 (def adapter (ws/create-web-adapter cfg {} nil nil))
 (println "Done!")
+(require '[ogbot.web-selenium :as ws])
+  (require '[ogbot.config :as config])
+  (def cfg (config/load-bot-configuration "files/config/config.ini"))
+  (def adapter (ws/create-web-adapter cfg {} nil nil))
