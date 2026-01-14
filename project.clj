@@ -30,7 +30,9 @@
                  [http-kit "2.6.0"]
                  ;; Utilities
                  [clj-time "0.15.2"]
-                 [com.taoensso/timbre "6.3.1"]]
+                 [com.taoensso/timbre "6.3.1"]
+                 ;; Selenium automation
+                 [etaoin "1.0.40"]]
 
   :main ^:skip-aot ogbot.core
 

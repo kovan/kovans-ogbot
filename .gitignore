@@ -2,3 +2,4 @@
 target/
 files/botdata/
 
+.lein-repl-history
