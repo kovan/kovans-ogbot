@@ -7,3 +7,5 @@ files/botdata/
 
 target/classes/META-INF/maven/ogbot/ogbot/pom.properties
 .lein-repl-history
+target/classes/META-INF/maven/ogbot/ogbot/pom.properties
+captcha_debug.png

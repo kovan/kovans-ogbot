@@ -80,6 +80,14 @@
     ;; Merge with defaults (loaded config takes precedence)
     (let [config (atom (merge default-config @converted-config))]
 
+    ;; Parse numeric fields
+    (swap! config update :attack-radius #(if (string? %) (Integer/parseInt %) %))
+    (swap! config update :systems-per-galaxy #(if (string? %) (Integer/parseInt %) %))
+    (swap! config update :slots-to-reserve #(if (string? %) (Integer/parseInt %) %))
+    (swap! config update :probes-to-send #(if (string? %) (Integer/parseInt %) %))
+    (swap! config update :max-probes #(if (string? %) (Integer/parseInt %) %))
+    (swap! config update :wait-between-attack-checks #(if (string? %) (Integer/parseInt %) %))
+
     ;; Parse special fields
     (swap! config update :pre-midnight-pause-time utils/parse-time)
     (swap! config update :inactives-appearance-time utils/parse-time)

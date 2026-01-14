@@ -138,9 +138,14 @@
       )
 
     (connected (:event-mgr state))
-    (assoc state
-           :web-adapter web-adapter
-           :own-player updated-player)))
+    ;; Set source-planets from player's colonies if not configured
+    (let [source-planets (if (empty? (:source-planets state))
+                          (:colonies updated-player)
+                          (:source-planets state))]
+      (assoc state
+             :web-adapter web-adapter
+             :own-player updated-player
+             :source-planets source-planets))))
 
 ;; ============================================================================
 ;; Galaxy Scanning

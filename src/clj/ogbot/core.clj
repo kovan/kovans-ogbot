@@ -7,10 +7,10 @@
 
 (defn print-banner []
   (println "╔═══════════════════════════════════════════╗")
-  (println "║   Kovan's OGBot - Clojure Edition v3.1   ║")
+  (println "║   Kovan's OGBot - Clojure Edition v3.1    ║")
   (println "║                                           ║")
-  (println "║   Automated OGame Bot                    ║")
-  (println "║   Translated from Python to Clojure      ║")
+  (println "║   Automated OGame Bot                     ║")
+  (println "║   Translated from Python to Clojure       ║")
   (println "╚═══════════════════════════════════════════╝")
   (println))
 

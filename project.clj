@@ -32,7 +32,9 @@
                  [clj-time "0.15.2"]
                  [com.taoensso/timbre "6.3.1"]
                  ;; Selenium automation
-                 [etaoin "1.0.40"]]
+                 [etaoin "1.0.40"]
+                 ;; HTTP client for API calls
+                 [clj-http "3.12.3"]]
 
   :main ^:skip-aot ogbot.core
 

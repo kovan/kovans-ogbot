@@ -6,11 +6,15 @@
             [clj-time.core :as t]
             [clj-time.format :as f]
             [clj-time.coerce :as tc]
+            [clj-http.client :as http]
+            [cheshire.core :as json]
             [ogbot.entities :as entities]
             [ogbot.constants :as constants]
             [ogbot.utils :as utils]
             [ogbot.config :as config])
-  (:import [java.time Duration LocalDateTime]))
+  (:import [java.time Duration LocalDateTime]
+           [java.util Base64]
+           [java.io File]))
 
 ;; ============================================================================
 ;; Server Data
@@ -188,6 +192,103 @@
     (catch Exception _ false)))
 
 ;; ============================================================================
+;; CAPTCHA Solver using Claude API
+;; ============================================================================
+
+(defn image-to-base64
+  "Convert an image file to base64 string"
+  [file-path]
+  (let [file (io/file file-path)
+        bytes (byte-array (.length file))]
+    (with-open [stream (io/input-stream file)]
+      (.read stream bytes))
+    (.encodeToString (Base64/getEncoder) bytes)))
+
+(defn solve-captcha-with-claude
+  "Send screenshot to Claude API and get drag coordinates for CAPTCHA.
+   Returns {:source {:x n :y n} :target {:x n :y n}} or nil if failed."
+  [screenshot-path]
+  (let [api-key (System/getenv "ANTHROPIC_API_KEY")]
+    (when-not api-key
+      (throw (Exception. "ANTHROPIC_API_KEY environment variable not set")))
+    (let [base64-image (image-to-base64 screenshot-path)
+          request-body {:model "claude-sonnet-4-20250514"
+                        :max_tokens 1024
+                        :messages [{:role "user"
+                                    :content [{:type "image"
+                                               :source {:type "base64"
+                                                        :media_type "image/png"
+                                                        :data base64-image}}
+                                              {:type "text"
+                                               :text "This is a CAPTCHA puzzle. I need you to identify the drag-and-drop coordinates.
+
+The puzzle says 'Drag the Orange into the Empty' or similar.
+
+Look at the image and identify:
+1. The CENTER coordinates (x, y) of the orange/highlighted icon that needs to be dragged
+2. The CENTER coordinates (x, y) of the empty slot where it should be dropped
+
+Return ONLY a JSON object in this exact format, nothing else:
+{\"source\": {\"x\": <number>, \"y\": <number>}, \"target\": {\"x\": <number>, \"y\": <number>}}
+
+The coordinates should be pixel positions relative to the image dimensions."}]}]}
+          response (http/post "https://api.anthropic.com/v1/messages"
+                              {:headers {"x-api-key" api-key
+                                         "anthropic-version" "2023-06-01"
+                                         "content-type" "application/json"}
+                               :body (json/generate-string request-body)
+                               :as :json})]
+      (when (= 200 (:status response))
+        (let [content (-> response :body :content first :text)
+              ;; Extract JSON from response (Claude might add explanation text)
+              json-match (re-find #"\{[^{}]*\"source\"[^{}]*\"target\"[^{}]*\}" content)]
+          (when json-match
+            (try
+              (json/parse-string json-match true)
+              (catch Exception _ nil))))))))
+
+(defn perform-drag-and-drop
+  "Perform drag and drop action from source to target coordinates"
+  [driver source-coords target-coords]
+  (let [actions (e/make-mouse-input driver)]
+    ;; Move to source, press, move to target, release
+    (e/perform-actions driver
+                       [{:type "pointer"
+                         :id "mouse1"
+                         :parameters {:pointerType "mouse"}
+                         :actions [{:type "pointerMove" :duration 100
+                                    :x (:x source-coords) :y (:y source-coords)}
+                                   {:type "pointerDown" :button 0}
+                                   {:type "pause" :duration 100}
+                                   {:type "pointerMove" :duration 300
+                                    :x (:x target-coords) :y (:y target-coords)}
+                                   {:type "pause" :duration 100}
+                                   {:type "pointerUp" :button 0}]}])))
+
+(defn handle-captcha
+  "Detect and solve CAPTCHA if present using Claude API.
+   Detects CAPTCHA by checking if login form is still visible after submit.
+   Currently disabled - waits for manual solving."
+  [driver event-mgr]
+  (let [still-on-login? (element-exists? driver {:css "#loginForm button[type='submit']"})]
+    (when still-on-login?
+      (log-and-print event-mgr "Login blocked - CAPTCHA likely present. Manual solving required.")
+      (log-and-print event-mgr "Please solve the CAPTCHA in the browser window...")
+      (log-and-print event-mgr "Waiting up to 60 seconds for CAPTCHA to be solved...")
+      ;; Save screenshot for debugging
+      (e/screenshot driver "/tmp/ogbot_captcha.png")
+      ;; Wait for user to solve CAPTCHA (poll every 2 seconds for up to 60 seconds)
+      (loop [attempts 0]
+        (when (< attempts 30)
+          (Thread/sleep 2000)
+          (if (element-exists? driver {:css "#loginForm button[type='submit']"})
+            (do
+              (when (= 0 (mod attempts 5))
+                (log-and-print event-mgr (format "Still waiting for CAPTCHA... (%d seconds)" (* attempts 2))))
+              (recur (inc attempts)))
+            (log-and-print event-mgr "CAPTCHA appears to be solved, continuing...")))))))
+
+;; ============================================================================
 ;; Login
 ;; ============================================================================
 
@@ -205,66 +306,66 @@
     (e/go driver lobby-url)
     (Thread/sleep 3000)
 
-    ;; Wait for and click the login tab/button if needed
-    (when (element-exists? driver {:css "[data-tab='login'], .tabsList .loginTab, #loginTab"})
-      (click-element driver {:css "[data-tab='login'], .tabsList .loginTab, #loginTab"})
+    ;; Click the "Log in" tab (page shows Register form by default)
+    (log-and-print (:event-mgr adapter) "Clicking Log in tab...")
+    (when (element-exists? driver {:xpath "//li[contains(text(), 'Log in')]"})
+      (click-element driver {:xpath "//li[contains(text(), 'Log in')]"})
       (Thread/sleep 1000))
 
     ;; Fill login form
     (log-and-print (:event-mgr adapter) "Filling login form...")
 
-    ;; Try different possible selectors for email/username field
-    (let [email-selectors [{:css "input[name='email']"}
-                           {:css "input[name='login']"}
-                           {:css "input[type='email']"}
-                           {:css "#usernameLogin"}
-                           {:css ".loginForm input[type='text']"}]
-          password-selectors [{:css "input[name='password']"}
-                              {:css "input[type='password']"}
-                              {:css "#passwordLogin"}
-                              {:css ".loginForm input[type='password']"}]]
+    ;; Fill email field
+    (fill-input driver {:css "#loginForm input[name='email']"} (:username config))
+    (Thread/sleep 500)
 
-      ;; Find and fill email field
-      (doseq [selector email-selectors]
-        (when (element-exists? driver selector)
-          (fill-input driver selector (:username config))))
-
-      (Thread/sleep 500)
-
-      ;; Find and fill password field
-      (doseq [selector password-selectors]
-        (when (element-exists? driver selector)
-          (fill-input driver selector (:password config)))))
-
+    ;; Fill password field
+    (fill-input driver {:css "#loginForm input[name='password']"} (:password config))
     (Thread/sleep 1000)
 
     ;; Click submit button
-    (let [submit-selectors [{:css "button[type='submit']"}
-                            {:css "input[type='submit']"}
-                            {:css ".loginSubmit"}
-                            {:css "#loginSubmit"}
-                            {:css ".loginForm button"}]]
-      (doseq [selector submit-selectors]
-        (when (element-exists? driver selector)
-          (click-element driver selector))))
-
-    (Thread/sleep 5000)
-
-    ;; After login, we need to select a server and enter the game
-    ;; Look for server list and click on the configured server
-    (when (element-exists? driver {:css ".serverList, #serverList, .accountList"})
-      (log-and-print (:event-mgr adapter) "Selecting server...")
-      ;; Try to find and click the server/account entry
-      (let [server-entries (query-all-elements driver {:css ".accountCard, .serverItem, .server-item"})]
-        (when (seq server-entries)
-          (click-element driver (first server-entries)))))
-
+    (log-and-print (:event-mgr adapter) "Submitting login...")
+    (click-element driver {:css "#loginForm button[type='submit']"})
     (Thread/sleep 3000)
 
-    ;; Look for play button
-    (when (element-exists? driver {:css ".btn_play, .playButton, [data-action='play']"})
-      (click-element driver {:css ".btn_play, .playButton, [data-action='play']"})
-      (Thread/sleep 5000))
+    ;; Handle CAPTCHA if present
+    (handle-captcha driver (:event-mgr adapter))
+    (Thread/sleep 3000)
+
+    ;; Dismiss cookie banner if present (try multiple selectors)
+    (when (or (element-exists? driver {:css ".cookiebanner5"})
+              (element-exists? driver {:css "[class*='cookiebanner']"}))
+      (log-and-print (:event-mgr adapter) "Dismissing cookie banner...")
+      ;; Click "Accept Cookies" button
+      (when (element-exists? driver {:xpath "//button[contains(text(), 'Accept')]"})
+        (click-element driver {:xpath "//button[contains(text(), 'Accept')]"}))
+      (Thread/sleep 2000))
+
+    ;; After login, we should be on the hub page
+    ;; Look for Play button and click it
+    (log-and-print (:event-mgr adapter) "Looking for Play button...")
+    (Thread/sleep 2000)
+
+    (when (element-exists? driver {:css "button.button-primary"})
+      (log-and-print (:event-mgr adapter) "Clicking Play button...")
+      (click-element driver {:css "button.button-primary"})
+      (Thread/sleep 3000))
+
+    ;; Account selection page - click Play on the first account
+    (when (element-exists? driver {:xpath "//*[contains(text(), 'Your Accounts')]"})
+      (log-and-print (:event-mgr adapter) "Selecting first account...")
+      ;; Find the first Play button in the accounts table
+      (let [play-buttons (query-all-elements driver {:xpath "//button[contains(text(), 'Play')]"})]
+        (when (seq play-buttons)
+          (e/click-el driver (first play-buttons))
+          (Thread/sleep 5000))))
+
+    ;; Game might open in a new tab - switch to it if so
+    (let [handles (e/get-window-handles driver)]
+      (when (> (count handles) 1)
+        (log-and-print (:event-mgr adapter) "Switching to game tab...")
+        (e/switch-window driver (last handles))
+        (Thread/sleep 3000)))
 
     ;; Now we should be in the game - extract session from URL
     (let [current-url (e/get-url driver)
@@ -295,21 +396,31 @@
         _ (when-not page
             (navigate-to-page adapter "index.php" {:page "ingame" :component "overview"}))
         ;; Query planet elements in sidebar
-        planet-elements (query-all-elements driver {:css ".smallplanet, #planetList .planet"})
+        planet-elements (query-all-elements driver {:css ".smallplanet"})
         colonies (atom [])]
+
+    (log-and-print (:event-mgr adapter) (format "Found %d planet elements" (count planet-elements)))
 
     (doseq [planet-el planet-elements]
       (try
-        ;; Get planet name
-        (let [name-el (e/child driver planet-el {:css ".planet-name, .planetlink .planet-name"})
-              name (when name-el (e/get-element-text-el driver name-el))
-              ;; Get coordinates
-              coord-el (e/child driver planet-el {:css ".planet-koords, .planetlink .planet-koords"})
-              coord-text (when coord-el (e/get-element-text-el driver coord-el))
+        ;; Get planet name and coordinates from child elements
+        (let [children (e/children driver planet-el {:css ".planet-name, .planet-koords"})
+              name-el (first (filter #(try
+                                        (str/includes? (or (e/get-element-attr-el driver % "class") "") "planet-name")
+                                        (catch Exception _ false))
+                                     children))
+              coord-el (first (filter #(try
+                                         (str/includes? (or (e/get-element-attr-el driver % "class") "") "planet-koords")
+                                         (catch Exception _ false))
+                                      children))
+              planet-name (when name-el (str/trim (e/get-element-text-el driver name-el)))
+              coord-text (when coord-el (str/trim (e/get-element-text-el driver coord-el)))
               coords (when coord-text (entities/parse-coords coord-text))]
-          (when (and name coords)
-            (swap! colonies conj (entities/own-planet coords player name))))
-        (catch Exception _ nil)))
+          (log-and-print (:event-mgr adapter) (format "  Planet: %s at %s" planet-name coord-text))
+          (when (and planet-name coords)
+            (swap! colonies conj (entities/own-planet coords player planet-name))))
+        (catch Exception e
+          (log-and-print (:event-mgr adapter) (format "  Error parsing planet: %s" (.getMessage e))))))
 
     (assoc player :colonies @colonies)))
 
@@ -736,6 +847,89 @@
 ;; Initialization
 ;; ============================================================================
 
+;; ============================================================================
+;; Session Persistence
+;; ============================================================================
+
+(def session-file "files/session.edn")
+
+(defn save-session!
+  "Save session data (cookies and session ID) to disk for later reuse"
+  [adapter]
+  (let [driver (:driver adapter)
+        session (:session adapter)
+        cookies (e/get-cookies driver)
+        webpage (get-in adapter [:config :webpage])
+        session-data {:session session
+                      :cookies cookies
+                      :webpage webpage
+                      :saved-at (System/currentTimeMillis)}]
+    (io/make-parents session-file)
+    (spit session-file (pr-str session-data))
+    (log-and-print (:event-mgr adapter) "Session saved to disk")))
+
+(defn load-session
+  "Load saved session data from disk. Returns nil if no valid session found."
+  []
+  (when (.exists (io/file session-file))
+    (try
+      (let [data (read-string (slurp session-file))
+            age-ms (- (System/currentTimeMillis) (:saved-at data 0))
+            max-age-ms (* 24 60 60 1000)] ;; 24 hours max age
+        (when (< age-ms max-age-ms)
+          data))
+      (catch Exception _ nil))))
+
+(defn restore-cookies!
+  "Restore cookies to the browser driver"
+  [driver cookies webpage]
+  ;; Navigate to the domain first (cookies can only be set for current domain)
+  (e/go driver (str "https://" webpage))
+  (Thread/sleep 1000)
+  ;; Set each cookie
+  (doseq [cookie cookies]
+    (try
+      (e/set-cookie driver cookie)
+      (catch Exception _ nil))))
+
+(defn validate-session
+  "Check if the restored session is still valid by checking for game elements"
+  [adapter]
+  (let [driver (:driver adapter)
+        session (:session adapter)
+        webpage (get-in adapter [:config :webpage])]
+    (try
+      ;; Navigate to the game page with session
+      (let [url (format "https://%s/game/index.php?page=ingame&component=overview&session=%s"
+                        webpage session)]
+        (e/go driver url)
+        (Thread/sleep 3000)
+        ;; Check if we're still logged in (look for planet elements or player name)
+        (or (element-exists? driver {:css ".smallplanet"})
+            (element-exists? driver {:css "#playerName"})
+            (element-exists? driver {:css ".OGameClock"})))
+      (catch Exception _ false))))
+
+(defn try-restore-session
+  "Attempt to restore a saved session. Returns updated adapter if successful, nil otherwise."
+  [adapter saved-session]
+  (let [driver (:driver adapter)
+        event-mgr (:event-mgr adapter)
+        webpage (get-in adapter [:config :webpage])
+        saved-webpage (:webpage saved-session)]
+    ;; Only restore if webpage matches
+    (when (= webpage saved-webpage)
+      (log-and-print event-mgr "Found saved session, attempting to restore...")
+      (restore-cookies! driver (:cookies saved-session) webpage)
+      (let [restored-adapter (assoc adapter :session (:session saved-session))]
+        (if (validate-session restored-adapter)
+          (do
+            (log-and-print event-mgr "Session restored successfully!")
+            restored-adapter)
+          (do
+            (log-and-print event-mgr "Saved session expired, need to login again")
+            nil))))))
+
 (defn create-web-adapter
   "Create a Selenium-based web adapter"
   [config translations check-thread-msgs-fn event-mgr]
@@ -749,11 +943,20 @@
                               driver
                               nil
                               check-thread-msgs-fn
-                              event-mgr)]
-    ;; Perform login
-    (let [session (do-login! adapter)]
-      (log-and-print event-mgr (str "Session established: " session))
-      (assoc adapter :session session))))
+                              event-mgr)
+        ;; Try to restore saved session first
+        saved-session (load-session)
+        restored-adapter (when saved-session
+                           (try-restore-session adapter saved-session))]
+    (if restored-adapter
+      restored-adapter
+      ;; No valid saved session, do full login
+      (let [session (do-login! adapter)
+            logged-in-adapter (assoc adapter :session session)]
+        (log-and-print event-mgr (str "Session established: " session))
+        ;; Save session for next time
+        (save-session! logged-in-adapter)
+        logged-in-adapter))))
 
 (defn shutdown-adapter
   "Shutdown the web adapter and close the browser"
