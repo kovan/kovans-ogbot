@@ -352,13 +352,32 @@ The coordinates should be pixel positions relative to the image dimensions."}]}]
       (Thread/sleep 3000))
 
     ;; Account selection page - click Play on the first account
-    (when (element-exists? driver {:xpath "//*[contains(text(), 'Your Accounts')]"})
-      (log-and-print (:event-mgr adapter) "Selecting first account...")
-      ;; Find the first Play button in the accounts table
-      (let [play-buttons (query-all-elements driver {:xpath "//button[contains(text(), 'Play')]"})]
-        (when (seq play-buttons)
-          (e/click-el driver (first play-buttons))
-          (Thread/sleep 5000))))
+    ;; Check if we're on accounts page by URL or page content
+    (let [current-url (e/get-url driver)]
+      (when (or (str/includes? current-url "/accounts")
+                (element-exists? driver {:xpath "//*[contains(text(), 'Your Accounts')]"})
+                (element-exists? driver {:xpath "//*[contains(text(), 'Tus cuentas')]"})
+                (element-exists? driver {:css ".rt-table, table"}))
+        (log-and-print (:event-mgr adapter) "On accounts page, selecting first account...")
+        ;; Find the Play/Jugar button - try multiple selectors
+        (let [play-selectors [{:xpath "//button[contains(text(), 'Play')]"}
+                              {:xpath "//button[contains(text(), 'Jugar')]"}
+                              {:xpath "//button[contains(text(), 'Spielen')]"}
+                              {:xpath "//button[contains(text(), 'Jouer')]"}
+                              {:css ".btn-primary, .button-primary"}
+                              {:css "button.btn"}]
+              clicked? (loop [[sel & rest-sels] play-selectors]
+                         (if sel
+                           (let [buttons (query-all-elements driver sel)]
+                             (if (seq buttons)
+                               (do
+                                 (log-and-print (:event-mgr adapter) (str "Found play button with selector: " sel))
+                                 (e/click-el driver (first buttons))
+                                 true)
+                               (recur rest-sels)))
+                           false))]
+          (when clicked?
+            (Thread/sleep 5000)))))
 
     ;; Game might open in a new tab - switch to it if so
     (let [handles (e/get-window-handles driver)]
@@ -368,13 +387,28 @@ The coordinates should be pixel positions relative to the image dimensions."}]}]
         (Thread/sleep 3000)))
 
     ;; Now we should be in the game - extract session from URL
+    ;; Wait for game page to fully load
+    (Thread/sleep 3000)
+
     (let [current-url (e/get-url driver)
-          session-match (re-find #"[?&]session=([0-9A-Fa-f]{12})" current-url)
+          _ (log-and-print (:event-mgr adapter) (str "Current URL: " current-url))
+          ;; Try multiple patterns for session extraction
+          session-match (or
+                          ;; Standard session parameter
+                          (re-find #"[?&]session=([0-9A-Fa-f]{12})" current-url)
+                          ;; Longer session format (first 12 chars)
+                          (re-find #"[?&]session=([0-9A-Fa-f]{12})[0-9A-Fa-f]*" current-url))
           session (if session-match
                     (second session-match)
                     ;; Try to find session in page source
                     (let [source (e/get-source driver)
-                          source-match (re-find #"session['\"]?\s*[:=]\s*['\"]?([0-9A-Fa-f]{12})" source)]
+                          ;; Try multiple patterns in page source
+                          source-match (or
+                                         (re-find #"session['\"]?\s*[:=]\s*['\"]?([0-9A-Fa-f]{12})['\"]?" source)
+                                         ;; Look for ogameSession or similar
+                                         (re-find #"ogameSession['\"]?\s*[:=]\s*['\"]?([0-9A-Fa-f]{12})" source)
+                                         ;; Look for session in URL-like string in source
+                                         (re-find #"session=([0-9A-Fa-f]{12})" source))]
                       (when source-match (second source-match))))]
 
       (if session
@@ -382,7 +416,13 @@ The coordinates should be pixel positions relative to the image dimensions."}]}]
           (logged-in (:event-mgr adapter) (:username config) session)
           (Thread/sleep 2000)
           session)
-        (throw (utils/bot-fatal-error "Could not extract session ID after login"))))))
+        ;; If still no session, take a screenshot and print more debug info
+        (do
+          (log-and-print (:event-mgr adapter) "Failed to extract session. Taking debug screenshot...")
+          (io/make-parents "debug/login_failed.png")
+          (e/screenshot driver "debug/login_failed.png")
+          (log-and-print (:event-mgr adapter) (str "Page title: " (e/get-title driver)))
+          (throw (utils/bot-fatal-error "Could not extract session ID after login")))))))
 
 ;; ============================================================================
 ;; Data Extraction from Pages
