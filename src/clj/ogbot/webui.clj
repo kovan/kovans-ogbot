@@ -164,11 +164,12 @@ tr:hover { background: #1a1a2e; }
   [:div.panel
    [:h2 "📋 Activity Log"]
    [:label [:input#auto-scroll {:type "checkbox" :checked true}] " Auto-scroll"]
-   [:div.log#activity-log
-    (for [{:keys [time msg]} (take-last 50 logs)]
-      [:div.log-entry
-       [:span.log-time (f/unparse (f/formatter "HH:mm:ss") time)]
-       [:span msg]])]])
+   [:div {:class "log" :id "activity-log"}
+    (doall
+     (for [{:keys [time msg]} (take-last 50 logs)]
+       [:div.log-entry
+        [:span.log-time (f/unparse (f/formatter "HH:mm:ss") time)]
+        [:span msg]]))]])
 
 (defn rentabilities-panel [rentabilities]
   [:div.panel
@@ -181,60 +182,71 @@ tr:hover { background: #1a1a2e; }
       [:th "Player"]
       [:th "Rentability"]]]
     [:tbody
-     (for [rent (take 20 rentabilities)]
-       [:tr
-        [:td (str (get-in rent [:source-planet :coords]))]
-        [:td (str (get-in rent [:target-planet :coords]))]
-        [:td (get-in rent [:target-planet :owner :name])]
-        [:td [:span.rentability
-              {:class (if (pos? (:rentability rent)) "positive" "negative")}
-              (format "%.2f" (:rentability rent))]]])]]])
+     (doall
+      (for [rent (take 20 rentabilities)]
+        [:tr
+         [:td (str (get-in rent [:source-planet :coords]))]
+         [:td (str (get-in rent [:target-planet :coords]))]
+         [:td (get-in rent [:target-planet :owner :name])]
+         [:td [:span.rentability
+               {:class (if (pos? (:rentability rent)) "positive" "negative")}
+               (format "%.2f" (:rentability rent))]]]))]]])
 
 (defn stats-panel [state]
   [:div.panel
    [:h2 "📊 Statistics"]
-   [:p "Status: " [:strong (:status state)]]
-   [:p "Inactive Planets: " [:strong (count (:planets state))]]
-   [:p "Targets: " [:strong (count (:rentabilities state))]]
-   [:p "Log Entries: " [:strong (count (:activity-log state))]]])
+   [:p "Status: " [:strong.stats-status (:status state)]]
+   [:p "Inactive Planets: " [:strong.stats-planets (count (:planets state))]]
+   [:p "Targets: " [:strong.stats-targets (count (:rentabilities state))]]
+   [:p "Log Entries: " [:strong.stats-logs (count (:activity-log state))]]])
 
 (defn javascript []
   [:script "
+let lastLogCount = 0;
+let currentStatus = '';
+
 function startBot() {
   fetch('/api/start', {method: 'POST'})
     .then(r => r.json())
-    .then(data => console.log('Bot started', data));
+    .then(data => {
+      console.log('Bot started', data);
+      updateStatusDisplay('running');
+    });
 }
 function stopBot() {
   fetch('/api/stop', {method: 'POST'})
     .then(r => r.json())
-    .then(data => console.log('Bot stopped', data));
+    .then(data => {
+      console.log('Bot stopped', data);
+      updateStatusDisplay('stopped');
+    });
 }
 function pauseBot() {
   fetch('/api/pause', {method: 'POST'})
     .then(r => r.json())
-    .then(data => console.log('Bot paused', data));
+    .then(data => {
+      console.log('Bot paused', data);
+      updateStatusDisplay('paused');
+    });
 }
 function resumeBot() {
   fetch('/api/resume', {method: 'POST'})
     .then(r => r.json())
-    .then(data => console.log('Bot resumed', data));
+    .then(data => {
+      console.log('Bot resumed', data);
+      updateStatusDisplay('running');
+    });
 }
 
-// Server-Sent Events for real-time updates
-const eventSource = new EventSource('/api/events');
-eventSource.onmessage = function(e) {
-  const data = JSON.parse(e.data);
-  if (data.type === 'log') {
-    addLogEntry(data.msg);
-  } else if (data.type === 'status') {
-    updateStatus(data.status);
-  }
-};
+function updateStatusDisplay(status) {
+  const statusEl = document.querySelector('.status');
+  statusEl.className = 'status ' + status;
+  statusEl.textContent = status.toUpperCase();
+  currentStatus = status;
+}
 
-function addLogEntry(msg) {
+function addLogEntry(time, msg) {
   const log = document.getElementById('activity-log');
-  const time = new Date().toLocaleTimeString();
   const entry = document.createElement('div');
   entry.className = 'log-entry';
   entry.innerHTML = '<span class=\"log-time\">' + time + '</span><span>' + msg + '</span>';
@@ -245,20 +257,40 @@ function addLogEntry(msg) {
   }
 }
 
-function updateStatus(status) {
-  window.location.reload(); // Simple refresh for now
+function pollUpdates() {
+  fetch('/api/updates')
+    .then(r => r.json())
+    .then(data => {
+      // Update status if changed
+      if (data.status !== currentStatus) {
+        updateStatusDisplay(data.status);
+      }
+
+      // Add new log entries
+      const log = document.getElementById('activity-log');
+      if (data.logs && data.logs.length > 0) {
+        // Clear and rebuild log to avoid duplicates
+        const existingCount = log.children.length;
+        if (data.logs.length !== existingCount) {
+          log.innerHTML = '';
+          data.logs.forEach(entry => {
+            addLogEntry(entry.time, entry.msg);
+          });
+        }
+      }
+
+      // Update stats
+      document.querySelector('.stats-targets').textContent = data.rentabilities_count || 0;
+      document.querySelector('.stats-planets').textContent = data.planets_count || 0;
+    })
+    .catch(err => console.error('Poll error:', err));
 }
 
-// Auto-refresh rentabilities every 10 seconds
-setInterval(() => {
-  if (document.querySelector('.status.running')) {
-    fetch('/api/rentabilities')
-      .then(r => r.json())
-      .then(data => {
-        // Update would go here
-      });
-  }
-}, 10000);
+// Poll every 2 seconds
+setInterval(pollUpdates, 2000);
+
+// Initial poll
+pollUpdates();
 "])
 
 (defn main-page []
@@ -313,18 +345,20 @@ setInterval(() => {
    :headers {"Content-Type" "application/json"}
    :body (json/generate-string {:rentabilities (:rentabilities @app-state)})})
 
-;; Server-Sent Events endpoint
-(defn api-events [req]
-  (let [ch (async/chan 10)]
-    (add-event-channel ch)
+;; Polling endpoint for logs and status updates
+(defn api-updates [req]
+  (let [state @app-state
+        logs (take-last 20 (:activity-log state))]
     {:status 200
-     :headers {"Content-Type" "text/event-stream"
-               "Cache-Control" "no-cache"
-               "Connection" "keep-alive"}
-     :body (async/go-loop []
-             (when-let [event (async/<! ch)]
-               (str "data: " (json/generate-string event) "\n\n")
-               (recur)))}))
+     :headers {"Content-Type" "application/json"}
+     :body (json/generate-string
+            {:status (:status state)
+             :logs (mapv (fn [{:keys [time msg]}]
+                          {:time (f/unparse (f/formatter "HH:mm:ss") time)
+                           :msg msg})
+                        logs)
+             :rentabilities-count (count (:rentabilities state))
+             :planets-count (count (:planets state))})}))
 
 ;; ============================================================================
 ;; Routes
@@ -338,7 +372,7 @@ setInterval(() => {
   (POST "/api/resume" [] api-resume)
   (GET "/api/status" [] api-status)
   (GET "/api/rentabilities" [] api-rentabilities)
-  (GET "/api/events" [] api-events)
+  (GET "/api/updates" [] api-updates)
   (route/not-found "Not Found"))
 
 (def app
