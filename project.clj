@@ -34,7 +34,9 @@
                  ;; Selenium automation
                  [etaoin "1.0.40"]
                  ;; HTTP client for API calls
-                 [clj-http "3.12.3"]]
+                 [clj-http "3.12.3"]
+                 ;; Desktop GUI (JavaFX)
+                 [cljfx/cljfx "1.10.6"]]
 
   :main ^:skip-aot ogbot.core
 

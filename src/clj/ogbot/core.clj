@@ -16,7 +16,8 @@
 
 (defn print-usage []
   (println "Usage:")
-  (println "  lein run              - Start with GUI")
+  (println "  lein run              - Start with Web GUI (default)")
+  (println "  lein run --desktop    - Start with Desktop GUI (JavaFX)")
   (println "  lein run --no-gui     - Run in console mode")
   (println "  lein run --help       - Show this help")
   (println))
@@ -37,6 +38,11 @@
     (Thread/sleep 1000)
     (recur)))
 
+(defn run-desktop-mode []
+  (println "Starting bot with Desktop GUI (JavaFX)...")
+  (require '[ogbot.desktop-gui.core :as desktop-gui])
+  ((resolve 'ogbot.desktop-gui.core/start-desktop-gui)))
+
 (defn -main
   "Main entry point for OGBot"
   [& args]
@@ -48,6 +54,9 @@
 
     (some #{"--help" "-h"} args)
     (print-usage)
+
+    (some #{"--desktop" "--fx"} args)
+    (run-desktop-mode)
 
     (some #{"--no-gui" "--console"} args)
     (run-console-mode)
