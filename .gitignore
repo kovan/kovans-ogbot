@@ -9,3 +9,6 @@ target/classes/META-INF/maven/ogbot/ogbot/pom.properties
 .lein-repl-history
 target/classes/META-INF/maven/ogbot/ogbot/pom.properties
 captcha_debug.png
+debug/login_failed.png
+files/session.edn
+target/classes/META-INF/maven/ogbot/ogbot/pom.properties
