@@ -185,10 +185,15 @@
    :headers {"Content-Type" "application/json"}
    :body (json/generate-string @app-state)})
 
+(defn- format-rentability-for-json [rent]
+  (-> rent
+      (update-in [:target-planet :coords] str)
+      (update-in [:source-planet :coords] str)))
+
 (defn api-rentabilities [req]
   {:status 200
    :headers {"Content-Type" "application/json"}
-   :body (json/generate-string {:rentabilities (:rentabilities @app-state)})})
+   :body (json/generate-string {:rentabilities (mapv format-rentability-for-json (:rentabilities @app-state))})})
 
 ;; Polling endpoint for logs and status updates
 (defn api-updates [req]

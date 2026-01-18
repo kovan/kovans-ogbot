@@ -63,13 +63,14 @@
         source (:source-planet rent)
         history (:espionage-history target)
         report (when (seq history) (last history))
-        coords-str (str (:coords target))
+        target-coords (:coords target)
+        source-coords (:coords source)
         rentability (or (:rentability rent) 0.0)]
-    ^{:key coords-str}
+    ^{:key target-coords}
     [:tr
      [:td [:span.rentability {:class (if (pos? rentability) "positive" "negative")}
            (.toFixed rentability 2)]]
-     [:td coords-str]
+     [:td target-coords]
      [:td (or (:name target) "-")]
      [:td (get-in target [:owner :name] "-")]
      [:td (or (get-in target [:owner :alliance]) "-")]
@@ -77,17 +78,17 @@
      [:td {:class (status-class (get-defense-status report))}
       (get-defense-status report)]
      [:td (get-mines-str report)]
-     [:td (str (:coords source))]
+     [:td source-coords]
      [:td (if report
             (or (:date report) "-")
             "Not spied")]
      [:td.action-cell
       [:button.btn-action.btn-small
-       {:on-click #(state/spy-planet! coords-str)} "Spy"]
+       {:on-click #(state/spy-planet! target-coords)} "Spy"]
       [:button.btn-start.btn-small
-       {:on-click #(state/attack-planet! coords-str "smallCargo")} "SC"]
+       {:on-click #(state/attack-planet! target-coords "smallCargo")} "SC"]
       [:button.btn-start.btn-small
-       {:on-click #(state/attack-planet! coords-str "largeCargo")} "LC"]]]))
+       {:on-click #(state/attack-planet! target-coords "largeCargo")} "LC"]]]))
 
 (defn rentabilities-table []
   (let [rents @state/rentabilities]
