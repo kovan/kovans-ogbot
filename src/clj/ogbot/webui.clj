@@ -17,7 +17,8 @@
             [ogbot.bot :as bot]
             [ogbot.config :as config]
             [ogbot.db :as db]
-            [ogbot.constants :as constants])
+            [ogbot.constants :as constants]
+            [ogbot.web-selenium :as web])
   (:import [java.awt Desktop Desktop$Action]
            [java.net URI]))
 
@@ -85,7 +86,13 @@
   (when-not (:bot-thread @app-state)
     (let [event-mgr (->WebEventManager)
           bot-state (bot/create-bot-state "files/config/config.ini" event-mgr)
-          bot-thread (Thread. #(bot/start! bot-state))]
+          bot-thread (Thread.
+                      (fn []
+                        (try
+                          (bot/start! bot-state)
+                          (catch Exception e
+                            (add-log (str "Bot error: " (.getMessage e)))
+                            (swap! app-state assoc :status "error")))))]
       (.start bot-thread)
       (swap! app-state assoc
              :bot-state bot-state
@@ -373,6 +380,38 @@
        :body (json/generate-string {:error (.getMessage e)})})))
 
 ;; ============================================================================
+;; Manual Scan API
+;; ============================================================================
+
+(defn api-manual-scan [req]
+  (try
+    (let [body (json/parse-string (slurp (:body req)) true)
+          galaxy (or (:galaxy body) 1)
+          system (or (:system body) 1)]
+      (add-log (str "Manual scan requested for " galaxy ":" system))
+      (if-let [bot-state (:bot-state @app-state)]
+        (if-let [web-adapter (:web-adapter bot-state)]
+          (let [planets (web/scan-solar-system web-adapter galaxy system)
+                db-spec (get-planet-db-spec)]
+            (db/init-planet-db! db-spec)
+            (db/write-many-planets! db-spec planets)
+            (add-log (str "Scanned " (count planets) " planets in " galaxy ":" system))
+            {:status 200
+             :headers {"Content-Type" "application/json"}
+             :body (json/generate-string {:success true :planets-found (count planets)})})
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body (json/generate-string {:error "Bot not connected - start the bot first"})})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not running - start the bot first"})}))
+    (catch Exception e
+      (add-log (str "Scan error: " (.getMessage e)))
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+;; ============================================================================
 ;; Routes
 ;; ============================================================================
 
@@ -395,6 +434,7 @@
   ;; Actions
   (POST "/api/action/spy" [] api-spy)
   (POST "/api/action/attack" [] api-attack)
+  (POST "/api/action/scan" [] api-manual-scan)
   (route/not-found "Not Found"))
 
 (def app
