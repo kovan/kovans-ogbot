@@ -60,39 +60,45 @@
 
 (defn reports-table []
   (let [reports @state/planet-reports
+        selected-planet @state/selected-planet
         selected-code (when-let [r @state/selected-report] (:code r))]
     [:div
-     [:h3 "Spy Reports"]
-     [:div.table-wrapper
-      [:table
-       [:thead
-        [:tr
-         [:th "Code"]
-         [:th "Date"]
-         [:th "Coords"]
-         [:th "Metal"]
-         [:th "Crystal"]
-         [:th "Deuterium"]
-         [:th "Fleet"]
-         [:th "Defense"]
-         [:th "Probes"]]]
-       (into [:tbody]
-             (for [report reports
-                   :let [code (or (:code report) "")]]
-               ^{:key code}
-               [:tr {:class (when (= code selected-code) "selected")
-                     :on-click #(state/select-report! code)}
-                [:td code]
-                [:td (or (:date report) "-")]
-                [:td (or (:coords report) "-")]
-                [:td (or (:metal report) 0)]
-                [:td (or (:crystal report) 0)]
-                [:td (or (:deuterium report) 0)]
-                [:td {:class (status-class (:fleet_status report))}
-                 (:fleet_status report)]
-                [:td {:class (status-class (:defense_status report))}
-                 (:defense_status report)]
-                [:td (or (:probes_sent report) "-")]]))]]]))
+     [:h3 (if selected-planet
+            (str "Spy Reports for " selected-planet)
+            "Spy Reports")]
+     (if (and selected-planet (empty? reports))
+       [:div.no-reports
+        [:p "No spy reports for this planet."]]
+       [:div.table-wrapper
+        [:table
+         [:thead
+          [:tr
+           [:th "Code"]
+           [:th "Date"]
+           [:th "Coords"]
+           [:th "Metal"]
+           [:th "Crystal"]
+           [:th "Deuterium"]
+           [:th "Fleet"]
+           [:th "Defense"]
+           [:th "Probes"]]]
+         (into [:tbody]
+               (for [report reports
+                     :let [code (or (:code report) "")]]
+                 ^{:key code}
+                 [:tr {:class (when (= code selected-code) "selected")
+                       :on-click #(state/select-report! code)}
+                  [:td code]
+                  [:td (or (:date report) "-")]
+                  [:td (or (:coords report) "-")]
+                  [:td (or (:metal report) 0)]
+                  [:td (or (:crystal report) 0)]
+                  [:td (or (:deuterium report) 0)]
+                  [:td {:class (status-class (:fleet_status report))}
+                   (:fleet_status report)]
+                  [:td {:class (status-class (:defense_status report))}
+                   (:defense_status report)]
+                  [:td (or (:probes_sent report) "-")]]))]])]))
 
 (defn detail-panel [title data-key]
   (let [report @state/selected-report

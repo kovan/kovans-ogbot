@@ -251,6 +251,19 @@ tr.selected {
 .inactive-yes { color: #28a745; font-weight: bold; }
 .inactive-no { color: #888; }
 
+/* No reports message */
+.no-reports {
+  background: #181818;
+  padding: 20px;
+  border-radius: 5px;
+  color: #888;
+  text-align: center;
+}
+
+.no-reports p {
+  margin: 5px 0;
+}
+
 /* Action Buttons in Table */
 .action-cell {
   display: flex;
