@@ -17,7 +17,9 @@
             [ogbot.bot :as bot]
             [ogbot.config :as config]
             [ogbot.db :as db]
-            [ogbot.constants :as constants]))
+            [ogbot.constants :as constants])
+  (:import [java.awt Desktop Desktop$Action]
+           [java.net URI]))
 
 ;; ============================================================================
 ;; Application State
@@ -408,6 +410,17 @@
 
 (defonce server (atom nil))
 
+(defn- open-browser! [url]
+  (try
+    (when (Desktop/isDesktopSupported)
+      (let [desktop (Desktop/getDesktop)]
+        (when (.isSupported desktop Desktop$Action/BROWSE)
+          (.browse desktop (URI. url))
+          true)))
+    (catch Exception e
+      (println "Could not open browser automatically:" (.getMessage e))
+      false)))
+
 (defn start-server! [port]
   (when-not @server
     (println (str "Starting web UI on http://localhost:" port))
@@ -421,7 +434,8 @@
     (println "Web UI stopped")))
 
 (defn -main [& args]
-  (let [port (Integer/parseInt (or (first args) "3000"))]
+  (let [port (Integer/parseInt (or (first args) "3000"))
+        url (str "http://localhost:" port)]
     (start-server! port)
     (println)
     (println "╔════════════════════════════════════════════════╗")
@@ -430,4 +444,6 @@
     (println (format "║   Open http://localhost:%-5d in your browser║" port))
     (println "║                                                ║")
     (println "║   Press Ctrl+C to stop                         ║")
-    (println "╚════════════════════════════════════════════════╝")))
+    (println "╚════════════════════════════════════════════════╝")
+    (when (open-browser! url)
+      (println "\nBrowser opened automatically."))))
