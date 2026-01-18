@@ -43,20 +43,20 @@
          [:th "Alliance"]
          [:th "Inactive"]
          [:th "Reports"]]]
-       [:tbody
-        (for [planet planets
-              :let [coords (or (:coords planet) "")
-                    report-count (or (:report_count planet) 0)]]
-          ^{:key coords}
-          [:tr {:class (when (= coords selected) "selected")
-                :on-click #(state/select-planet! coords)}
-           [:td coords]
-           [:td (or (:name planet) "-")]
-           [:td (or (:owner_name planet) "-")]
-           [:td (or (:owner_alliance planet) "-")]
-           [:td {:class (if (:owner_is_inactive planet) "inactive-yes" "inactive-no")}
-            (if (:owner_is_inactive planet) "yes" "no")]
-           [:td (if (pos? report-count) report-count "-")]])]]]]))
+       (into [:tbody]
+             (for [planet planets
+                   :let [coords (or (:coords planet) "")
+                         report-count (or (:report_count planet) 0)]]
+               ^{:key coords}
+               [:tr {:class (when (= coords selected) "selected")
+                     :on-click #(state/select-planet! coords)}
+                [:td coords]
+                [:td (or (:name planet) "-")]
+                [:td (or (:owner_name planet) "-")]
+                [:td (or (:owner_alliance planet) "-")]
+                [:td {:class (if (:owner_is_inactive planet) "inactive-yes" "inactive-no")}
+                 (if (:owner_is_inactive planet) "yes" "no")]
+                [:td (if (pos? report-count) report-count "-")]]))]]]))
 
 (defn reports-table []
   (let [reports @state/planet-reports
@@ -76,23 +76,23 @@
          [:th "Fleet"]
          [:th "Defense"]
          [:th "Probes"]]]
-       [:tbody
-        (for [report reports
-              :let [code (or (:code report) "")]]
-          ^{:key code}
-          [:tr {:class (when (= code selected-code) "selected")
-                :on-click #(state/select-report! code)}
-           [:td code]
-           [:td (or (:date report) "-")]
-           [:td (or (:coords report) "-")]
-           [:td (or (:metal report) 0)]
-           [:td (or (:crystal report) 0)]
-           [:td (or (:deuterium report) 0)]
-           [:td {:class (status-class (:fleet_status report))}
-            (:fleet_status report)]
-           [:td {:class (status-class (:defense_status report))}
-            (:defense_status report)]
-           [:td (or (:probes_sent report) "-")]])]]]]))
+       (into [:tbody]
+             (for [report reports
+                   :let [code (or (:code report) "")]]
+               ^{:key code}
+               [:tr {:class (when (= code selected-code) "selected")
+                     :on-click #(state/select-report! code)}
+                [:td code]
+                [:td (or (:date report) "-")]
+                [:td (or (:coords report) "-")]
+                [:td (or (:metal report) 0)]
+                [:td (or (:crystal report) 0)]
+                [:td (or (:deuterium report) 0)]
+                [:td {:class (status-class (:fleet_status report))}
+                 (:fleet_status report)]
+                [:td {:class (status-class (:defense_status report))}
+                 (:defense_status report)]
+                [:td (or (:probes_sent report) "-")]]))]]]))
 
 (defn detail-panel [title data-key]
   (let [report @state/selected-report
@@ -100,17 +100,17 @@
     [:div.detail-panel
      [:h4 title]
      [:table
-      [:tbody
-       (if (and data (seq data))
-         (for [[type-name quantity] data]
-           ^{:key type-name}
-           [:tr
-            [:td type-name]
-            [:td quantity]])
-         [:tr [:td {:col-span 2}
-               (if (nil? data)
-                 (str "Unknown " title)
-                 (str "No " title))]])]]]))
+      (into [:tbody]
+            (if (and data (seq data))
+              (for [[type-name quantity] data]
+                ^{:key type-name}
+                [:tr
+                 [:td type-name]
+                 [:td quantity]])
+              [[:tr [:td {:col-span 2}
+                     (if (nil? data)
+                       (str "Unknown " title)
+                       (str "No " title))]]]))]]))
 
 (defn detail-panels []
   [:div.detail-grid

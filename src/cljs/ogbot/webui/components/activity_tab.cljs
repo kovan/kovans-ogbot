@@ -40,12 +40,12 @@
                :checked auto-scroll?
                :on-change #(reset! state/auto-scroll? (.. % -target -checked))}]
       " Auto-scroll"]
-     [:div.log {:id "activity-log"}
-      (for [{:keys [time msg]} logs]
-        ^{:key (str time msg)}
-        [:div.log-entry
-         [:span.log-time time]
-         [:span msg]])]]))
+     (into [:div.log {:id "activity-log"}]
+           (for [{:keys [time msg]} logs]
+             ^{:key (str time msg)}
+             [:div.log-entry
+              [:span.log-time time]
+              [:span msg]]))]))
 
 (defn stats-panel []
   (let [stats @state/stats
@@ -57,6 +57,37 @@
      [:p "Targets: " [:strong (:targets stats)]]
      [:p "Log Entries: " [:strong (:logs stats)]]
      [:p "DB Planets: " [:strong (:db-planets stats)]]]))
+
+(defn- rent-row [rent]
+  (let [target (:target-planet rent)
+        source (:source-planet rent)
+        history (:espionage-history target)
+        report (when (seq history) (last history))
+        coords-str (str (:coords target))
+        rentability (or (:rentability rent) 0.0)]
+    ^{:key coords-str}
+    [:tr
+     [:td [:span.rentability {:class (if (pos? rentability) "positive" "negative")}
+           (.toFixed rentability 2)]]
+     [:td coords-str]
+     [:td (or (:name target) "-")]
+     [:td (get-in target [:owner :name] "-")]
+     [:td (or (get-in target [:owner :alliance]) "-")]
+     [:td (format-resources (when report (:resources report)))]
+     [:td {:class (status-class (get-defense-status report))}
+      (get-defense-status report)]
+     [:td (get-mines-str report)]
+     [:td (str (:coords source))]
+     [:td (if report
+            (or (:date report) "-")
+            "Not spied")]
+     [:td.action-cell
+      [:button.btn-action.btn-small
+       {:on-click #(state/spy-planet! coords-str)} "Spy"]
+      [:button.btn-start.btn-small
+       {:on-click #(state/attack-planet! coords-str "smallCargo")} "SC"]
+      [:button.btn-start.btn-small
+       {:on-click #(state/attack-planet! coords-str "largeCargo")} "LC"]]]))
 
 (defn rentabilities-table []
   (let [rents @state/rentabilities]
@@ -77,37 +108,8 @@
          [:th "Source"]
          [:th "Last Spied"]
          [:th "Actions"]]]
-       [:tbody
-        (for [rent (take 50 rents)
-              :let [target (:target-planet rent)
-                    source (:source-planet rent)
-                    history (:espionage-history target)
-                    report (when (seq history) (last history))
-                    coords-str (str (:coords target))
-                    rentability (or (:rentability rent) 0.0)]]
-          ^{:key coords-str}
-          [:tr
-           [:td [:span.rentability {:class (if (pos? rentability) "positive" "negative")}
-                 (.toFixed rentability 2)]]
-           [:td coords-str]
-           [:td (or (:name target) "-")]
-           [:td (get-in target [:owner :name] "-")]
-           [:td (or (get-in target [:owner :alliance]) "-")]
-           [:td (format-resources (when report (:resources report)))]
-           [:td {:class (status-class (get-defense-status report))}
-            (get-defense-status report)]
-           [:td (get-mines-str report)]
-           [:td (str (:coords source))]
-           [:td (if report
-                  (or (:date report) "-")
-                  "Not spied")]
-           [:td.action-cell
-            [:button.btn-action.btn-small
-             {:on-click #(state/spy-planet! coords-str)} "Spy"]
-            [:button.btn-start.btn-small
-             {:on-click #(state/attack-planet! coords-str "smallCargo")} "SC"]
-            [:button.btn-start.btn-small
-             {:on-click #(state/attack-planet! coords-str "largeCargo")} "LC"]]])]]]]))
+       (into [:tbody]
+             (map rent-row (take 50 rents)))]]]))
 
 (defn activity-tab []
   [:div#activity-tab.tab-content.active
