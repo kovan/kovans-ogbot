@@ -1,0 +1,270 @@
+/* OGBot Web UI - Dark Theme */
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #121212;
+  color: #e0e0e0;
+}
+
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #e0e0e0;
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+/* Controls */
+.controls {
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.controls button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+}
+
+.btn-start { background: #28a745; }
+.btn-start:hover { background: #218838; }
+.btn-stop { background: #dc3545; }
+.btn-stop:hover { background: #c82333; }
+.btn-pause { background: #ffc107; color: #000; }
+.btn-pause:hover { background: #e0a800; }
+.btn-action { background: #17a2b8; }
+.btn-action:hover { background: #138496; }
+.btn-small { padding: 5px 10px; font-size: 12px; }
+
+.status {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-weight: bold;
+  margin-left: auto;
+}
+
+.status.running { background: #28a745; }
+.status.stopped { background: #dc3545; }
+.status.paused { background: #ffc107; color: #000; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  margin-bottom: 0;
+  background: #1e1e1e;
+  border-radius: 8px 8px 0 0;
+}
+
+.tab-btn {
+  padding: 15px 30px;
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+
+.tab-btn:hover { color: #ccc; }
+.tab-btn.active {
+  color: #fff;
+  border-bottom-color: #28a745;
+  background: #2d2d2d;
+}
+
+.tab-content {
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 0 0 8px 8px;
+  min-height: 500px;
+}
+
+/* Grid Layout */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+h3 {
+  margin: 15px 0 10px 0;
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* Log */
+.log {
+  height: 300px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 12px;
+  background: #181818;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.log-entry {
+  padding: 5px 0;
+  border-bottom: 1px solid #333;
+}
+
+.log-time {
+  color: #888;
+  margin-right: 10px;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th, td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+th {
+  background: #2d2d2d;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+tr:hover {
+  background: #2a2a2a;
+  cursor: pointer;
+}
+
+tr.selected {
+  background: #3a3a3a;
+}
+
+.table-wrapper {
+  max-height: 250px;
+  overflow-y: auto;
+  background: #181818;
+  border-radius: 5px;
+}
+
+.table-wrapper-large {
+  max-height: 400px;
+}
+
+/* Rentability */
+.rentability { font-weight: bold; }
+.rentability.positive { color: #28a745; }
+.rentability.negative { color: #dc3545; }
+
+/* Filter Bar */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-bar select,
+.filter-bar input {
+  padding: 8px 12px;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background: #181818;
+  color: #fff;
+}
+
+.filter-bar input {
+  min-width: 200px;
+}
+
+.filter-bar label {
+  color: #888;
+}
+
+/* Detail Panels */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.detail-panel {
+  background: #181818;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.detail-panel h4 {
+  margin: 0 0 10px 0;
+  color: #aaa;
+  font-size: 13px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 5px;
+}
+
+.detail-panel table {
+  font-size: 12px;
+}
+
+.detail-panel th,
+.detail-panel td {
+  padding: 4px 8px;
+}
+
+/* Status Indicators */
+.status-yes { color: #28a745; }
+.status-no { color: #888; }
+.status-unknown { color: #ffc107; }
+.inactive-yes { color: #28a745; font-weight: bold; }
+.inactive-no { color: #888; }
+
+/* Action Buttons in Table */
+.action-cell {
+  display: flex;
+  gap: 5px;
+}
+
+.action-cell button {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .detail-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

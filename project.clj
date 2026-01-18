@@ -5,6 +5,11 @@
             :url "https://www.gnu.org/licenses/gpl-2.0.html"}
 
   :dependencies [[org.clojure/clojure "1.11.1"]
+                 ;; ClojureScript
+                 [org.clojure/clojurescript "1.11.132"]
+                 [reagent "1.2.0" :exclusions [cljsjs/react cljsjs/react-dom]]
+                 [cljsjs/react "18.2.0-1"]
+                 [cljsjs/react-dom "18.2.0-1"]
                  ;; HTTP client
                  [clj-http "3.12.3"]
                  ;; HTML parsing
@@ -33,10 +38,10 @@
                  [com.taoensso/timbre "6.3.1"]
                  ;; Selenium automation
                  [etaoin "1.0.40"]
-                 ;; HTTP client for API calls
-                 [clj-http "3.12.3"]
                  ;; Desktop GUI (JavaFX)
                  [cljfx/cljfx "1.10.6"]]
+
+  :plugins [[lein-cljsbuild "1.1.8"]]
 
   :main ^:skip-aot ogbot.core
 
@@ -45,11 +50,19 @@
   :source-paths ["src/clj"]
   :resource-paths ["resources" "languages"]
 
+  :cljsbuild {:builds [{:id "prod"
+                        :source-paths ["src/cljs"]
+                        :compiler {:output-to "resources/public/js/main.js"
+                                   :output-dir "target/cljs-prod"
+                                   :optimizations :advanced
+                                   :pretty-print false}}]}
+
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
              :dev {:dependencies [[org.clojure/tools.namespace "1.4.4"]]}}
 
   :jvm-opts ["-Xmx512m"]
 
-  :aliases {"run-gui" ["run"]
-            "check" ["do" "clean," "compile"]})
+  :aliases {"start" ["do" "cljsbuild" "once" "prod," "run"]
+            "check" ["do" "clean," "compile"]
+            "cljs" ["cljsbuild" "once" "prod"]})
