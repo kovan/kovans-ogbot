@@ -174,31 +174,44 @@
         (log-activity (:event-mgr state) "No reachable systems found - check source planets config")
         state)
       (let [deut-planet (:deuterium-source-planet (:config state))
-            all-planets (web/get-solar-systems (:web-adapter state) systems deut-planet)
-            _ (log-activity (:event-mgr state) (format "Scanned %d planets total" (count all-planets)))
-            inactive-planets (filter #(:is-inactive (:owner %)) all-planets)
-            filtered-inactives (remove
-                               (fn [p]
-                                 (or (some #{(:name (:owner p))}
-                                          (:players-to-avoid (:config state)))
-                                     (some #{(:alliance (:owner p))}
-                                          (:alliances-to-avoid (:config state)))))
-                               inactive-planets)]
+            web-adapter (:web-adapter state)
+            planet-db (:planet-db state)
+            all-planets (atom [])
+            system-count (count systems)]
+        ;; Scan and save incrementally
+        (doseq [[idx [galaxy system]] (map-indexed vector systems)]
+          (log-activity (:event-mgr state) (format "Scanning %d:%d (%d/%d)" galaxy system (inc idx) system-count))
+          (let [planets (web/scan-solar-system web-adapter galaxy system)]
+            (when (seq planets)
+              (swap! all-planets into planets))
+            ;; Save incrementally every 10 systems
+            (when (and (pos? (count @all-planets))
+                       (zero? (mod (inc idx) 10)))
+              (db/write-many-planets! planet-db @all-planets)
+              (log-activity (:event-mgr state) (format "Saved %d planets so far..." (count @all-planets))))))
 
-        ;; Save to database
-        (log-activity (:event-mgr state) (format "Saving %d planets to database..." (count all-planets)))
-        (db/write-many-planets! (:planet-db state) all-planets)
-        (log-activity (:event-mgr state) "Planets saved to database")
+        ;; Final save
+        (db/write-many-planets! planet-db @all-planets)
+        (log-activity (:event-mgr state) (format "Scanned %d planets total" (count @all-planets)))
 
-        (log-activity (:event-mgr state)
-                     (format "Found %d inactive planets in %d systems"
-                            (count filtered-inactives)
-                            (count systems)))
+        (let [inactive-planets (filter #(:is-inactive (:owner %)) @all-planets)
+              filtered-inactives (remove
+                                 (fn [p]
+                                   (or (some #{(:name (:owner p))}
+                                            (:players-to-avoid (:config state)))
+                                       (some #{(:alliance (:owner p))}
+                                            (:alliances-to-avoid (:config state)))))
+                                 inactive-planets)]
 
-        (assoc state
-               :inactive-planets filtered-inactives
-               :last-inactive-scan-time (t/now)
-               :reachable-solar-systems systems)))))
+          (log-activity (:event-mgr state)
+                       (format "Found %d inactive planets in %d systems"
+                              (count filtered-inactives)
+                              system-count))
+
+          (assoc state
+                 :inactive-planets filtered-inactives
+                 :last-inactive-scan-time (t/now)
+                 :reachable-solar-systems systems))))))
 
 ;; ============================================================================
 ;; Espionage
