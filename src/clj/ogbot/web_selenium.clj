@@ -842,30 +842,32 @@ The coordinates should be pixel positions relative to the image dimensions."}]}]
   (let [driver (:driver adapter)
         found-planets (atom [])
         players-by-name (atom {})
-        ;; Query planet rows
-        row-elements (query-all-elements driver {:css "#galaxyContent tr, .galaxyRow, [data-position]"})]
+        ;; Select galaxy rows (div-based structure in modern OGame)
+        row-elements (query-all-elements driver {:css ".galaxyRow.ctContentRow"})]
 
     (doseq [row-el row-elements]
       (try
-        ;; Check if row has a planet
-        (let [planet-el (e/child driver row-el {:css ".planetname, .cellPlanet"})
-              owner-el (e/child driver row-el {:css ".playername, .cellPlayerName a"})
-              position-el (e/child driver row-el {:css ".position, .cellPosition"})]
-          (when (and planet-el owner-el)
+        ;; Get planet name and owner from the correct cells
+        (let [planet-name-el (e/child driver row-el {:css ".cellPlanetName span"})
+              owner-el (e/child driver row-el {:css ".cellPlayerName .playerName"})
+              position-el (e/child driver row-el {:css ".cellPosition"})]
+          (when (and planet-name-el owner-el position-el)
             (let [owner-name (str/trim (e/get-element-text-el driver owner-el))
-                  position-text (when position-el (e/get-element-text-el driver position-el))
-                  position (if position-text
-                            (try (Integer/parseInt (str/trim position-text)) (catch Exception _ 1))
-                            1)]
-              (when-not (empty? owner-name)
+                  position-text (e/get-element-text-el driver position-el)
+                  position (try (Integer/parseInt (str/trim position-text)) (catch Exception _ 0))]
+              (when (and (not (empty? owner-name)) (pos? position))
                 (let [owner (or (@players-by-name owner-name)
                                (let [new-player (entities/enemy-player owner-name)]
                                  (swap! players-by-name assoc owner-name new-player)
                                  new-player))
                       coords (entities/coords galaxy solar-system position)
-                      planet (entities/enemy-planet coords owner)]
-                  ;; Check for inactive status
-                  (let [inactive? (element-exists? driver row-el {:css ".inactive, .longinactive"})]
+                      planet-name (str/trim (e/get-element-text-el driver planet-name-el))
+                      planet (-> (entities/enemy-planet coords owner)
+                                (assoc :name planet-name))]
+                  ;; Check for inactive status via row class or player status class
+                  (let [row-class (try (e/get-element-attr-el driver row-el "class") (catch Exception _ ""))
+                        inactive? (or (str/includes? row-class "inactive_filter")
+                                     (str/includes? row-class "longinactive"))]
                     (swap! found-planets conj
                            (if inactive?
                              (assoc-in planet [:owner :is-inactive] true)
