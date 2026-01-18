@@ -203,6 +203,16 @@ tr.selected {
   color: #888;
 }
 
+.filter-bar button {
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+}
+
 /* Detail Panels */
 .detail-grid {
   display: grid;
