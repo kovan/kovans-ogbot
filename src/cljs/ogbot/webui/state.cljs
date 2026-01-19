@@ -58,20 +58,36 @@
 ;; ============================================================================
 
 (defn start-bot! []
+  (js/console.log "start-bot! called")
   (api-post "/api/start"
-            :on-success #(reset! bot-status "running")))
+            :on-success (fn [_]
+                          (js/console.log "start-bot! success")
+                          (reset! bot-status "running"))
+            :on-error (fn [e] (js/console.error "start-bot! error:" e))))
 
 (defn stop-bot! []
+  (js/console.log "stop-bot! called")
   (api-post "/api/stop"
-            :on-success #(reset! bot-status "stopped")))
+            :on-success (fn [_]
+                          (js/console.log "stop-bot! success")
+                          (reset! bot-status "stopped"))
+            :on-error (fn [e] (js/console.error "stop-bot! error:" e))))
 
 (defn pause-bot! []
+  (js/console.log "pause-bot! called")
   (api-post "/api/pause"
-            :on-success #(reset! bot-status "paused")))
+            :on-success (fn [_]
+                          (js/console.log "pause-bot! success")
+                          (reset! bot-status "paused"))
+            :on-error (fn [e] (js/console.error "pause-bot! error:" e))))
 
 (defn resume-bot! []
+  (js/console.log "resume-bot! called")
   (api-post "/api/resume"
-            :on-success #(reset! bot-status "running")))
+            :on-success (fn [_]
+                          (js/console.log "resume-bot! success")
+                          (reset! bot-status "running"))
+            :on-error (fn [e] (js/console.error "resume-bot! error:" e))))
 
 ;; ============================================================================
 ;; Polling

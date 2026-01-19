@@ -49,6 +49,8 @@ h1 {
 .btn-stop:hover { background: #c82333; }
 .btn-pause { background: #ffc107; color: #000; }
 .btn-pause:hover { background: #e0a800; }
+.btn-resume { background: #17a2b8; }
+.btn-resume:hover { background: #138496; }
 .btn-action { background: #17a2b8; }
 .btn-action:hover { background: #138496; }
 .btn-small { padding: 5px 10px; font-size: 12px; }

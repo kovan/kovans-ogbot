@@ -101,25 +101,39 @@
       (add-log "Bot started"))))
 
 (defn stop-bot! []
-  (when-let [bot-state (:bot-state @app-state)]
-    (bot/stop! bot-state)
-    (swap! app-state assoc
-           :bot-thread nil
-           :bot-state nil
-           :status "stopped")
-    (add-log "Bot stopped")))
+  (println "stop-bot! called, bot-state:" (:bot-state @app-state))
+  (if-let [bot-state (:bot-state @app-state)]
+    (do
+      (bot/stop! bot-state)
+      (swap! app-state assoc
+             :bot-thread nil
+             :bot-state nil
+             :status "stopped")
+      (add-log "Bot stopped")
+      (println "Bot stopped successfully"))
+    (do
+      (swap! app-state assoc :status "stopped")
+      (println "No bot-state, but setting status to stopped anyway"))))
 
 (defn pause-bot! []
-  (when-let [bot-state (:bot-state @app-state)]
-    (reset! (:paused? bot-state) true)
-    (swap! app-state assoc :status "paused")
-    (add-log "Bot paused")))
+  (println "pause-bot! called, bot-state:" (:bot-state @app-state))
+  (if-let [bot-state (:bot-state @app-state)]
+    (do
+      (reset! (:paused? bot-state) true)
+      (swap! app-state assoc :status "paused")
+      (add-log "Bot paused")
+      (println "Bot paused successfully"))
+    (println "No bot-state to pause")))
 
 (defn resume-bot! []
-  (when-let [bot-state (:bot-state @app-state)]
-    (reset! (:paused? bot-state) false)
-    (swap! app-state assoc :status "running")
-    (add-log "Bot resumed")))
+  (println "resume-bot! called, bot-state:" (:bot-state @app-state))
+  (if-let [bot-state (:bot-state @app-state)]
+    (do
+      (reset! (:paused? bot-state) false)
+      (swap! app-state assoc :status "running")
+      (add-log "Bot resumed")
+      (println "Bot resumed successfully"))
+    (println "No bot-state to resume")))
 
 ;; ============================================================================
 ;; HTML Index Page (loads ClojureScript app)
