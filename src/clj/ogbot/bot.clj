@@ -388,16 +388,30 @@
 ;; ============================================================================
 
 (defn start! [state]
-  (log-activity (:event-mgr state) "Bot started")
+  "Start bot in auto mode - scans and attacks automatically"
+  (log-activity (:event-mgr state) "Bot started (auto mode)")
   (let [state (load-bot-state! state)
         state (connect! state)
         state (scan-galaxies state)]
     (spy-planets state (:inactive-planets state) :buildings)
     (attack-mode state)))
 
+(defn start-interactive! [state]
+  "Start bot in interactive mode - connects but waits for manual commands"
+  (log-activity (:event-mgr state) "Bot started (interactive mode)")
+  (let [state (load-bot-state! state)
+        state (connect! state)]
+    (log-activity (:event-mgr state) "Connected and ready. Use web UI to control.")
+    ;; Keep the state updated and return it
+    state))
+
 (defn stop! [state]
   (reset! (:running? state) false)
   (save-bot-state! state)
+  (when-let [adapter (:web-adapter state)]
+    (try
+      (web/shutdown-adapter adapter)
+      (catch Exception _ nil)))
   (log-activity (:event-mgr state) "Bot stopped"))
 
 (defn run-bot [config-file]

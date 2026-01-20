@@ -14,6 +14,7 @@
             [clojure.string :as str]
             [clj-time.core :as t]
             [clj-time.format :as f]
+            [etaoin.api :as etaoin.api]
             [ogbot.bot :as bot]
             [ogbot.config :as config]
             [ogbot.db :as db]
@@ -89,7 +90,10 @@
           bot-thread (Thread.
                       (fn []
                         (try
-                          (bot/start! bot-state)
+                          ;; Use interactive mode - just connect, don't auto-scan
+                          (let [connected-state (bot/start-interactive! bot-state)]
+                            ;; Store the connected state back
+                            (swap! app-state assoc :bot-state connected-state))
                           (catch Exception e
                             (add-log (str "Bot error: " (.getMessage e)))
                             (swap! app-state assoc :status "error")))))]
@@ -98,7 +102,7 @@
              :bot-state bot-state
              :bot-thread bot-thread
              :status "running")
-      (add-log "Bot started"))))
+      (add-log "Bot started (interactive mode)"))))
 
 (defn stop-bot! []
   (println "stop-bot! called, bot-state:" (:bot-state @app-state))
@@ -431,6 +435,206 @@
        :body (json/generate-string {:error (.getMessage e)})})))
 
 ;; ============================================================================
+;; Game Overview API
+;; ============================================================================
+
+(defn api-game-overview [req]
+  "Get current game overview - player info, planets, resources"
+  (try
+    (if-let [bot-state (:bot-state @app-state)]
+      (if-let [web-adapter (:web-adapter bot-state)]
+        (let [player (:own-player bot-state)
+              colonies (when player (:colonies player))]
+          {:status 200
+           :headers {"Content-Type" "application/json"}
+           :body (json/generate-string
+                  {:player (when player
+                            {:name (:name player)
+                             :alliance (:alliance player)
+                             :rank (:rank player)
+                             :points (:points player)})
+                   :planets (mapv (fn [p]
+                                   {:name (:name p)
+                                    :coords (str (:coords p))})
+                                 (or colonies []))
+                   :status "connected"})})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not connected" :status "disconnected"})})
+      {:status 400
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error "Bot not running" :status "stopped"})})
+    (catch Exception e
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+(defn api-navigate [req]
+  "Navigate to a game page (overview, resources, fleet, galaxy, etc.)"
+  (try
+    (let [body (json/parse-string (slurp (:body req)) true)
+          page (or (:page body) "overview")]
+      (if-let [bot-state (:bot-state @app-state)]
+        (if-let [web-adapter (:web-adapter bot-state)]
+          (do
+            (web/navigate-to-page web-adapter "index.php" {:page "ingame" :component page})
+            (add-log (str "Navigated to " page))
+            {:status 200
+             :headers {"Content-Type" "application/json"}
+             :body (json/generate-string {:success true :page page})})
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body (json/generate-string {:error "Bot not connected"})})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not running"})}))
+    (catch Exception e
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+(defn api-screenshot [req]
+  "Take a screenshot of the current browser state"
+  (try
+    (if-let [bot-state (:bot-state @app-state)]
+      (if-let [web-adapter (:web-adapter bot-state)]
+        (let [driver (:driver web-adapter)
+              screenshot-file (java.io.File/createTempFile "ogbot-screenshot" ".png")]
+          (etaoin.api/screenshot driver (.getAbsolutePath screenshot-file))
+          {:status 200
+           :headers {"Content-Type" "image/png"}
+           :body (java.io.FileInputStream. screenshot-file)})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not connected"})})
+      {:status 400
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error "Bot not running"})})
+    (catch Exception e
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+(defn api-click [req]
+  "Click an element by CSS selector"
+  (try
+    (let [body (json/parse-string (slurp (:body req)) true)
+          selector (:selector body)]
+      (if-let [bot-state (:bot-state @app-state)]
+        (if-let [web-adapter (:web-adapter bot-state)]
+          (let [driver (:driver web-adapter)
+                selector-map (if (clojure.string/starts-with? selector "//")
+                               {:xpath selector}
+                               {:css selector})]
+            (etaoin.api/click driver selector-map)
+            (Thread/sleep 500)
+            {:status 200
+             :headers {"Content-Type" "application/json"}
+             :body (json/generate-string {:success true :clicked selector})})
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body (json/generate-string {:error "Bot not connected"})})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not running"})}))
+    (catch Exception e
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+(defn api-fill [req]
+  "Fill an input field"
+  (try
+    (let [body (json/parse-string (slurp (:body req)) true)
+          selector (:selector body)
+          text (:text body)]
+      (if-let [bot-state (:bot-state @app-state)]
+        (if-let [web-adapter (:web-adapter bot-state)]
+          (let [driver (:driver web-adapter)]
+            (etaoin.api/fill driver {:css selector} text)
+            {:status 200
+             :headers {"Content-Type" "application/json"}
+             :body (json/generate-string {:success true :filled selector})})
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body (json/generate-string {:error "Bot not connected"})})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not running"})}))
+    (catch Exception e
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+(defn api-get-text [req]
+  "Get text from elements matching a selector"
+  (try
+    (let [selector (get-in req [:params :selector])]
+      (if-let [bot-state (:bot-state @app-state)]
+        (if-let [web-adapter (:web-adapter bot-state)]
+          (let [driver (:driver web-adapter)
+                elements (etaoin.api/query-all driver {:css selector})
+                texts (mapv #(etaoin.api/get-element-text-el driver %) elements)]
+            {:status 200
+             :headers {"Content-Type" "application/json"}
+             :body (json/generate-string {:texts texts :count (count texts)})})
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body (json/generate-string {:error "Bot not connected"})})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not running"})}))
+    (catch Exception e
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+(defn api-get-html [req]
+  "Get page HTML source"
+  (try
+    (if-let [bot-state (:bot-state @app-state)]
+      (if-let [web-adapter (:web-adapter bot-state)]
+        (let [driver (:driver web-adapter)
+              html (etaoin.api/get-source driver)]
+          {:status 200
+           :headers {"Content-Type" "text/html"}
+           :body html})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not connected"})})
+      {:status 400
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error "Bot not running"})})
+    (catch Exception e
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+(defn api-go-url [req]
+  "Navigate to a specific URL"
+  (try
+    (let [body (json/parse-string (slurp (:body req)) true)
+          url (:url body)]
+      (if-let [bot-state (:bot-state @app-state)]
+        (if-let [web-adapter (:web-adapter bot-state)]
+          (let [driver (:driver web-adapter)]
+            (etaoin.api/go driver url)
+            (Thread/sleep 2000)
+            {:status 200
+             :headers {"Content-Type" "application/json"}
+             :body (json/generate-string {:success true :url url})})
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body (json/generate-string {:error "Bot not connected"})})
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/generate-string {:error "Bot not running"})}))
+    (catch Exception e
+      {:status 500
+       :headers {"Content-Type" "application/json"}
+       :body (json/generate-string {:error (.getMessage e)})})))
+
+;; ============================================================================
 ;; Routes
 ;; ============================================================================
 
@@ -454,6 +658,16 @@
   (POST "/api/action/spy" [] api-spy)
   (POST "/api/action/attack" [] api-attack)
   (POST "/api/action/scan" [] api-manual-scan)
+  ;; Game control
+  (GET "/api/game/overview" [] api-game-overview)
+  (POST "/api/game/navigate" [] api-navigate)
+  ;; Direct Selenium control
+  (GET "/api/selenium/screenshot" [] api-screenshot)
+  (POST "/api/selenium/click" [] api-click)
+  (POST "/api/selenium/fill" [] api-fill)
+  (GET "/api/selenium/text" [] api-get-text)
+  (GET "/api/selenium/html" [] api-get-html)
+  (POST "/api/selenium/go" [] api-go-url)
   (route/not-found "Not Found"))
 
 (def app

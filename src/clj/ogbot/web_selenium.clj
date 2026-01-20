@@ -173,13 +173,19 @@
     (catch Exception _ false)))
 
 (defn click-element
-  "Click an element with optional wait"
+  "Click an element with optional wait and retry"
   [driver selector]
-  (try
-    (e/wait-visible driver selector {:timeout 5})
-    (e/click driver selector)
-    true
-    (catch Exception _ false)))
+  (loop [attempts 3]
+    (if (zero? attempts)
+      false
+      (try
+        (e/wait-visible driver selector {:timeout 5})
+        (Thread/sleep 500) ;; Extra wait for interactability
+        (e/click driver selector)
+        true
+        (catch Exception e
+          (Thread/sleep 1000)
+          (recur (dec attempts)))))))
 
 (defn fill-input
   "Fill an input field"
